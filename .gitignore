@@ -46,3 +46,8 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local env files with real keys (copy env/example.json)
+/env/*.json
+!/env/example.json
+/android/build/

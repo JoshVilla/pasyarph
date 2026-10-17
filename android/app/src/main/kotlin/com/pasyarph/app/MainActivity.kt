@@ -1,4 +1,4 @@
-package com.example.pasyarph
+package com.pasyarph.app
 
 import io.flutter.embedding.android.FlutterActivity
 

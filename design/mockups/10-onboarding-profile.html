@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Onboarding — rider profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#C2410C}a:hover{color:#9A3412}
+</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Barlow', system-ui, sans-serif; color: #15171C; box-sizing: border-box; padding: 60px 20px 36px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.5px; color: #9A3412">STEP 1 OF 2</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<span style="height: 6px; border-radius: 3px; background: #C2410C"></span>
+<span style="height: 6px; border-radius: 3px; background: #E2E0DA"></span>
+</div>
+</div>
+
+<h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1.05; letter-spacing: 0.5px">SET UP YOUR<br>RIDER PROFILE</h1>
+
+<div style="display: flex; align-items: center; gap: 16px">
+<button aria-label="Add profile photo" style="width: 88px; height: 88px; border-radius: 44px; border: 2px dashed #D3D5CC; background: #F3F2EE; position: relative; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5A5F69" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>
+<span style="position: absolute; right: -2px; bottom: -2px; width: 32px; height: 32px; border-radius: 16px; background: #C2410C; border: 3px solid #FFFFFF; display: flex; align-items: center; justify-content: center">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+</span>
+</button>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px; font-weight: 600">Add a photo</span>
+<span style="font-size: 14px; color: #5A5F69">Riders trust faces in the feed. Optional.</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="dname" style="font-size: 13px; font-weight: 600; color: #5A5F69">Rider name</label>
+<input id="dname" type="text" value="Juan" style="height: 52px; border-radius: 12px; border: 1.5px solid #E2E0DA; padding: 0 14px; font-family: inherit; font-size: 16px; color: #15171C; box-sizing: border-box">
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600; color: #5A5F69">What do you ride?</span>
+<div role="radiogroup" aria-label="Motorcycle type" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button role="radio" aria-checked="false" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DA; background: #FFFFFF; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: #15171C">SCOOTER</button>
+<button role="radio" aria-checked="true" style="height: 52px; border-radius: 14px; border: 2px solid #C2410C; background: #FBE9DF; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: #9A3412">UNDERBONE</button>
+<button role="radio" aria-checked="false" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DA; background: #FFFFFF; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: #15171C">BIG BIKE</button>
+<button role="radio" aria-checked="false" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DA; background: #FFFFFF; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: #15171C">DUAL-SPORT</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="area" style="font-size: 13px; font-weight: 600; color: #5A5F69">Home area</label>
+<input id="area" type="text" placeholder="e.g. Cordon, Isabela" style="height: 52px; border-radius: 12px; border: 1.5px solid #E2E0DA; padding: 0 14px; font-family: inherit; font-size: 16px; color: #15171C; box-sizing: border-box">
+<span style="font-size: 13px; color: #5A5F69">Town only. Helps show loops near you.</span>
+</div>
+
+<div style="flex: 1"></div>
+
+<a href="11-onboarding-location.html" style="height: 56px; border-radius: 16px; background: #C2410C; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 1px">NEXT</a>
+</div>
+
+
+</body>
+</html>

@@ -1,30 +1,35 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:pasyarph/main.dart';
+import 'package:pasyarph/app.dart';
+import 'package:pasyarph/core/widgets/bottom_tabs.dart';
+import 'package:pasyarph/features/create/screens/create_screen.dart';
+import 'package:pasyarph/features/feed/screens/feed_screen.dart';
+import 'package:pasyarph/features/me/screens/me_screen.dart';
+import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('starts on Ride and switches between the four tabs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const PasyarApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(RideScreen), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final tabs = {
+      'Feed': FeedScreen,
+      'Create': CreateScreen,
+      'Me': MeScreen,
+      'Ride': RideScreen,
+    };
+    for (final MapEntry(key: label, value: screen) in tabs.entries) {
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PasyarBottomTabs),
+          matching: find.text(label),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(screen), findsOneWidget, reason: label);
+    }
   });
 }
