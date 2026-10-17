@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../data/repositories/avatar_repository.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/check_email_screen.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
@@ -12,10 +14,13 @@ import '../features/create/screens/create_screen.dart';
 import '../features/dev/screens/widget_gallery_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
 import '../features/me/screens/me_screen.dart';
-import '../features/onboarding/screens/onboarding_placeholder_screen.dart';
+import '../features/onboarding/providers/onboarding_provider.dart';
+import '../features/onboarding/screens/onboarding_location_screen.dart';
+import '../features/onboarding/screens/onboarding_profile_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
 import 'auth_redirect.dart';
 import 'env.dart';
+import 'location/location_permission.dart';
 import 'widgets/app_shell.dart';
 
 abstract final class Routes {
@@ -73,9 +78,26 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
         path: AuthRoutes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
-      GoRoute(
-        path: AuthRoutes.onboardingProfile,
-        builder: (context, state) => const OnboardingPlaceholderScreen(),
+      // Both onboarding steps share one draft, so Back keeps what was typed.
+      ShellRoute(
+        builder: (context, state, child) => ChangeNotifierProvider(
+          create: (context) => OnboardingProvider(
+            auth: context.read<AuthProvider>(),
+            avatars: context.read<AvatarRepository>(),
+            location: context.read<LocationPermissionService>(),
+          ),
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: AuthRoutes.onboardingProfile,
+            builder: (context, state) => const OnboardingProfileScreen(),
+          ),
+          GoRoute(
+            path: AuthRoutes.onboardingLocation,
+            builder: (context, state) => const OnboardingLocationScreen(),
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),

@@ -24,6 +24,12 @@ class AuthScaffold extends StatelessWidget {
     this.onBack,
     this.leading,
     this.gap = 20,
+    this.top = 56,
+    this.titleSize = 36,
+    this.titleHeight = 1.2,
+    this.subtitleGap = 4,
+    this.subtitleHeight = 1.2,
+    this.bottomTrim,
   });
 
   final String title;
@@ -38,16 +44,28 @@ class AuthScaffold extends StatelessWidget {
   final List<Widget> bottom;
   final double gap;
 
+  /// Minimum top padding (56 on auth screens, 60 on onboarding).
+  final double top;
+  final double titleSize;
+  final double titleHeight;
+  final double subtitleGap;
+  final double subtitleHeight;
+
+  /// Taken off the 36 px bottom padding when the last bottom widget's tap
+  /// area is taller than its text. Defaults to [authFooterBottomTrim] when
+  /// the last widget is an [AuthFooterLink].
+  final double? bottomTrim;
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardOpen = media.viewInsets.bottom > 0;
-    final top = math.max(56.0, media.viewPadding.top + 12);
+    final topPad = math.max(top, media.viewPadding.top + 12);
     final hasFooter = bottom.isNotEmpty && bottom.last is AuthFooterLink;
+    final trim = bottomTrim ?? (hasFooter ? authFooterBottomTrim : 0);
     final bottomPad = keyboardOpen
         ? 4.0
-        : math.max(36.0, media.viewPadding.bottom + 16) -
-              (hasFooter ? authFooterBottomTrim : 0);
+        : math.max(36.0, media.viewPadding.bottom + 16) - trim;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -58,7 +76,7 @@ class AuthScaffold extends StatelessWidget {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(20, top, 20, 20),
+                padding: EdgeInsets.fromLTRB(20, topPad, 20, 20),
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
@@ -75,7 +93,14 @@ class AuthScaffold extends StatelessWidget {
                         ),
                       ),
                     ?leading,
-                    _TitleBlock(title: title, subtitle: subtitle),
+                    _TitleBlock(
+                      title: title,
+                      subtitle: subtitle,
+                      size: titleSize,
+                      height: titleHeight,
+                      subtitleGap: subtitleGap,
+                      subtitleHeight: subtitleHeight,
+                    ),
                     ...children,
                   ],
                 ),
@@ -97,27 +122,41 @@ class AuthScaffold extends StatelessWidget {
 }
 
 class _TitleBlock extends StatelessWidget {
-  const _TitleBlock({required this.title, this.subtitle});
+  const _TitleBlock({
+    required this.title,
+    required this.subtitle,
+    required this.size,
+    required this.height,
+    required this.subtitleGap,
+    required this.subtitleHeight,
+  });
 
   final String title;
   final String? subtitle;
+  final double size;
+  final double height;
+  final double subtitleGap;
+  final double subtitleHeight;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 4,
+      spacing: subtitleGap,
       children: [
         Semantics(
           header: true,
-          child: Text(title, style: PasyarTextStyles.screenTitle(36)),
+          child: Text(
+            title,
+            style: PasyarTextStyles.screenTitle(size).copyWith(height: height),
+          ),
         ),
         if (subtitle != null)
           Text(
             subtitle!,
             style: PasyarTextStyles.body.copyWith(
               fontSize: 16,
-              height: 1.2,
+              height: subtitleHeight,
               color: PasyarColors.muted,
             ),
           ),
@@ -149,8 +188,11 @@ class AuthFooterLink extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.only(top: 1),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      // Wraps onto two lines with very large system text instead of
+      // overflowing.
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           if (text.isNotEmpty) Text('$text ', style: base),
           Semantics(

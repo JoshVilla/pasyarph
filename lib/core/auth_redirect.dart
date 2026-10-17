@@ -9,6 +9,7 @@ abstract final class AuthRoutes {
   static const resetPassword = '/reset-password';
   static const splash = '/splash';
   static const onboardingProfile = '/onboarding/profile';
+  static const onboardingLocation = '/onboarding/location';
 
   static const signedOutOnly = {
     welcome,

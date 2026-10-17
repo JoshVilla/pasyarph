@@ -1,26 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
+import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
+import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
 import 'package:pasyarph/features/auth/screens/welcome_screen.dart';
 import 'package:pasyarph/features/create/screens/create_screen.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
-import 'package:pasyarph/features/onboarding/screens/onboarding_placeholder_screen.dart';
+import 'package:pasyarph/features/onboarding/screens/onboarding_location_screen.dart';
+import 'package:pasyarph/features/onboarding/screens/onboarding_profile_screen.dart';
 import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
+import 'support/fake_services.dart';
 
 Future<FakeAuthRepository> pumpApp(
   WidgetTester tester,
-  FakeAuthRepository repo,
-) async {
+  FakeAuthRepository repo, {
+  FakeLocationPermission? location,
+}) async {
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 2.75;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    ChangeNotifierProvider(
-      create: (_) => AuthProvider(repo),
+    MultiProvider(
+      providers: [
+        Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
+        Provider<LocationPermissionService>(
+          create: (_) => location ?? FakeLocationPermission(),
+        ),
+        ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
+      ],
       child: const PasyarApp(),
     ),
   );
@@ -57,18 +71,60 @@ void main() {
     expect(repo.calls, contains('signInWithPassword:ana@test.ph'));
   });
 
-  testWidgets('new account goes to onboarding', (tester) async {
+  testWidgets('new account: onboarding step 1 → step 2 → Ride', (tester) async {
+    final location = FakeLocationPermission(LocationAccess.denied);
+    final repo = await pumpApp(
+      tester,
+      FakeAuthRepository(
+        session: fakeSession(),
+        profile: fakeProfile(onboardingCompleted: false),
+      ),
+      location: location,
+    );
+    expect(find.byType(OnboardingProfileScreen), findsOneWidget);
+    // Rider name is prefilled with the first name ("Ana Rider" → "Ana").
+    expect(find.widgetWithText(TextField, 'Ana'), findsOneWidget);
+
+    await tester.tap(find.text('UNDERBONE'));
+    await tester.tap(find.text('NEXT'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingLocationScreen), findsOneWidget);
+    expect(repo.profileUpdates.first, {
+      'display_name': 'Ana',
+      'bike_type': 'underbone',
+      'home_area': null,
+      'avatar_url': null,
+    });
+
+    // Back keeps the draft.
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingProfileScreen), findsOneWidget);
+    await tester.tap(find.text('NEXT'));
+    await tester.pumpAndSettle();
+
+    // Denied permission still finishes onboarding.
+    await tester.tap(find.text('ALLOW LOCATION'));
+    await tester.pumpAndSettle();
+    expect(location.requests, 1);
+    expect(find.byType(RideScreen), findsOneWidget);
+  });
+
+  testWidgets('"Not now" finishes without asking for location', (tester) async {
+    final location = FakeLocationPermission();
     await pumpApp(
       tester,
       FakeAuthRepository(
         session: fakeSession(),
         profile: fakeProfile(onboardingCompleted: false),
       ),
+      location: location,
     );
-    expect(find.byType(OnboardingPlaceholderScreen), findsOneWidget);
-
-    await tester.tap(find.text('CONTINUE'));
+    await tester.tap(find.text('NEXT'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(location.requests, 0);
     expect(find.byType(RideScreen), findsOneWidget);
   });
 

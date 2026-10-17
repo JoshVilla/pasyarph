@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/env.dart';
+import 'core/location/location_permission.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/avatar_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 Future<void> main() async {
@@ -15,11 +17,21 @@ Future<void> main() async {
     url: Env.supabaseUrl,
     publishableKey: Env.supabaseAnonKey,
   );
+  final client = Supabase.instance.client;
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) =>
-          AuthProvider(SupabaseAuthRepository(Supabase.instance.client)),
+    MultiProvider(
+      providers: [
+        Provider<AvatarRepository>(
+          create: (_) => SupabaseAvatarRepository(client),
+        ),
+        Provider<LocationPermissionService>(
+          create: (_) => const GeolocatorPermissionService(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(SupabaseAuthRepository(client)),
+        ),
+      ],
       child: const PasyarApp(),
     ),
   );
