@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(33);
+select plan(34);
 
 -- Helpers -------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ $$;
 -- Riders: A (owns things), B (A's club member), C (stranger).
 insert into auth.users (id, email, raw_user_meta_data)
 values
-  ('00000000-0000-0000-0000-00000000000a', 'a@test.ph', '{"full_name": "Ana Rider"}'),
+  ('00000000-0000-0000-0000-00000000000a', 'a@test.ph', '{"full_name": "Ana Rider", "terms_accepted": true}'),
   ('00000000-0000-0000-0000-00000000000b', 'b@test.ph', '{"name": "Ben Rider"}'),
   ('00000000-0000-0000-0000-00000000000c', 'c@test.ph', '{}');
 
@@ -55,6 +55,11 @@ select is(
   (select full_name from profiles where id = '00000000-0000-0000-0000-00000000000b'),
   'Ben Rider',
   'sign-up trigger falls back to the "name" metadata key (Google)'
+);
+select ok(
+  (select terms_accepted_at is not null from profiles where id = '00000000-0000-0000-0000-00000000000a')
+  and (select terms_accepted_at is null from profiles where id = '00000000-0000-0000-0000-00000000000b'),
+  'sign-up trigger records terms acceptance from metadata'
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');

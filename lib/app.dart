@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import 'core/router.dart';
 import 'core/theme/pasyar_theme.dart';
+import 'features/auth/providers/auth_provider.dart';
 
+/// Expects an [AuthProvider] above it (see main.dart).
 class PasyarApp extends StatefulWidget {
   const PasyarApp({super.key});
 
@@ -12,7 +15,9 @@ class PasyarApp extends StatefulWidget {
 }
 
 class _PasyarAppState extends State<PasyarApp> {
-  final GoRouter _router = createRouter();
+  late final GoRouter _router = createRouter(
+    auth: context.read<AuthProvider>(),
+  );
 
   @override
   void dispose() {

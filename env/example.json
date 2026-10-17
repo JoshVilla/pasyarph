@@ -1,6 +1,8 @@
 {
-  "SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
-  "SUPABASE_ANON_KEY": "your-supabase-anon-key",
-  "MAP_TILE_URL": "https://api.maptiler.com/maps/streets-v4/{z}/{x}/{y}.png?key={key}",
-  "MAP_TILE_KEY": "your-maptiler-key"
+    "SUPABASE_URL":  "https://YOUR-PROJECT.supabase.co",
+    "SUPABASE_ANON_KEY":  "your-supabase-anon-key",
+    "MAP_TILE_URL":  "https://api.maptiler.com/maps/streets-v4/{z}/{x}/{y}.png?key={key}",
+    "MAP_TILE_KEY":  "your-maptiler-key",
+    "GOOGLE_WEB_CLIENT_ID":  "",
+    "GOOGLE_IOS_CLIENT_ID":  ""
 }

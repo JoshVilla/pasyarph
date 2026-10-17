@@ -35,13 +35,16 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, full_name)
+  insert into public.profiles (id, full_name, terms_accepted_at)
   values (
     new.id,
     nullif(trim(coalesce(
       new.raw_user_meta_data ->> 'full_name',
       new.raw_user_meta_data ->> 'name'
-    )), '')
+    )), ''),
+    -- Email sign-up sends {"terms_accepted": true}. Recorded here because
+    -- with email confirmation on there is no session to update the profile.
+    case when new.raw_user_meta_data ->> 'terms_accepted' = 'true' then now() end
   );
   return new;
 end;

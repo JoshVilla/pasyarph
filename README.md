@@ -93,6 +93,16 @@ Notes for app code:
 - Geography columns come back as hex EWKB. RPCs return GeoJSON. `GeoCodec` reads both and writes EWKT.
 - Storage paths: `avatars/<user_id>/...` and `post-photos/<user_id>/<post_id>/<n>.jpg`.
 
+## Sign-in setup
+
+Only email + password is on for now. Apple and Google are built but hidden; turn them on with `Features.socialSignIn` in `lib/core/features.dart` after steps 2 and 3.
+
+Email + password works once the migrations are pushed. The other pieces are set in dashboards:
+
+1. **Redirect URLs** (Supabase → Authentication → URL Configuration): add `com.pasyarph.app.dev://auth-callback` and `com.pasyarph.app://auth-callback`. Email confirmation links, password reset links and Apple sign-in on Android return to the app through these.
+2. **Google:** in Google Cloud, create a *Web* OAuth client. Put its ID and secret in Supabase → Auth → Providers → Google, and its ID in `GOOGLE_WEB_CLIENT_ID` in `env/*.json`. Also create one *Android* OAuth client per flavor, with package `com.pasyarph.app.dev` / `com.pasyarph.app` and your signing SHA-1 (`cd android && ./gradlew signingReport`). Until `GOOGLE_WEB_CLIENT_ID` is set, the Google button says sign-in isn't set up.
+3. **Apple:** needs an Apple Developer account. Create a Services ID and key, then enable Apple in Supabase → Auth → Providers. On Android it opens Apple's web sign-in in the browser.
+
 ## Design system
 
 - Tokens and text styles: `lib/core/theme/`

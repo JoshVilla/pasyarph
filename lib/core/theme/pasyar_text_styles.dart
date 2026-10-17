@@ -39,7 +39,7 @@ abstract final class PasyarTextStyles {
   /// UPPERCASE screen titles. Home 30, Feed 32, Onboarding 34,
   /// Post / Log in / Register 36.
   static TextStyle screenTitle([double size = 36]) =>
-      _display.copyWith(fontSize: size, letterSpacing: 0.5);
+      _display.copyWith(fontSize: size, letterSpacing: 0.5, height: 1.2);
 
   /// Riding banner distance.
   static final navDistance = _display.copyWith(fontSize: 40, height: 1.0);
