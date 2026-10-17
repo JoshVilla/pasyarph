@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase and map tiles. Debug builds add this automatically;
+         release builds need it here. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <!-- "While using the app" location for building loops (asked during
          onboarding). Background location is added with navigation. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>

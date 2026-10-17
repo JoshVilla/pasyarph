@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:pasyarph/core/location/location_permission.dart';
+import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 
 class FakeAvatarRepository implements AvatarRepository {
@@ -30,4 +32,30 @@ class FakeLocationPermission implements LocationPermissionService {
 
   @override
   Future<bool> openSettings() async => true;
+}
+
+class FakePositionSource implements PositionSource {
+  FakePositionSource({this.enabled = true, this.last});
+
+  bool enabled;
+  RiderFix? last;
+  int settingsOpened = 0;
+  final controller = StreamController<RiderFix>.broadcast();
+
+  void emit(RiderFix fix) => controller.add(fix);
+
+  @override
+  Future<bool> serviceEnabled() async => enabled;
+
+  @override
+  Future<RiderFix?> lastKnown() async => last;
+
+  @override
+  Stream<RiderFix> fixes() => controller.stream;
+
+  @override
+  Future<bool> openLocationSettings() async {
+    settingsOpened++;
+    return true;
+  }
 }

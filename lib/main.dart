@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'core/env.dart';
 import 'core/location/location_permission.dart';
+import 'core/location/location_provider.dart';
+import 'core/location/position_source.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -27,6 +29,12 @@ Future<void> main() async {
         ),
         Provider<LocationPermissionService>(
           create: (_) => const GeolocatorPermissionService(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => LocationProvider(
+            permissions: context.read<LocationPermissionService>(),
+            positions: const GeolocatorPositionSource(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(SupabaseAuthRepository(client)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
+import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
@@ -32,6 +33,12 @@ Future<FakeAuthRepository> pumpApp(
         Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
         Provider<LocationPermissionService>(
           create: (_) => location ?? FakeLocationPermission(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => LocationProvider(
+            permissions: context.read<LocationPermissionService>(),
+            positions: FakePositionSource(),
+          ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
       ],
