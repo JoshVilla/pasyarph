@@ -20,9 +20,9 @@ If something breaks, fix it in the same step before continuing. Don't stack prom
 |---|---|---|
 | App | Flutter, Provider for state | What you already know |
 | Backend | Supabase (Postgres + PostGIS, Auth, Storage, Edge Functions) | PostGIS handles route lines, "loops near you", and distance queries natively |
-| Routing | OpenRouteService (round trip, directions, POIs) via a Supabase Edge Function | Keeps the API key off the phone; lets you cache and rate-limit |
+| Routing | GraphHopper (round trip, directions) via a Supabase Edge Function; places from the Overpass API (OSM) | Keeps the API key off the phone; lets you cache and rate-limit |
 | Map | `flutter_map` + a tile provider (MapTiler or Stadia free tier) | OSM's own tile servers can't be used for apps |
-| Navigation | Custom: ORS step instructions + `geolocator` + `flutter_tts` | Keeps riders inside the app |
+| Navigation | Custom: GraphHopper step instructions + `geolocator` + `flutter_tts` | Keeps riders inside the app |
 
 > If you'd rather use Firebase, tell the agent in Prompt 00 and replace PostGIS queries with geohash queries (`geoflutterfire_plus`). Everything else stays the same.
 
@@ -39,7 +39,7 @@ Motorcycle loop-route app for Filipino riders. A rider picks how long they want 
 ## Stack
 - Flutter (latest stable), Provider for state, go_router for navigation
 - Supabase: Auth, Postgres + PostGIS, Storage, Edge Functions (Deno/TypeScript)
-- OpenRouteService API called ONLY from Edge Functions, never from the app
+- GraphHopper routing API called ONLY from Edge Functions, never from the app (OpenRouteService was dropped: its public API timed out)
 - flutter_map with vector/raster tiles from [TILE PROVIDER], key in --dart-define
 - geolocator, flutter_tts, camera/image_picker, wakelock_plus
 
@@ -217,6 +217,8 @@ Match design/screenshots/01-home.png and design/mockups/01-home.html exactly (la
 
 ## Prompt 07 — Edge Function: generate-loop
 
+> Done. Built with GraphHopper round trips instead of ORS (ORS timed out); see README → Edge Functions.
+
 ```
 Create a Supabase Edge Function generate-loop (TypeScript):
 Input: { lat, lng, duration: 'quick'|'half'|'full', avoidHighways: bool, avoidUnpaved: bool, seed: int }
@@ -256,7 +258,7 @@ Match design/screenshots/02-loop-preview.png and design/mockups/02-loop-preview.
 
 ```
 Improve main stop selection in generate-loop:
-- After getting the route, query ORS POIs (or the Overpass API if ORS POIs lack coverage) within 1.5 km of the route for: viewpoints, waterfalls, tourist attractions, restaurants/cafés, fuel stations.
+- After getting the route, query the Overpass API (OpenStreetMap) within 1.5 km of the route for: viewpoints, waterfalls, tourist attractions, restaurants/cafés, fuel stations.
 - Pick the main stop: prefer viewpoint/waterfall/attraction located 35–65% along the route; fall back to a food spot; fall back to the farthest point.
 - Return main_stop {name, type, lat, lng, km_into_route} and nearby fuel stations along the loop.
 - Show them in the Preview: main stop card "MAIN STOP · 52 KM IN" with name and type, small fuel icons on the map.
@@ -272,11 +274,11 @@ Add unit tests for the stop-picking logic.
 ```
 Build the Riding screen (mockup screen 3):
 Match design/screenshots/03-riding.png and design/mockups/03-riding.html exactly (layout, sizes, colors, copy). Open both before coding, and add a 390x844 golden test to compare when done.
-- Dark top banner with the next maneuver icon, distance to it (big condensed number), and instruction text from the ORS steps.
+- Dark top banner with the next maneuver icon, distance to it (big condensed number), and instruction text from the GraphHopper steps.
 - Map follows the rider with heading-up rotation; ridden part of the loop turns grey.
 - "Main stop in X km" chip, bottom panel with km left, ETA back home, current speed, progress bar, mute voice, END RIDE.
 - Voice prompts with flutter_tts at ~500 m and ~100 m before each maneuver (English first; structure strings so Filipino can be added later).
-- Off-route detection: if > 50 m from the route for > 10 seconds, request a new route from the current position back onto the loop (new Edge Function route-to-loop or reuse ORS directions) and resume.
+- Off-route detection: if > 50 m from the route for > 10 seconds, request a new route from the current position back onto the loop (new Edge Function route-to-loop using GraphHopper directions) and resume.
 - Keep the screen on (wakelock_plus) while riding. Save a ride summary (distance ridden, time) locally when the ride ends.
 - Handle the app going to background: keep location updates running with a foreground service notification on Android ("Pasyar is guiding your ride").
 - Big text and controls; nothing that needs reading while moving.
@@ -357,7 +359,7 @@ There is no mockup for this screen: build it only from the components and tokens
 ```
 Implement "Ride this loop" from a feed post or loop link:
 - Load the loop's shared_route.
-- Route from the rider's current location to the nearest point on the loop (ORS directions via an Edge Function), then follow the loop all the way around, then route back to the rider's start.
+- Route from the rider's current location to the nearest point on the loop (GraphHopper directions via an Edge Function), then follow the loop all the way around, then route back to the rider's start.
 - Show a preview first: total distance including approach and return, ride time, main stop.
 - START RIDE uses the same navigation screen (Prompt 10).
 ```
@@ -372,13 +374,47 @@ Implement "Ride this loop" from a feed post or loop link:
 Build the Create tab (mockup screen 6):
 Match design/screenshots/06-create-loop.png and design/mockups/06-create-loop.html exactly (layout, sizes, colors, copy). Open both before coding, and add a 390x844 golden test to compare when done.
 - Map starts at the rider's location as point S. Tapping the map adds numbered points; long-press a point to remove; drag to move.
-- After each change, call an Edge Function route-through-points that snaps to roads via ORS directions through S → 1 → … → n → S, debounced 600 ms.
+- After each change, call an Edge Function route-through-points that snaps to roads via GraphHopper directions through S → 1 → … → n → S, debounced 600 ms. (The free plan allows 5 points per request: split longer loops into chunks, or require the paid plan.)
 - Show the closing segment back to S as a dashed line until the route returns.
 - Bottom sheet: loop name, live distance and ride time, "N points · closes back to start", choose which point is the main stop, visibility segmented control (Public / Club / Private), SAVE and SHARE LINK.
 - Limit to 15 points. Undo last point.
 ```
 
 **Done when:** you can build a 4-point loop, save it, and see it in your profile.
+
+---
+
+## Prompt 16b — Multi-day trips
+
+```
+Add multi-day trips (3+ days, e.g. Cordon → Baguio → Sagada → Pagudpud → home), planned by the rider.
+There is no mockup for these screens: build them only from the components and tokens in design/DESIGN.md (reuse the Create map, route line, markers, StatBlock, StopCard, ChoiceCard, BottomSheetPanel) so they match the rest of the app.
+
+Data
+- Migrations: trips (id, owner_id, name, visibility, club_id, created_at) and trip_days (id, trip_id, day_number, start_point, end_point geography(Point), stops jsonb, route, shared_route geography(LineString), distance_m, duration_s, main_stop jsonb). RLS like loops: owners read route; others read shared_route only, by visibility.
+- Home privacy: trim the first 800 m of day 1 and the last 800 m of the final day in shared_route (overnight towns are not trimmed).
+- Dart models for both tables.
+
+Planning (Create tab → "Multi-day trip")
+- Start is the rider's location (S). Tap the map or search a town to add each overnight stop; the final day returns to S automatically.
+- Each day can have up to 3 optional stops between its start and its overnight town (GraphHopper free plan allows 5 points per request).
+- Route each day separately through an Edge Function route-day (GraphHopper, car profile, one call per day; only re-route days that changed, debounced 600 ms).
+- Day list in the sheet: "DAY 1 · Cordon → Baguio", km, ride time per day, and totals for the trip. Warn on a day over 400 km or 9 h of riding ("Long day — consider an extra overnight stop").
+- Reorder, insert or remove overnight stops; undo last change. Limit 10 days.
+- Name, visibility (Public / Club / Private), SAVE and SHARE LINK.
+
+Riding
+- Trip preview: all days on the map in the route style (current day in accent, other days in riddenRoute grey), day list, START DAY N.
+- START DAY N opens the normal navigation screen (Prompt 10) for that day's route only; finishing a day marks it done and the trip shows the next day.
+- Posts at a stop (Prompt 11) attach the trip and day.
+
+Sharing
+- Feed card for a trip: name, "5 days · 1,240 km", day list, map of all days. "Ride this trip" copies it as the viewer's own trip, starting from their location (approach and return legs added to day 1 and the final day).
+
+Add unit tests for day splitting, day warnings, the trip privacy trim, and trip totals.
+```
+
+**Done when:** you can plan a 4-day trip, see per-day distance and time, save it, ride day 1 with navigation, and another account can see it in the feed and copy it.
 
 ---
 
@@ -453,6 +489,7 @@ Prepare Pasyar for store release:
 - Android release signing for prod flavor; iOS signing notes for the Mac build machine.
 - Store listing text (title "Pasyar – Moto Loop Routes PH"), screenshots checklist, and a closed beta track.
 - Review: remove dev-only screens from prod builds, verify no API keys in the app bundle.
+- Routing plan: GraphHopper's free plan is non-commercial with a per-minute limit; move to a paid plan (or a self-hosted router) before release.
 ```
 
 **Done when:** a signed prod build is uploaded to Google Play closed testing.
@@ -461,8 +498,10 @@ Prepare Pasyar for store release:
 
 ## Later (after real rider feedback)
 
-- Custom waypoint-circle loop generation for areas where ORS round trips backtrack too much.
+- Custom waypoint-circle loop generation for areas where GraphHopper round trips backtrack too much.
+- Multi-day "Surprise me": pick the number of days and the app chooses overnight towns about a day's ride apart around a loop (builds on Prompt 16b).
+- An "EPIC · 300 km +" option on Home for long single-day loops (check round-trip quality at 300–500 km first).
 - AI natural-language input ("chill 2-hour loop with a waterfall") that maps to generate-loop parameters.
-- Self-hosting OpenRouteService once you approach the free tier's 2,000 directions/day.
+- Self-hosting a router (GraphHopper or OpenRouteService with Philippines data) once traffic outgrows the hosted plan.
 - Offline maps for areas with weak signal.
 - Filipino and Ilocano voice prompts and UI.
