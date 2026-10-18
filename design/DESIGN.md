@@ -10,7 +10,7 @@ This folder is the source of truth for how Pasyar looks. **Match it. Don't redes
 | 1 | Home — pick a ride | `screenshots/01-home.png` | `mockups/01-home.html` |
 | 2 | Loop preview + Shuffle | `screenshots/02-loop-preview.png` | `mockups/02-loop-preview.html` |
 | 3 | Riding (navigation) | `screenshots/03-riding.png` | `mockups/03-riding.html` |
-| 4 | Post at the stop | `screenshots/04-post-at-stop.png` | `mockups/04-post-at-stop.html` |
+| 4 | Post the loop (after the ride; copy changes in Prompt 11) | `screenshots/04-post-at-stop.png` | `mockups/04-post-at-stop.html` |
 | 5 | Newsfeed (tall, scrolling) | `screenshots/05-newsfeed.png` | `mockups/05-newsfeed.html` |
 | 6 | Create + share a loop | `screenshots/06-create-loop.png` | `mockups/06-create-loop.html` |
 | 7 | Welcome | `screenshots/07-welcome.png` | `mockups/07-welcome.html` |
