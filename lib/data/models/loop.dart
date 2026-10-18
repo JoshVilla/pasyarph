@@ -4,15 +4,25 @@ import '../geo/geo_codec.dart';
 import 'enums.dart';
 import 'json.dart';
 
-/// `loops.main_stop` jsonb: {name, type, lat, lng}.
+/// `loops.main_stop` jsonb: {name, type, lat, lng, km_into_route}.
 class MainStop {
-  const MainStop({required this.location, this.name, this.type});
+  const MainStop({
+    required this.location,
+    this.name,
+    this.type,
+    this.kmIntoRoute,
+  });
 
+  /// Null for unnamed places and for the turnaround fallback.
   final String? name;
 
-  /// e.g. viewpoint, waterfall, attraction, food.
+  /// viewpoint, waterfall, attraction, food, or turnaround (no place found:
+  /// the farthest point of the loop).
   final String? type;
   final LatLng location;
+
+  /// Distance along the loop from the start.
+  final double? kmIntoRoute;
 
   factory MainStop.fromJson(Json json) => MainStop(
     name: json['name'] as String?,
@@ -21,6 +31,7 @@ class MainStop {
       (json['lat'] as num).toDouble(),
       (json['lng'] as num).toDouble(),
     ),
+    kmIntoRoute: toDoubleOrNull(json['km_into_route']),
   );
 
   Json toJson() => {
@@ -28,7 +39,26 @@ class MainStop {
     'type': type,
     'lat': location.latitude,
     'lng': location.longitude,
+    if (kmIntoRoute != null) 'km_into_route': kmIntoRoute,
   };
+}
+
+/// A fuel station along a generated loop.
+class FuelStop {
+  const FuelStop({required this.location, this.name, this.kmIntoRoute = 0});
+
+  final String? name;
+  final LatLng location;
+  final double kmIntoRoute;
+
+  factory FuelStop.fromJson(Json json) => FuelStop(
+    name: json['name'] as String?,
+    location: LatLng(
+      (json['lat'] as num).toDouble(),
+      (json['lng'] as num).toDouble(),
+    ),
+    kmIntoRoute: toDoubleOrNull(json['km_into_route']) ?? 0,
+  );
 }
 
 /// Row of `loops` as other riders (and the owner) can read it.

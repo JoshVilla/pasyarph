@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/pasyar_colors.dart';
 import '../theme/pasyar_text_styles.dart';
@@ -210,6 +211,35 @@ class _LoopPointPainter extends CustomPainter {
   bool shouldRepaint(_LoopPointPainter oldDelegate) => oldDelegate.fill != fill;
 }
 
+/// Fuel station along a loop: a small white disc with an `ink` pump icon,
+/// quieter than the main stop so it doesn't compete with it.
+class FuelMarker extends StatelessWidget {
+  const FuelMarker({super.key});
+
+  static const size = 24.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: PasyarColors.card,
+        shape: BoxShape.circle,
+        border: Border.all(color: PasyarColors.lineStrong, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F15171C),
+            offset: Offset(0, 1),
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      child: const Icon(LucideIcons.fuel, size: 13, color: PasyarColors.ink),
+    );
+  }
+}
+
 void _ringedCircle(Canvas canvas, Offset c, double r, Color fill) {
   canvas
     ..drawCircle(c, r, Paint()..color = fill)
@@ -251,6 +281,13 @@ abstract final class PasyarMarkers {
       child: MainStopMarker(radius: radius),
     );
   }
+
+  static Marker fuel(LatLng point) => Marker(
+    point: point,
+    width: FuelMarker.size,
+    height: FuelMarker.size,
+    child: const FuelMarker(),
+  );
 
   static Marker loopPoint(LatLng point, int number) => Marker(
     point: point,

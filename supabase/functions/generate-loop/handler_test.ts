@@ -120,6 +120,8 @@ function deps(overrides: Partial<Deps> & { responses?: Response[] } = {}) {
     bodies,
     deps: {
       consumeQuota: overrides.consumeQuota ?? (() => Promise.resolve(true)),
+      queryPlaces: overrides.queryPlaces ??
+        (() => Promise.resolve([])),
       callRouting: overrides.callRouting ?? ((body: unknown) => {
         bodies.push(body as Record<string, unknown>);
         return Promise.resolve(responses.shift()!);
@@ -241,6 +243,36 @@ Deno.test('a failure after a usable loop still returns that loop', async () => {
   const res = await createHandler(d)(post(valid));
   assertEquals(res.status, 200);
   assertEquals((await res.json()).distance_m, 80_000);
+});
+
+Deno.test('main stop and fuel from nearby places', async () => {
+  const mid = loop[2]; // the far corner, halfway around
+  const seen: { points: number; radius: number }[] = [];
+  const { deps: d } = deps({
+    queryPlaces: (_req, line, radius) => {
+      seen.push({ points: line.coordinates.length, radius });
+      return Promise.resolve([
+        { name: 'Overlook', type: 'viewpoint', lat: mid[1], lng: mid[0] + 0.003 },
+        { name: 'Petron', type: 'fuel', lat: start[1] + 0.001, lng: start[0] },
+      ]);
+    },
+  });
+  const body = await (await createHandler(d)(post(valid))).json();
+  assertEquals(body.main_stop.name, 'Overlook');
+  assertEquals(body.main_stop.type, 'viewpoint');
+  assertEquals(body.fuel_stops.length, 1);
+  assertEquals(seen, [{ points: loop.length, radius: 1500 }]);
+});
+
+Deno.test('places unavailable: still a loop, farthest point as the stop', async () => {
+  const { deps: d } = deps({
+    queryPlaces: () => Promise.reject(new Error('Overpass 504')),
+  });
+  const res = await createHandler(d)(post(valid));
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  assertEquals(body.main_stop.type, 'turnaround');
+  assertEquals(body.fuel_stops, []);
 });
 
 Deno.test('bad input is a 400', async () => {

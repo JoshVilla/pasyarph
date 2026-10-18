@@ -145,6 +145,91 @@ export function backtrackingRatio(
 }
 
 /**
+ * Douglas–Peucker simplification: keeps the shape within [toleranceM].
+ * Used to send a short polyline to Overpass instead of thousands of points.
+ */
+export function simplify(coords: LngLat[], toleranceM: number): LngLat[] {
+  if (coords.length < 3) return coords.slice();
+  const project = projector(coords[0]);
+  const pts = coords.map(project);
+  const keep = new Uint8Array(coords.length);
+  keep[0] = keep[coords.length - 1] = 1;
+
+  const stack: [number, number][] = [[0, coords.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop()!;
+    let worst = -1;
+    let worstD = toleranceM;
+    for (let i = a + 1; i < b; i++) {
+      const d = segmentDistance(pts[i], pts[a], pts[b]).distance;
+      if (d > worstD) {
+        worstD = d;
+        worst = i;
+      }
+    }
+    if (worst >= 0) {
+      keep[worst] = 1;
+      stack.push([a, worst], [worst, b]);
+    }
+  }
+  return coords.filter((_, i) => keep[i]);
+}
+
+type XY = [number, number];
+
+/** Distance from p to segment ab, and how far along ab (0–1) the nearest
+ * point is. */
+function segmentDistance(p: XY, a: XY, b: XY) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0
+    ? 0
+    : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  const x = a[0] + t * dx;
+  const y = a[1] + t * dy;
+  return { distance: Math.hypot(p[0] - x, p[1] - y), t };
+}
+
+export interface RoutePosition {
+  /** Straight-line distance from the point to the route. */
+  offRouteM: number;
+  /** Distance along the route to the nearest spot. */
+  alongM: number;
+}
+
+/** Builds a lookup that places any point on [coords]: how far it is from
+ * the route, and how far along the route its nearest spot is. */
+export function routeLocator(coords: LngLat[]) {
+  const project = projector(coords[0]);
+  const pts = coords.map(project);
+  const along = [0];
+  for (let i = 1; i < pts.length; i++) {
+    along.push(
+      along[i - 1] +
+        Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
+    );
+  }
+  return {
+    lengthM: along[along.length - 1],
+    locate(point: LngLat): RoutePosition {
+      const p = project(point);
+      let best = { offRouteM: Infinity, alongM: 0 };
+      for (let i = 1; i < pts.length; i++) {
+        const { distance, t } = segmentDistance(p, pts[i - 1], pts[i]);
+        if (distance < best.offRouteM) {
+          best = {
+            offRouteM: distance,
+            alongM: along[i - 1] + t * (along[i] - along[i - 1]),
+          };
+        }
+      }
+      return best;
+    },
+  };
+}
+
+/**
  * Sum of heading changes (degrees) per km. Straight roads score near 0;
  * mountain switchbacks score in the hundreds. Segments shorter than
  * [minSegmentM] are merged so tiny GPS-style kinks don't count.

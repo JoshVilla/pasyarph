@@ -33,13 +33,13 @@ class LoopPreviewProvider extends ChangeNotifier {
 
   LoopRequest? _request;
   GeneratedLoop? _loop;
-  MainStopPoint? _mainStop;
+  StopInfo? _mainStop;
   bool _loading = false;
   RouteException? _error;
 
   LoopRequest? get request => _request;
   GeneratedLoop? get loop => _loop;
-  MainStopPoint? get mainStop => _mainStop;
+  StopInfo? get mainStop => _mainStop;
 
   /// A loop is being fetched. During Shuffle the previous [loop] stays.
   bool get loading => _loading;
@@ -76,7 +76,7 @@ class LoopPreviewProvider extends ChangeNotifier {
     try {
       final loop = await _bestLoop(_request!);
       _loop = loop;
-      _mainStop = farthestPoint(loop.route);
+      _mainStop = stopFor(loop);
       return true;
     } on RouteException catch (e) {
       _error = e;

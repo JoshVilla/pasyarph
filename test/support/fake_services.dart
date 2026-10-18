@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
+import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
@@ -95,6 +96,8 @@ GeneratedLoop demoLoop({
   double backtracking = 0.02,
   double curviness = 340,
   List<String> warnings = const [],
+  MainStop? mainStop,
+  List<FuelStop> fuel = const [],
 }) => GeneratedLoop(
   route: DemoRoutes.loop,
   distanceM: 118000,
@@ -104,4 +107,17 @@ GeneratedLoop demoLoop({
   backtrackingRatio: backtracking,
   curvinessScore: curviness,
   warnings: warnings,
+  mainStop: mainStop,
+  fuelStops: fuel,
 );
+
+/// The mockup's main stop: a named viewpoint 52 km in, with fuel nearby.
+final demoStop = MainStop(
+  location: DemoRoutes.mainStop,
+  name: 'Mt. Palali Viewpoint',
+  type: 'viewpoint',
+  kmIntoRoute: 52,
+);
+final demoFuel = [
+  FuelStop(location: DemoRoutes.point2, name: 'Petron', kmIntoRoute: 40),
+];

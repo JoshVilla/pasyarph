@@ -2,6 +2,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../geo/geo_codec.dart';
 import 'json.dart';
+import 'loop.dart';
 
 /// How long the rider wants to ride. [value] is what generate-loop expects.
 enum LoopDuration {
@@ -71,6 +72,8 @@ class GeneratedLoop {
     required this.curvinessScore,
     this.motorwayM = 0,
     this.unpavedM = 0,
+    this.mainStop,
+    this.fuelStops = const [],
     this.warnings = const [],
   });
 
@@ -95,6 +98,12 @@ class GeneratedLoop {
   /// this is a lower bound.
   final int unpavedM;
 
+  /// Picked by the function from nearby places; null from older servers.
+  final MainStop? mainStop;
+
+  /// Fuel stations along the loop, in riding order.
+  final List<FuelStop> fuelStops;
+
   /// Things the rider should know, e.g. a request that couldn't be honored.
   final List<String> warnings;
 
@@ -110,6 +119,13 @@ class GeneratedLoop {
     curvinessScore: (json['curviness_score'] as num).toDouble(),
     motorwayM: (json['motorway_m'] as num?)?.toInt() ?? 0,
     unpavedM: (json['unpaved_m'] as num?)?.toInt() ?? 0,
+    mainStop: json['main_stop'] == null
+        ? null
+        : MainStop.fromJson(json['main_stop'] as Json),
+    fuelStops: [
+      for (final f in json['fuel_stops'] as List? ?? [])
+        FuelStop.fromJson(f as Json),
+    ],
     warnings: [for (final w in json['warnings'] as List? ?? []) w as String],
   );
 }

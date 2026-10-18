@@ -7,20 +7,24 @@ import '../../../core/map/pasyar_map.dart';
 import '../../../core/map/route_style.dart';
 import '../../../core/theme/pasyar_theme.dart';
 
-/// A loop on the map: orange route on a white casing, start dot and main
-/// stop flag. Fits the whole loop inside [fitPadding], and refits when the
-/// route changes (Shuffle).
+/// A loop on the map: orange route on a white casing, start dot, main stop
+/// flag and fuel stations. Fits the whole loop inside [fitPadding], and
+/// refits when the route changes (Shuffle).
 class LoopMap extends StatefulWidget {
   const LoopMap({
     super.key,
     required this.route,
     required this.mainStop,
+    this.fuel = const [],
     this.fitPadding = const EdgeInsets.all(40),
     this.attributionBottom = 0,
   });
 
   final List<LatLng> route;
   final LatLng? mainStop;
+
+  /// Fuel stations, drawn under the main stop and start markers.
+  final List<LatLng> fuel;
   final EdgeInsets fitPadding;
   final double attributionBottom;
 
@@ -71,6 +75,7 @@ class _LoopMapState extends State<LoopMap> {
         PolylineLayer(polylines: routePolylines(route: widget.route)),
         MarkerLayer(
           markers: [
+            for (final f in widget.fuel) PasyarMarkers.fuel(f),
             if (mainStop != null) PasyarMarkers.mainStop(mainStop),
             PasyarMarkers.rider(widget.route.first, halo: false),
           ],

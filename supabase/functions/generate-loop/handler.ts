@@ -1,7 +1,12 @@
 // generate-loop request handling, with its outside world injected so it can
 // be tested without network calls. index.ts wires the real dependencies.
 
-import { backtrackingRatio, curvinessScore, type LngLat } from './geometry.ts';
+import {
+  backtrackingRatio,
+  curvinessScore,
+  type LngLat,
+  simplify,
+} from './geometry.ts';
 import {
   LoopError,
   parseRoute,
@@ -9,6 +14,7 @@ import {
   routeBody,
   routingError,
 } from './graphhopper.ts';
+import { MAX_OFF_ROUTE_M, type Place, pickStops } from './stops.ts';
 import {
   correctedDistance,
   type Duration,
@@ -35,6 +41,36 @@ export interface Deps {
   consumeQuota(req: Request): Promise<boolean>;
   /** POSTs a body to GraphHopper /route. */
   callRouting(body: unknown): Promise<Response>;
+  /** Places within [radiusM] of a GeoJSON LineString (the places_along
+   * RPC). May throw. */
+  queryPlaces(
+    req: Request,
+    line: { type: 'LineString'; coordinates: LngLat[] },
+    radiusM: number,
+  ): Promise<Place[]>;
+}
+
+/** Simplifying the route this much keeps the RPC payload small and moves
+ * the 1.5 km band by at most 150 m; pickStops re-checks exact distances. */
+const PLACES_SIMPLIFY_M = 150;
+
+/** OSM places near the route. Places are a bonus: any failure means no
+ * places, and the farthest point becomes the main stop. */
+async function placesNear(
+  deps: Deps,
+  req: Request,
+  coords: LngLat[],
+): Promise<Place[]> {
+  try {
+    const line = {
+      type: 'LineString' as const,
+      coordinates: simplify(coords, PLACES_SIMPLIFY_M),
+    };
+    return await deps.queryPlaces(req, line, MAX_OFF_ROUTE_M);
+  } catch (e) {
+    console.warn('generate-loop places unavailable:', String(e));
+    return [];
+  }
 }
 
 /** Most GraphHopper calls per Generate (each costs 2 credits). */
@@ -137,6 +173,10 @@ export async function generateLoop(deps: Deps, httpReq: Request) {
     avoidUnpaved: req.avoidUnpaved,
   };
   const { route: r, seed } = await bestLoop(deps, req, prefs);
+  const { mainStop, fuel } = pickStops(
+    r.coordinates,
+    await placesNear(deps, httpReq, r.coordinates),
+  );
   return {
     route: { type: 'LineString', coordinates: r.coordinates },
     distance_m: r.distance_m,
@@ -147,6 +187,8 @@ export async function generateLoop(deps: Deps, httpReq: Request) {
     curviness_score: round(curvinessScore(r.coordinates), 1),
     motorway_m: r.motorway_m,
     unpaved_m: r.unpaved_m,
+    main_stop: mainStop,
+    fuel_stops: fuel,
     warnings: warningsFor(r, prefs),
   };
 }

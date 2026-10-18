@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
+import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
 import 'package:pasyarph/features/ride/loop_stats.dart';
@@ -43,6 +44,44 @@ void main() {
       expect(stop.location, c);
       expect(stop.metersIn, closeTo(22132, 50));
       expect(stop.kmInLabel, '22 KM IN');
+    });
+
+    test('stop from the function: title, km, and detail', () {
+      final stop = stopFor(demoLoop(mainStop: demoStop));
+      expect(stop.title, 'Mt. Palali Viewpoint');
+      expect(stop.kmInLabel, '52 KM IN');
+      expect(stopDetail(stop, demoFuel), 'Viewpoint · gas station nearby');
+      expect(stopDetail(stop, const []), 'Viewpoint');
+    });
+
+    test('unnamed place: its type is the title', () {
+      final stop = stopFor(
+        demoLoop(
+          mainStop: MainStop(location: DemoRoutes.mainStop, type: 'waterfall'),
+        ),
+      );
+      expect(stop.title, 'Waterfall');
+      expect(stopDetail(stop, const []), '');
+    });
+
+    test('turnaround or no stop at all: the farthest point', () {
+      final turnaround = stopFor(
+        demoLoop(
+          mainStop: MainStop(location: DemoRoutes.mainStop, type: 'turnaround'),
+        ),
+      );
+      expect(turnaround.title, 'Main stop');
+      expect(stopDetail(turnaround, const []), 'Farthest point of the loop');
+
+      final none = stopFor(demoLoop());
+      expect(none.location, DemoRoutes.mainStop);
+      expect(none.title, 'Main stop');
+    });
+
+    test('fuel more than 3 km from the stop is not "nearby"', () {
+      final stop = stopFor(demoLoop(mainStop: demoStop));
+      final far = [FuelStop(location: DemoRoutes.start, name: 'Shell')];
+      expect(stopDetail(stop, far), 'Viewpoint');
     });
 
     test('best loop: least backtracking, then curviest', () {

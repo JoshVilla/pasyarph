@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../data/models/generated_loop.dart';
+import '../../data/models/loop.dart';
 
 /// Loops riding more than this share of the same road twice are rerolled.
 const maxBacktracking = 0.25;
@@ -44,23 +45,78 @@ String formatRideTime(int seconds) {
   return m == 0 ? '$h h' : '$h h ${m.toString().padLeft(2, '0')}';
 }
 
-/// Placeholder main stop until real places come in: the point of the loop
-/// farthest (straight line) from the start.
-class MainStopPoint {
-  const MainStopPoint({required this.location, required this.metersIn});
+/// The loop's main stop as the preview shows it.
+class StopInfo {
+  const StopInfo({
+    required this.location,
+    required this.metersIn,
+    this.name,
+    this.type = turnaround,
+  });
+
+  static const turnaround = 'turnaround';
 
   final LatLng location;
 
   /// Distance along the route from the start.
   final double metersIn;
+  final String? name;
+
+  /// viewpoint, waterfall, attraction, food, or [turnaround].
+  final String type;
 
   /// "52 KM IN".
   String get kmInLabel => '${(metersIn / 1000).round()} KM IN';
+
+  static const _typeLabels = {
+    'viewpoint': 'Viewpoint',
+    'waterfall': 'Waterfall',
+    'attraction': 'Attraction',
+    'food': 'Food stop',
+  };
+
+  /// "Viewpoint", "Food stop", ...; null for the turnaround.
+  String? get typeLabel => _typeLabels[type];
+
+  /// Card title: the place's name, else its type, else "Main stop".
+  String get title => name ?? typeLabel ?? 'Main stop';
+}
+
+/// The function's main stop, or (older responses) the farthest point.
+StopInfo stopFor(GeneratedLoop loop) {
+  final stop = loop.mainStop;
+  if (stop == null) return farthestPoint(loop.route);
+  return StopInfo(
+    location: stop.location,
+    metersIn: (stop.kmIntoRoute ?? 0) * 1000,
+    name: stop.name,
+    type: stop.type ?? StopInfo.turnaround,
+  );
+}
+
+/// A fuel station this close (straight line) to the stop is "nearby".
+const fuelNearbyM = 3000.0;
+
+/// Card detail line: "Waterfall · gas station nearby".
+String stopDetail(StopInfo stop, List<FuelStop> fuel) {
+  final nearbyFuel = fuel.any(
+    (f) => _distance(f.location, stop.location) <= fuelNearbyM,
+  );
+  final parts = [
+    // A titled place repeats its type here; an untitled one already shows it.
+    if (stop.typeLabel != null && stop.name != null) stop.typeLabel!,
+    if (stop.type == StopInfo.turnaround) 'Farthest point of the loop',
+    if (nearbyFuel) 'gas station nearby',
+  ];
+  if (parts.isEmpty) return '';
+  final text = parts.join(' · ');
+  return text[0].toUpperCase() + text.substring(1);
 }
 
 const _distance = Distance();
 
-MainStopPoint farthestPoint(List<LatLng> route) {
+/// The point of the loop farthest (straight line) from the start.
+StopInfo farthestPoint(List<LatLng> route) {
   final start = route.first;
   var best = 0;
   var bestDistance = -1.0;
@@ -75,7 +131,7 @@ MainStopPoint farthestPoint(List<LatLng> route) {
       bestAlong = along;
     }
   }
-  return MainStopPoint(location: route[best], metersIn: bestAlong);
+  return StopInfo(location: route[best], metersIn: bestAlong);
 }
 
 /// Lowest backtracking first; ties (within 1%) go to the curvier loop.

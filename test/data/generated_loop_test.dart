@@ -35,6 +35,16 @@ void main() {
       'curviness_score': 88.5,
       'motorway_m': 0,
       'unpaved_m': 1200,
+      'main_stop': {
+        'name': 'Talon',
+        'type': 'waterfall',
+        'lat': 16.7,
+        'lng': 121.5,
+        'km_into_route': 24.6,
+      },
+      'fuel_stops': [
+        {'name': 'Petron', 'lat': 16.68, 'lng': 121.46, 'km_into_route': 3.1},
+      ],
       'warnings': ['Avoid unpaved isn\'t available yet.'],
     });
 
@@ -48,6 +58,9 @@ void main() {
     expect(loop.curvinessScore, 88.5);
     expect(loop.steps.single.sign, 2);
     expect(loop.unpavedM, 1200);
+    expect(loop.mainStop!.name, 'Talon');
+    expect(loop.mainStop!.kmIntoRoute, 24.6);
+    expect(loop.fuelStops.single.name, 'Petron');
     expect(loop.warnings, hasLength(1));
   });
 

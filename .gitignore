@@ -51,3 +51,6 @@ app.*.map.json
 /env/*.json
 !/env/example.json
 /android/build/
+
+# Places export (large, regenerated from OpenStreetMap)
+/tools/places/out/

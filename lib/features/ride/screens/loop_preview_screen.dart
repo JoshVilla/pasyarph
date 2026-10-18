@@ -55,6 +55,7 @@ class LoopPreviewScreen extends StatelessWidget {
             map: LoopMap(
               route: loop.route,
               mainStop: preview.mainStop?.location,
+              fuel: [for (final f in loop.fuelStops) f.location],
               // Keep the loop clear of the top controls and the sheet edge.
               fitPadding: EdgeInsets.fromLTRB(
                 40,
@@ -100,6 +101,10 @@ class LoopPreviewScreen extends StatelessWidget {
   }
 }
 
+extension on String {
+  String? get ifNotEmpty => isEmpty ? null : this;
+}
+
 class _PreviewSheet extends StatelessWidget {
   const _PreviewSheet({required this.preview, required this.loop});
 
@@ -137,8 +142,8 @@ class _PreviewSheet extends StatelessWidget {
         if (stop != null)
           StopCard(
             overline: 'MAIN STOP · ${stop.kmInLabel}',
-            name: 'Main stop',
-            detail: 'Farthest point of the loop',
+            name: stop.title,
+            detail: stopDetail(stop, loop.fuelStops).ifNotEmpty,
           ),
         Row(
           spacing: PasyarSpacing.buttonGap,

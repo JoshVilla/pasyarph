@@ -48,7 +48,11 @@ void main() {
       fileName: 'loop_preview',
       constraints: _screen,
       pumpBeforeTest: (tester) async => tester.pumpAndSettle(),
-      builder: () => _screenWith(_preview(FakeRouteRepository())),
+      builder: () => _screenWith(
+        _preview(
+          FakeRouteRepository([demoLoop(mainStop: demoStop, fuel: demoFuel)]),
+        ),
+      ),
     );
   });
 
@@ -65,6 +69,21 @@ void main() {
     final kmIn = farthestPoint(DemoRoutes.loop).kmInLabel;
     expect(find.text('MAIN STOP · $kmIn'), findsOneWidget);
     expect(find.byType(MainStopMarker), findsOneWidget);
+  });
+
+  testWidgets('real stop: name, km, detail and fuel on the map', (
+    tester,
+  ) async {
+    final repo = FakeRouteRepository([
+      demoLoop(mainStop: demoStop, fuel: demoFuel),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: _screenWith(_preview(repo))));
+    await tester.pumpAndSettle();
+
+    expect(find.text('MAIN STOP · 52 KM IN'), findsOneWidget);
+    expect(find.text('Mt. Palali Viewpoint'), findsOneWidget);
+    expect(find.text('Viewpoint · gas station nearby'), findsOneWidget);
+    expect(find.byType(FuelMarker), findsOneWidget);
   });
 
   testWidgets('shuffle shows progress, then the new loop', (tester) async {
