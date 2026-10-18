@@ -12,6 +12,15 @@ export const TARGET_LENGTH_M: Record<Duration, number> = {
 /** A loop within this share of the target is close enough. */
 export const LENGTH_TOLERANCE = 0.25;
 
+/** A loop longer than this many times the target is never returned: a
+ * "quick" loop that takes four hours is worse than an error. */
+export const MAX_LENGTH_FACTOR = 1.6;
+
+/** Retries may ask GraphHopper for as little as this share of the target:
+ * in the mountains a round trip can come out several times longer than
+ * asked. */
+export const MIN_REQUEST_SHARE = 0.1;
+
 /** "Avoid highways" accepts a loop with less expressway than this. */
 export const MAX_MOTORWAY_M = 500;
 
@@ -34,6 +43,10 @@ export function isCloseEnough(actualM: number, targetM: number) {
   return Math.abs(actualM - targetM) <= targetM * LENGTH_TOLERANCE;
 }
 
+export function isTooLong(actualM: number, targetM: number) {
+  return actualM > targetM * MAX_LENGTH_FACTOR;
+}
+
 /** Requested round-trip distance for a retry, from how far off the last
  * one came out. Clamped so one odd route can't send the next to extremes. */
 export function correctedDistance(
@@ -42,7 +55,7 @@ export function correctedDistance(
   targetM: number,
 ) {
   const next = requestedM * (targetM / actualM);
-  return Math.min(targetM * 2, Math.max(targetM * 0.3, next));
+  return Math.min(targetM * 2, Math.max(targetM * MIN_REQUEST_SHARE, next));
 }
 
 export function meetsPreferences(c: Candidate, p: Preferences) {

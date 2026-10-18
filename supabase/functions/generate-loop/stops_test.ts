@@ -79,6 +79,14 @@ Deno.test('scenic stop in the middle of the loop wins', () => {
   assertAlmostEquals(mainStop.km_into_route, 6.2, 0.15);
 });
 
+Deno.test('food next to home is not a stop', () => {
+  const { mainStop } = pickStops(loop, [
+    place('food', 200, "Andok's"),
+    place('food', 11_800, 'Jollibee'),
+  ]);
+  assertEquals(mainStop.type, 'turnaround');
+});
+
 Deno.test('scenic stops outside 35–65% are skipped for food', () => {
   const { mainStop } = pickStops(loop, [
     place('viewpoint', 1_000, 'Too early'),
@@ -97,8 +105,11 @@ Deno.test('named and nearer the middle beats unnamed', () => {
   assertEquals(mainStop.name, 'Overlook');
 });
 
-Deno.test('places more than 1.5 km off the route are ignored', () => {
-  const { mainStop } = pickStops(loop, [place('waterfall', 6_000, 'Far', 3_000)]);
+Deno.test('places off the road are ignored: 500 m for falls, 200 m for food', () => {
+  const { mainStop } = pickStops(loop, [
+    place('waterfall', 6_000, 'Far', 800),
+    place('food', 6_000, 'Back street', 350),
+  ]);
   assertEquals(mainStop.type, 'turnaround');
 });
 

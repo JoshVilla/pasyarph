@@ -36,12 +36,27 @@ export interface FuelStop {
   km_into_route: number;
 }
 
-/** Places farther than this from the route are ignored. */
-export const MAX_OFF_ROUTE_M = 1_500;
+/** How far off the loop a place may be, by type: riders want stops they
+ * ride past, not detours. Falls and viewpoints often sit a short way off
+ * the road; food and fuel should be roadside. */
+export const OFF_ROUTE_LIMIT_M: Record<PlaceType, number> = {
+  waterfall: 500,
+  viewpoint: 500,
+  attraction: 500,
+  food: 200,
+  fuel: 200,
+};
+
+/** The widest limit: the radius to look for places in. */
+export const MAX_OFF_ROUTE_M = Math.max(...Object.values(OFF_ROUTE_LIMIT_M));
 
 /** Scenic stops should sit in this share of the loop, so the ride out and
  * the ride home are both worth it. */
 export const STOP_WINDOW: [number, number] = [0.35, 0.65];
+
+/** Food stops get a wider window: a meal 20% in is fine, one next to home
+ * isn't a stop. */
+export const FOOD_WINDOW: [number, number] = [0.2, 0.8];
 
 /** Most fuel stations returned. */
 export const MAX_FUEL = 15;
@@ -87,7 +102,8 @@ export function farthestPoint(coords: LngLat[]): MainStop {
 /**
  * Main stop: a waterfall, viewpoint or attraction 35–65% around the loop
  * (named, close to the road, near the middle preferred); else a food spot
- * (named and near the middle preferred); else the farthest point.
+ * 20–80% around (named and near the middle preferred); else the farthest
+ * point.
  * Fuel: every station near the route, in riding order.
  */
 export function pickStops(coords: LngLat[], places: Place[]) {
@@ -97,17 +113,17 @@ export function pickStops(coords: LngLat[], places: Place[]) {
       const pos = locator.locate([p.lng, p.lat]);
       return { ...p, ...pos, share: pos.alongM / locator.lengthM };
     })
-    .filter((p) => p.offRouteM <= MAX_OFF_ROUTE_M);
+    .filter((p) => p.offRouteM <= OFF_ROUTE_LIMIT_M[p.type]);
 
   const middle = (p: Located) => Math.abs(p.share - 0.5);
-  const inWindow = (p: Located) =>
-    p.share >= STOP_WINDOW[0] && p.share <= STOP_WINDOW[1];
+  const inWindow = (p: Located, [from, to] = STOP_WINDOW) =>
+    p.share >= from && p.share <= to;
 
   const scenic = located
     .filter((p) => SCENIC_WEIGHT[p.type] && inWindow(p))
     .sort((a, b) => scenicScore(b) - scenicScore(a));
   const food = located
-    .filter((p) => p.type === 'food')
+    .filter((p) => p.type === 'food' && inWindow(p, FOOD_WINDOW))
     .sort((a, b) => foodScore(b) - foodScore(a));
 
   function scenicScore(p: Located) {

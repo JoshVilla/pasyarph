@@ -19,6 +19,7 @@ import {
   correctedDistance,
   type Duration,
   isCloseEnough,
+  isTooLong,
   meetsPreferences,
   penalty,
   type Preferences,
@@ -51,7 +52,8 @@ export interface Deps {
 }
 
 /** Simplifying the route this much keeps the RPC payload small and moves
- * the 1.5 km band by at most 150 m; pickStops re-checks exact distances. */
+ * the line by at most 150 m, so the search band is widened by as much;
+ * pickStops re-checks exact distances. */
 const PLACES_SIMPLIFY_M = 150;
 
 /** OSM places near the route. Places are a bonus: any failure means no
@@ -66,7 +68,11 @@ async function placesNear(
       type: 'LineString' as const,
       coordinates: simplify(coords, PLACES_SIMPLIFY_M),
     };
-    return await deps.queryPlaces(req, line, MAX_OFF_ROUTE_M);
+    return await deps.queryPlaces(
+      req,
+      line,
+      MAX_OFF_ROUTE_M + PLACES_SIMPLIFY_M,
+    );
   } catch (e) {
     console.warn('generate-loop places unavailable:', String(e));
     return [];
@@ -125,7 +131,7 @@ async function route(
  * Up to [MAX_CALLS] round trips: a loop that is too long or short is retried
  * with a rescaled distance (same seed); one that uses roads the rider wants
  * to avoid, or has no road at a random point, moves to the next seed. Returns
- * the best loop seen.
+ * the best loop seen, unless even that is far too long.
  */
 async function bestLoop(deps: Deps, req: LoopRequest, prefs: Preferences) {
   const start: LngLat = [req.lng, req.lat];
@@ -157,6 +163,12 @@ async function bestLoop(deps: Deps, req: LoopRequest, prefs: Preferences) {
     }
   }
   if (!best) throw lastError ?? new LoopError('no_route');
+  if (isTooLong(best.route.distance_m, prefs.targetM)) {
+    throw new LoopError(
+      'too_long',
+      `best loop  m for a  m target`,
+    );
+  }
   return best;
 }
 

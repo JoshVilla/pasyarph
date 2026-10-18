@@ -24,7 +24,7 @@ const quick: Preferences = {
 
 Deno.test('corrected distance follows target/actual, within limits', () => {
   assertAlmostEquals(correctedDistance(120_000, 150_000, 120_000), 96_000, 1);
-  assertEquals(correctedDistance(50_000, 1_000_000, 50_000), 15_000);
+  assertEquals(correctedDistance(50_000, 1_000_000, 50_000), 5_000);
   assertEquals(correctedDistance(50_000, 1_000, 50_000), 100_000);
   assert(isCloseEnough(60_000, 50_000));
   assert(!isCloseEnough(68_600, 50_000));
@@ -294,7 +294,7 @@ Deno.test('main stop and fuel from nearby places', async () => {
   assertEquals(body.main_stop.name, 'Overlook');
   assertEquals(body.main_stop.type, 'viewpoint');
   assertEquals(body.fuel_stops.length, 1);
-  assertEquals(seen, [{ points: loop.length, radius: 1500 }]);
+  assertEquals(seen, [{ points: loop.length, radius: 650 }]);
 });
 
 Deno.test('places unavailable: still a loop, farthest point as the stop', async () => {
@@ -321,4 +321,23 @@ Deno.test('bad input is a 400', async () => {
     assertEquals(res.status, 400, JSON.stringify(bad));
     await res.body?.cancel();
   }
+});
+
+Deno.test('far too long on every try: a friendly 422, not a 4-hour quick loop', async () => {
+  const { deps: d, bodies } = deps({
+    responses: [ok({ km: 219 }), ok({ km: 150 }), ok({ km: 95 })],
+  });
+  const res = await createHandler(d)(post(valid));
+  assertEquals(res.status, 422);
+  assertEquals((await res.json()).error.code, 'too_long');
+  assertEquals(bodies.length, MAX_CALLS);
+  // Each retry asks for less, below the old 30% floor.
+  assert((bodies[2]['round_trip.distance'] as number) < 15_000);
+});
+
+Deno.test('a long first try corrected to a usable loop', async () => {
+  const { deps: d } = deps({ responses: [ok({ km: 219 }), ok({ km: 58 })] });
+  const res = await createHandler(d)(post(valid));
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).distance_m, 58_000);
 });

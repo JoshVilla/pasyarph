@@ -144,6 +144,7 @@ export type LoopErrorCode =
   | 'unauthorized'
   | 'limit_reached'
   | 'no_route'
+  | 'too_long'
   | 'routing_busy'
   | 'routing_down';
 
@@ -154,6 +155,8 @@ const MESSAGES: Record<LoopErrorCode, string> = {
   limit_reached:
     "You've generated 30 loops in the last hour. Take a break and try again soon.",
   no_route: "Couldn't find a loop from here. Try Shuffle or a shorter ride.",
+  too_long:
+    "Couldn't find a loop that short from here. Try Shuffle or a longer ride.",
   routing_busy: 'The route service is busy. Try again in a minute.',
   routing_down: "The route service isn't responding. Try again soon.",
 };
@@ -163,6 +166,7 @@ const STATUS: Record<LoopErrorCode, number> = {
   unauthorized: 401,
   limit_reached: 429,
   no_route: 422,
+  too_long: 422,
   routing_busy: 503,
   routing_down: 502,
 };

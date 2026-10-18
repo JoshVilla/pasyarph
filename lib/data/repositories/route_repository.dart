@@ -11,7 +11,7 @@ import '../models/json.dart';
 class RouteException implements Exception {
   const RouteException(this.code, this.message);
 
-  /// `limit_reached`, `no_route`, `routing_busy`, `routing_down`,
+  /// `limit_reached`, `no_route`, `too_long`, `routing_busy`, `routing_down`,
   /// `unauthorized`, `bad_request`, or `offline` (no connection from the
   /// phone).
   final String code;
