@@ -56,6 +56,14 @@ Deno.serve(createHandler({
     });
   },
 
+  async loopForRiding(req, loopId) {
+    const { data, error } = await clientFor(req).rpc('loop_for_riding', {
+      p_loop_id: loopId,
+    });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   async queryPlaces(req, line, radiusM) {
     const { data, error } = await clientFor(req).rpc('places_along', {
       route: line,

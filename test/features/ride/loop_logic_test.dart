@@ -103,6 +103,55 @@ void main() {
       expect(provider.loading, isFalse);
     });
 
+    test(
+      'ride this loop: that loop, titled by name, no shuffle or reroll',
+      () async {
+        final repo = FakeRouteRepository([
+          // Approach and return on the same road: high backtracking is fine.
+          demoLoop(backtracking: 0.6, approachM: 4200),
+        ]);
+        final provider = LoopPreviewProvider(repo);
+        expect(
+          await provider.rideLoop(
+            loopId: 'loop-1',
+            name: 'Sunday Falls Loop',
+            start: DemoRoutes.start,
+          ),
+          isTrue,
+        );
+        expect(repo.rideLoops, ['loop-1']);
+        expect(repo.seeds, isEmpty);
+        expect(provider.isRideThisLoop, isTrue);
+        expect(provider.title, 'SUNDAY FALLS LOOP');
+        expect(provider.loop!.approachM, 4200);
+        expect(await provider.shuffle(), isFalse);
+        expect(repo.rideLoops, hasLength(1));
+
+        // Generating afterwards is a normal loop again.
+        await provider.generate(_request);
+        expect(provider.isRideThisLoop, isFalse);
+        expect(provider.title, 'HALF-DAY LOOP');
+      },
+    );
+
+    test('ride this loop: a private or deleted loop says so', () async {
+      final provider = LoopPreviewProvider(
+        FakeRouteRepository([
+          const RouteException(
+            'loop_not_found',
+            "This loop isn't available anymore.",
+          ),
+        ]),
+      );
+      final ok = await provider.rideLoop(
+        loopId: 'gone',
+        name: 'Old loop',
+        start: DemoRoutes.start,
+      );
+      expect(ok, isFalse);
+      expect(provider.error!.code, 'loop_not_found');
+    });
+
     test('backtracking loop: tries more seeds and keeps the best', () async {
       final repo = FakeRouteRepository([
         demoLoop(seed: 1, backtracking: 0.5),

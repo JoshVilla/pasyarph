@@ -11,7 +11,8 @@ import '../models/json.dart';
 class RouteException implements Exception {
   const RouteException(this.code, this.message);
 
-  /// `limit_reached`, `no_route`, `too_long`, `routing_busy`, `routing_down`,
+  /// `limit_reached`, `no_route`, `too_long`, `loop_not_found`,
+  /// `routing_busy`, `routing_down`,
   /// `unauthorized`, `bad_request`, or `offline` (no connection from the
   /// phone).
   final String code;
@@ -50,6 +51,14 @@ abstract interface class RouteRepository {
     required bool avoidUnpaved,
     required int seed,
   });
+
+  /// Ride this loop: someone else's loop [loopId] ridden from [start] (to
+  /// the loop, round it, and back). Throws [RouteException]
+  /// (`loop_not_found` when it's gone or private).
+  Future<GeneratedLoop> rideLoop({
+    required String loopId,
+    required LatLng start,
+  });
 }
 
 class SupabaseRouteRepository implements RouteRepository {
@@ -64,19 +73,28 @@ class SupabaseRouteRepository implements RouteRepository {
     required bool avoidHighways,
     required bool avoidUnpaved,
     required int seed,
-  }) async {
+  }) => _invoke({
+    'lat': start.latitude,
+    'lng': start.longitude,
+    'duration': duration.value,
+    'avoidHighways': avoidHighways,
+    'avoidUnpaved': avoidUnpaved,
+    'seed': seed,
+  });
+
+  @override
+  Future<GeneratedLoop> rideLoop({
+    required String loopId,
+    required LatLng start,
+  }) => _invoke({
+    'loop_id': loopId,
+    'lat': start.latitude,
+    'lng': start.longitude,
+  });
+
+  Future<GeneratedLoop> _invoke(Json body) async {
     try {
-      final res = await _client.functions.invoke(
-        'generate-loop',
-        body: {
-          'lat': start.latitude,
-          'lng': start.longitude,
-          'duration': duration.value,
-          'avoidHighways': avoidHighways,
-          'avoidUnpaved': avoidUnpaved,
-          'seed': seed,
-        },
-      );
+      final res = await _client.functions.invoke('generate-loop', body: body);
       return GeneratedLoop.fromJson(res.data as Json);
     } on FunctionException catch (e) {
       throw RouteException.fromBody(e.details);

@@ -75,6 +75,7 @@ class GeneratedLoop {
     this.mainStop,
     this.fuelStops = const [],
     this.warnings = const [],
+    this.approachM = 0,
   });
 
   final List<LatLng> route;
@@ -107,6 +108,10 @@ class GeneratedLoop {
   /// Things the rider should know, e.g. a request that couldn't be honored.
   final List<String> warnings;
 
+  /// Ride this loop: meters from the rider to the loop (ridden twice, there
+  /// and back, both in [distanceM]). 0 for generated loops.
+  final int approachM;
+
   factory GeneratedLoop.fromJson(Json json) => GeneratedLoop(
     route: GeoCodec.parseLineString(json['route'] as Json),
     distanceM: (json['distance_m'] as num).toInt(),
@@ -127,5 +132,6 @@ class GeneratedLoop {
         FuelStop.fromJson(f as Json),
     ],
     warnings: [for (final w in json['warnings'] as List? ?? []) w as String],
+    approachM: toIntOrNull(json['approach_m']) ?? 0,
   );
 }

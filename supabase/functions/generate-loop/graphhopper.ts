@@ -9,6 +9,17 @@ import { haversineM, type LngLat, spurMask } from './geometry.ts';
 
 export const GRAPHHOPPER_URL = 'https://graphhopper.com/api/1/route';
 
+/** A plain A → B car route (ride-this-loop approach and connector). */
+export function pointsBody(from: LngLat, to: LngLat) {
+  return {
+    points: [from, to],
+    profile: 'car',
+    points_encoded: false,
+    instructions: false,
+    details: ['road_class', 'surface'],
+  };
+}
+
 export function routeBody(start: LngLat, distanceM: number, seed: number) {
   return {
     points: [start],
@@ -145,6 +156,7 @@ export type LoopErrorCode =
   | 'limit_reached'
   | 'no_route'
   | 'too_long'
+  | 'loop_not_found'
   | 'routing_busy'
   | 'routing_down';
 
@@ -157,6 +169,7 @@ const MESSAGES: Record<LoopErrorCode, string> = {
   no_route: "Couldn't find a loop from here. Try Shuffle or a shorter ride.",
   too_long:
     "Couldn't find a loop that short from here. Try Shuffle or a longer ride.",
+  loop_not_found: "This loop isn't available anymore.",
   routing_busy: 'The route service is busy. Try again in a minute.',
   routing_down: "The route service isn't responding. Try again soon.",
 };
@@ -167,6 +180,7 @@ const STATUS: Record<LoopErrorCode, number> = {
   limit_reached: 429,
   no_route: 422,
   too_long: 422,
+  loop_not_found: 404,
   routing_busy: 503,
   routing_down: 502,
 };

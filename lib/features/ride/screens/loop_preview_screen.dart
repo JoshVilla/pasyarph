@@ -85,10 +85,14 @@ class LoopPreviewScreen extends StatelessWidget {
                       semanticLabel: 'Back',
                       onPressed: () => context.pop(),
                     ),
-                    FloatingPill(
-                      child: Text(
-                        '${request.duration.title} LOOP',
-                        style: PasyarTextStyles.pillTitle,
+                    Flexible(
+                      child: FloatingPill(
+                        child: Text(
+                          preview.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: PasyarTextStyles.pillTitle,
+                        ),
                       ),
                     ),
                   ],
@@ -157,18 +161,27 @@ class _PreviewSheet extends StatelessWidget {
             name: stop.title,
             detail: stopDetail(stop, loop.fuelStops).ifNotEmpty,
           ),
+        // Ride this loop: the distance includes getting there and back.
+        if (loop.approachM > 0)
+          Text(
+            'Includes ${formatDistance(loop.approachM)} to the loop and '
+            'back.',
+            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+          ),
         Row(
           spacing: PasyarSpacing.buttonGap,
           children: [
-            SizedBox(
-              width: 132,
-              child: SecondaryButton(
-                label: 'SHUFFLE',
-                icon: LucideIcons.shuffle,
-                loading: preview.loading,
-                onPressed: preview.shuffle,
+            // Someone else's loop is that loop: nothing to shuffle.
+            if (!preview.isRideThisLoop)
+              SizedBox(
+                width: 132,
+                child: SecondaryButton(
+                  label: 'SHUFFLE',
+                  icon: LucideIcons.shuffle,
+                  loading: preview.loading,
+                  onPressed: preview.shuffle,
+                ),
               ),
-            ),
             Expanded(
               child: PrimaryButton(
                 label: 'START RIDE',

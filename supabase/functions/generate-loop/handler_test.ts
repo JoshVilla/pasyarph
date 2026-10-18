@@ -155,6 +155,7 @@ function deps(overrides: Partial<Deps> & { responses?: Response[] } = {}) {
       consumeQuota: overrides.consumeQuota ?? (() => Promise.resolve(true)),
       queryPlaces: overrides.queryPlaces ??
         (() => Promise.resolve([])),
+      loopForRiding: overrides.loopForRiding ?? (() => Promise.resolve(null)),
       callRouting: overrides.callRouting ?? ((body: unknown) => {
         bodies.push(body as Record<string, unknown>);
         return Promise.resolve(responses.shift()!);
@@ -340,4 +341,109 @@ Deno.test('a long first try corrected to a usable loop', async () => {
   const res = await createHandler(d)(post(valid));
   assertEquals(res.status, 200);
   assertEquals((await res.json()).distance_m, 58_000);
+});
+
+// --- ride this loop ------------------------------------------------------------
+
+/** A GraphHopper A → B answer along [coords]. */
+const ab = (coords: LngLat[], km: number) =>
+  new Response(JSON.stringify({
+    paths: [{
+      distance: km * 1000,
+      time: km * 60_000, // 1 km/min
+      points: { type: 'LineString', coordinates: coords },
+      details: {},
+    }],
+  }));
+
+/** The trimmed square loop from ride_test, as loop_for_riding returns it. */
+function sharedRow(): Record<string, unknown> {
+  const route: LngLat[] = [destination(start, 0, 800)];
+  for (const [bearing, meters] of [[0, 1200], [90, 2000], [180, 2000], [270, 1200]]) {
+    for (let d = 100; d <= meters; d += 100) {
+      route.push(destination(route[route.length - 1], bearing, 100));
+    }
+  }
+  return {
+    id: '7f0c3c9e-1d2b-4c5a-9e8f-0123456789ab',
+    name: 'Sunday Falls Loop',
+    shared_route: { type: 'LineString', coordinates: route },
+    distance_m: 8000,
+    duration_s: 960, // 30 km/h
+    curviness_score: 50,
+    main_stop: { name: 'Talon', type: 'waterfall', lat: start[1] + 0.02, lng: start[0] + 0.01 },
+  };
+}
+
+const rideBody = (lat: number, lng: number) => ({
+  loop_id: '7f0c3c9e-1d2b-4c5a-9e8f-0123456789ab',
+  lat,
+  lng,
+});
+
+Deno.test('ride this loop: approach, the loop, the gap, back home', async () => {
+  const row = sharedRow();
+  const route = (row.shared_route as { coordinates: LngLat[] }).coordinates;
+  const rider = destination(route[30], 90, 3000); // 3 km east of the loop
+  const join = route[30];
+  const { deps: d, bodies } = deps({
+    loopForRiding: () => Promise.resolve(row),
+    responses: [
+      ab([rider, join], 3.4), // approach
+      ab([route[route.length - 1], start, route[0]], 1.6), // connector
+    ],
+  });
+  const res = await createHandler(d)(post(rideBody(rider[1], rider[0])));
+  assertEquals(res.status, 200);
+  const body = await res.json();
+
+  assertEquals(bodies.length, 2);
+  assertEquals((bodies[0].points as LngLat[])[0], rider);
+  assertEquals((bodies[1].points as LngLat[])[1], route[0]);
+  const coords = body.route.coordinates as LngLat[];
+  assertEquals(coords[0], rider);
+  assertEquals(coords[coords.length - 1], rider);
+  // 6.4 km of loop (8 km square minus the 1.6 km cut) + 2 × 3.4 km
+  // approach + 1.6 km gap.
+  assertAlmostEquals(body.distance_m, 6400 + 6800 + 1600, 30);
+  // Loop at 30 km/h (768 s) + approach 2 × 3.4 min + gap 1.6 min.
+  assertAlmostEquals(body.duration_s, 768 + 408 + 96, 5);
+  assertEquals(body.approach_m, 3400);
+  assertEquals(body.main_stop.name, 'Talon');
+  assertEquals(body.loop_name, 'Sunday Falls Loop');
+  assertEquals(body.warnings, []);
+});
+
+Deno.test('ride this loop: already on it, ends close together: no routing', async () => {
+  const row = sharedRow();
+  const route = (row.shared_route as { coordinates: LngLat[] }).coordinates;
+  route.push(route[0]); // closed: no gap to bridge
+  const { deps: d, bodies } = deps({ loopForRiding: () => Promise.resolve(row) });
+  const on = route[20];
+  const res = await createHandler(d)(post(rideBody(on[1], on[0])));
+  assertEquals(res.status, 200);
+  assertEquals(bodies.length, 0);
+  assertEquals((await res.json()).approach_m, 0);
+});
+
+Deno.test('ride this loop: a loop you can\'t see is a 404', async () => {
+  const { deps: d } = deps({ loopForRiding: () => Promise.resolve(null) });
+  const res = await createHandler(d)(post(rideBody(start[1], start[0])));
+  assertEquals(res.status, 404);
+  assertEquals((await res.json()).error.code, 'loop_not_found');
+});
+
+Deno.test('ride this loop: far away gets a warning; bad ids are a 400', async () => {
+  const row = sharedRow();
+  const route = (row.shared_route as { coordinates: LngLat[] }).coordinates;
+  const far = destination(route[0], 180, 40_000);
+  const { deps: d } = deps({
+    loopForRiding: () => Promise.resolve(row),
+    responses: [ab([far, route[0]], 45), ab([route[route.length - 1], route[0]], 1.6)],
+  });
+  const body = await (await createHandler(d)(post(rideBody(far[1], far[0])))).json();
+  assertEquals(body.warnings, ['Sunday Falls Loop starts about 45 km from you.']);
+
+  const res = await createHandler(d)(post({ loop_id: 'nope', lat: 16, lng: 121 }));
+  assertEquals(res.status, 400);
 });

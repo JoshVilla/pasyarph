@@ -533,12 +533,17 @@ class _Action extends StatelessWidget {
                       color: PasyarColors.accent,
                     )
                   : Icon(icon, size: 20, color: color),
-              Text(
-                label,
-                style: PasyarTextStyles.bodySmall.copyWith(
-                  height: 1,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              // Shrinks with an ellipsis on narrow phones or large text.
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: PasyarTextStyles.bodySmall.copyWith(
+                    height: 1,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
               ),
             ],

@@ -4,17 +4,29 @@
 import {
   backtrackingRatio,
   curvinessScore,
+  haversineM,
+  lengthM,
+  routeLocator,
   type LngLat,
   simplify,
 } from './geometry.ts';
 import {
   LoopError,
   parseRoute,
+  pointsBody,
   type Route,
   routeBody,
   routingError,
 } from './graphhopper.ts';
 import { MAX_OFF_ROUTE_M, type Place, pickStops } from './stops.ts';
+import {
+  assembleRide,
+  GAP_M,
+  joinLoop,
+  loopTimeS,
+  ON_LOOP_M,
+  parseSharedLoop,
+} from './ride.ts';
 import {
   correctedDistance,
   type Duration,
@@ -49,6 +61,9 @@ export interface Deps {
     line: { type: 'LineString'; coordinates: LngLat[] },
     radiusM: number,
   ): Promise<Place[]>;
+  /** The loop_for_riding row for [loopId] as the caller sees it: null when
+   * it doesn't exist or isn't visible to them. May throw. */
+  loopForRiding(req: Request, loopId: string): Promise<unknown>;
 }
 
 /** Simplifying the route this much keeps the RPC payload small and moves
@@ -109,15 +124,19 @@ export function parseRequest(json: unknown): LoopRequest {
   };
 }
 
-async function route(
+function route(
   deps: Deps,
   start: LngLat,
   distanceM: number,
   seed: number,
 ): Promise<Route> {
+  return routeWith(deps, routeBody(start, distanceM, seed));
+}
+
+async function routeWith(deps: Deps, body: unknown): Promise<Route> {
   let res: Response;
   try {
-    res = await deps.callRouting(routeBody(start, distanceM, seed));
+    res = await deps.callRouting(body);
   } catch (e) {
     const timedOut = e instanceof Error && e.name === 'TimeoutError';
     throw new LoopError(timedOut ? 'routing_busy' : 'routing_down', String(e));
@@ -172,9 +191,111 @@ async function bestLoop(deps: Deps, req: LoopRequest, prefs: Preferences) {
   return best;
 }
 
+export interface RideRequest {
+  loopId: string;
+  lat: number;
+  lng: number;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function parseRideRequest(json: unknown): RideRequest {
+  // deno-lint-ignore no-explicit-any
+  const b = json as any;
+  const lat = Number(b?.lat);
+  const lng = Number(b?.lng);
+  const ok = typeof b?.loop_id === 'string' && UUID.test(b.loop_id) &&
+    Number.isFinite(lat) && Math.abs(lat) <= 90 &&
+    Number.isFinite(lng) && Math.abs(lng) <= 180;
+  if (!ok) throw new LoopError('bad_request');
+  return { loopId: b.loop_id, lat, lng };
+}
+
+/** Ride legs longer than this get a warning with the distance. */
+const LONG_APPROACH_M = 30_000;
+
+/**
+ * "Ride this loop": someone else's loop from where the rider is (see
+ * ride.ts). Same response as a generated loop, plus approach_m. At most two
+ * GraphHopper calls: the approach, and the connector over the trimmed gap.
+ */
+export async function rideLoop(deps: Deps, httpReq: Request, req: RideRequest) {
+  if (!(await deps.consumeQuota(httpReq))) {
+    throw new LoopError('limit_reached');
+  }
+  let row: unknown;
+  try {
+    row = await deps.loopForRiding(httpReq, req.loopId);
+  } catch (e) {
+    throw new LoopError('routing_down', `loop_for_riding: ${String(e)}`);
+  }
+  const loop = parseSharedLoop(row);
+  if (!loop) throw new LoopError('loop_not_found');
+
+  const rider: LngLat = [req.lng, req.lat];
+  const join = joinLoop(loop.route, rider);
+  const approach = join.offM <= ON_LOOP_M
+    ? null
+    : await routeWith(deps, pointsBody(rider, join.point));
+  const end = loop.route[loop.route.length - 1];
+  const start = loop.route[0];
+  const connector = haversineM(end, start) <= GAP_M
+    ? null
+    : await routeWith(deps, pointsBody(end, start));
+
+  const coordinates = assembleRide(
+    join,
+    approach?.coordinates ?? [],
+    connector?.coordinates ?? [],
+  );
+  const loopM = lengthM(loop.route);
+  const approachM = approach?.distance_m ?? 0;
+  const distance = Math.round(
+    loopM + 2 * approachM + (connector?.distance_m ?? 0),
+  );
+  const duration = loopTimeS(loop, loopM) +
+    2 * (approach?.duration_s ?? 0) +
+    (connector?.duration_s ?? 0);
+
+  const places = await placesNear(deps, httpReq, coordinates);
+  const picked = pickStops(coordinates, places);
+  const mainStop = loop.mainStop
+    ? {
+      ...loop.mainStop,
+      km_into_route: Math.round(
+        routeLocator(coordinates).locate([loop.mainStop.lng, loop.mainStop.lat])
+          .alongM / 100,
+      ) / 10,
+    }
+    : picked.mainStop;
+
+  return {
+    route: { type: 'LineString', coordinates },
+    distance_m: distance,
+    duration_s: duration,
+    steps: [],
+    seed: 0,
+    backtracking_ratio: round(backtrackingRatio(coordinates), 3),
+    curviness_score: round(curvinessScore(coordinates), 1),
+    motorway_m: (approach?.motorway_m ?? 0) * 2 + (connector?.motorway_m ?? 0),
+    unpaved_m: (approach?.unpaved_m ?? 0) * 2 + (connector?.unpaved_m ?? 0),
+    main_stop: mainStop,
+    fuel_stops: picked.fuel,
+    warnings: approachM > LONG_APPROACH_M
+      ? [`${loop.name} starts about ${Math.round(approachM / 1000)} km from you.`]
+      : [],
+    approach_m: approachM,
+    loop_name: loop.name,
+  };
+}
+
 export async function generateLoop(deps: Deps, httpReq: Request) {
   if (httpReq.method !== 'POST') throw new LoopError('bad_request');
-  const req = parseRequest(await httpReq.json().catch(() => null));
+  const body = await httpReq.json().catch(() => null);
+  if (body?.loop_id !== undefined) {
+    return rideLoop(deps, httpReq, parseRideRequest(body));
+  }
+  const req = parseRequest(body);
   if (!(await deps.consumeQuota(httpReq))) {
     throw new LoopError('limit_reached');
   }

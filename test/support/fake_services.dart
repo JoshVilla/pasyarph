@@ -95,12 +95,29 @@ class FakeRouteRepository implements RouteRepository {
     if (next is RouteException) throw next;
     return next as GeneratedLoop;
   }
+
+  final rideLoops = <String>[];
+
+  @override
+  Future<GeneratedLoop> rideLoop({
+    required String loopId,
+    required LatLng start,
+  }) async {
+    rideLoops.add(loopId);
+    await gate?.future;
+    final next = results.isEmpty
+        ? demoLoop(approachM: 3000)
+        : results.removeAt(0);
+    if (next is RouteException) throw next;
+    return next as GeneratedLoop;
+  }
 }
 
 /// The mockup's half-day loop: 118 km, 3 h 50, curvy.
 GeneratedLoop demoLoop({
   int seed = 1,
   int distanceM = 118000,
+  int approachM = 0,
   double backtracking = 0.02,
   double curviness = 340,
   List<String> warnings = const [],
@@ -109,6 +126,7 @@ GeneratedLoop demoLoop({
 }) => GeneratedLoop(
   route: DemoRoutes.loop,
   distanceM: distanceM,
+  approachM: approachM,
   durationS: 13800,
   steps: const [],
   seed: seed,

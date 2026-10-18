@@ -12,6 +12,7 @@ import 'package:pasyarph/features/ride/providers/ride_session_provider.dart';
 import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
 import 'package:pasyarph/features/ride/screens/ride_session_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
+import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/post_repository.dart';
@@ -43,6 +44,8 @@ Future<FakeAuthRepository> pumpApp(
   WidgetTester tester,
   FakeAuthRepository repo, {
   FakeLocationPermission? location,
+  List<FeedPost> feedPosts = const [],
+  FakeRouteRepository? routes,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.75;
@@ -53,7 +56,7 @@ Future<FakeAuthRepository> pumpApp(
       providers: [
         Provider<RideHistoryRepository>.value(value: history),
         Provider<PostRepository>(create: (_) => FakePosts()),
-        Provider<FeedRepository>(create: (_) => FakeFeedRepository(const [])),
+        Provider<FeedRepository>(create: (_) => FakeFeedRepository(feedPosts)),
         Provider<SocialRepository>(create: (_) => FakeSocialRepository()),
         Provider<PostDraftStore>(
           create: (_) => MemoryDrafts(Directory.systemTemp),
@@ -71,7 +74,7 @@ Future<FakeAuthRepository> pumpApp(
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => LoopPreviewProvider(FakeRouteRepository()),
+          create: (_) => LoopPreviewProvider(routes ?? FakeRouteRepository()),
         ),
         ChangeNotifierProvider(
           create: (context) => RideSessionProvider(
@@ -245,6 +248,32 @@ void main() {
     await tester.tap(find.text('FINISH LOOP'));
     await tester.pumpAndSettle();
     expect(find.byType(RideScreen), findsOneWidget);
+  });
+
+  testWidgets('RIDE IT on a post previews that loop from here', (tester) async {
+    final routes = FakeRouteRepository();
+    await pumpApp(
+      tester,
+      FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+      feedPosts: mockupPosts(DateTime.now()),
+      routes: routes,
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PasyarBottomTabs),
+        matching: find.text('Feed'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('RIDE IT').first);
+    await tester.pumpAndSettle();
+
+    expect(routes.rideLoops, ['loop-p1']);
+    expect(find.byType(LoopPreviewScreen), findsOneWidget);
+    expect(find.text('SUNDAY FALLS LOOP'), findsOneWidget);
+    expect(find.text('Includes 3.0 km to the loop and back.'), findsOneWidget);
+    expect(find.text('SHUFFLE'), findsNothing);
+    expect(find.text('START RIDE'), findsOneWidget);
   });
 
   testWidgets('signed in: tabs switch, and Me logs out', (tester) async {

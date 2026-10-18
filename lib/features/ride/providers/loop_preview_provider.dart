@@ -47,19 +47,54 @@ class LoopPreviewProvider extends ChangeNotifier {
   /// Why the last Generate or Shuffle failed; cleared on the next try.
   RouteException? get error => _error;
 
+  /// Ride this loop (Prompt 15): the loop being ridden from a post, else
+  /// null for a generated loop.
+  String? _rideLoopId;
+  String? _rideLoopName;
+
+  bool get isRideThisLoop => _rideLoopId != null;
+
+  /// The top pill: "HALF-DAY LOOP", or the loop's name when riding a post.
+  String get title =>
+      _rideLoopName?.toUpperCase() ?? '${_request?.duration.title} LOOP';
+
   /// Home's GENERATE LOOP. Returns true when a loop is ready to preview.
   Future<bool> generate(LoopRequest request) async {
     if (_loading) return false;
     _request = request;
+    _rideLoopId = null;
+    _rideLoopName = null;
+    _loop = null;
+    _mainStop = null;
+    return _fetch();
+  }
+
+  /// RIDE IT on a post: someone else's loop from [start]. Returns true when
+  /// it's ready to preview.
+  Future<bool> rideLoop({
+    required String loopId,
+    required String name,
+    required LatLng start,
+  }) async {
+    if (_loading) return false;
+    // A ride-this-loop ride has no duration or road options of its own.
+    _request = LoopRequest(
+      start: start,
+      duration: LoopDuration.halfDay,
+      avoidHighways: false,
+      avoidUnpaved: false,
+    );
+    _rideLoopId = loopId;
+    _rideLoopName = name;
     _loop = null;
     _mainStop = null;
     return _fetch();
   }
 
   /// New seed, same request. The current loop stays visible until the new
-  /// one arrives (or stays for good if it fails).
+  /// one arrives (or stays for good if it fails). Not for ride this loop.
   Future<bool> shuffle() async {
-    if (_loading || _request == null) return false;
+    if (_loading || _request == null || isRideThisLoop) return false;
     return _fetch();
   }
 
@@ -74,7 +109,10 @@ class LoopPreviewProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final loop = await _bestLoop(_request!);
+      // Riding to a loop and back on the same road is expected: no reroll.
+      final loop = isRideThisLoop
+          ? await _routes.rideLoop(loopId: _rideLoopId!, start: _request!.start)
+          : await _bestLoop(_request!);
       _loop = loop;
       _mainStop = stopFor(loop);
       return true;
