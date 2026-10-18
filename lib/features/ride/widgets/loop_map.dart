@@ -16,6 +16,9 @@ class LoopMap extends StatefulWidget {
     required this.route,
     required this.mainStop,
     this.fuel = const [],
+    this.ridden = const [],
+    this.ahead,
+    this.rider,
     this.fitPadding = const EdgeInsets.all(40),
     this.attributionBottom = 0,
   });
@@ -25,6 +28,12 @@ class LoopMap extends StatefulWidget {
 
   /// Fuel stations, drawn under the main stop and start markers.
   final List<LatLng> fuel;
+
+  /// While riding: the part already ridden (grey), the part left (orange,
+  /// defaults to the whole [route]) and the rider's position.
+  final List<LatLng> ridden;
+  final List<LatLng>? ahead;
+  final LatLng? rider;
   final EdgeInsets fitPadding;
   final double attributionBottom;
 
@@ -72,12 +81,18 @@ class _LoopMapState extends State<LoopMap> {
       ),
       children: [
         ?pasyarTileLayer(),
-        PolylineLayer(polylines: routePolylines(route: widget.route)),
+        PolylineLayer(
+          polylines: routePolylines(
+            route: widget.ahead ?? widget.route,
+            ridden: widget.ridden,
+          ),
+        ),
         MarkerLayer(
           markers: [
             for (final f in widget.fuel) PasyarMarkers.fuel(f),
             if (mainStop != null) PasyarMarkers.mainStop(mainStop),
             PasyarMarkers.rider(widget.route.first, halo: false),
+            if (widget.rider != null) PasyarMarkers.rider(widget.rider!),
           ],
         ),
         MapAttributionLayer(bottom: widget.attributionBottom),

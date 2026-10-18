@@ -13,6 +13,7 @@ import 'package:pasyarph/data/models/generated_loop.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:pasyarph/features/ride/providers/ride_options_provider.dart';
+import 'package:pasyarph/features/ride/providers/ride_session_provider.dart';
 import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:pasyarph/features/ride/widgets/home_controls.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +37,14 @@ Widget _home(LocationProvider location, [FakeRouteRepository? routes]) {
           ChangeNotifierProvider.value(value: location),
           ChangeNotifierProvider(
             create: (_) => LoopPreviewProvider(routes ?? FakeRouteRepository()),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => RideSessionProvider(
+              location: location,
+              notifier: FakeRideNotifier(),
+              history: FakeRideHistory(),
+              tickEvery: null,
+            ),
           ),
         ],
         child: Scaffold(

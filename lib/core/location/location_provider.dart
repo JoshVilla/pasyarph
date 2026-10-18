@@ -81,14 +81,28 @@ class LocationProvider extends ChangeNotifier {
     _set(LocationStatus.on);
     if (_subscription != null) return;
 
-    _subscription = _positions.fixes().listen(
-      _onFix,
-      onError: (Object _) => _stop(LocationStatus.serviceOff),
-    );
+    _subscription = _positions
+        .fixes(background: _background)
+        .listen(
+          _onFix,
+          onError: (Object _) => _stop(LocationStatus.serviceOff),
+        );
     if (_position == null) {
       final last = await _positions.lastKnown();
       if (last != null && _position == null && !_disposed) _onFix(last);
     }
+  }
+
+  bool _background = false;
+
+  /// During a ride: keep tracking while another app is in front (Android
+  /// foreground service with a notification). Restarts the stream.
+  Future<void> setBackground(bool on) async {
+    if (_background == on) return;
+    _background = on;
+    await _subscription?.cancel();
+    _subscription = null;
+    await refresh();
   }
 
   /// The banner's button: asks for permission, or opens the right settings

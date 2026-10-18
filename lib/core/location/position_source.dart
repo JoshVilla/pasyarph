@@ -19,8 +19,10 @@ abstract interface class PositionSource {
   /// Last cached fix, for a fast first paint. May be null.
   Future<RiderFix?> lastKnown();
 
-  /// Live fixes. Errors if location is turned off while listening.
-  Stream<RiderFix> fixes();
+  /// Live fixes. Errors if location is turned off while listening. With
+  /// [background], keeps running while another app (Google Maps) is in
+  /// front, through a foreground service with a notification.
+  Stream<RiderFix> fixes({bool background = false});
 
   Future<bool> openLocationSettings();
 }
@@ -41,13 +43,25 @@ class GeolocatorPositionSource implements PositionSource {
   }
 
   @override
-  Stream<RiderFix> fixes() => Geolocator.getPositionStream(
-    locationSettings: AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
-      intervalDuration: const Duration(seconds: 2),
-    ),
-  ).map(_fix);
+  Stream<RiderFix> fixes({bool background = false}) =>
+      Geolocator.getPositionStream(
+        locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 5,
+          intervalDuration: const Duration(seconds: 2),
+          foregroundNotificationConfig: background
+              ? const ForegroundNotificationConfig(
+                  notificationTitle: 'Pasyar ride in progress',
+                  notificationText:
+                      "Tracking your loop. We'll tell you when you reach the "
+                      'main stop.',
+                  notificationChannelName: 'Ride in progress',
+                  enableWakeLock: true,
+                  setOngoing: true,
+                )
+              : null,
+        ),
+      ).map(_fix);
 
   @override
   Future<bool> openLocationSettings() => Geolocator.openLocationSettings();

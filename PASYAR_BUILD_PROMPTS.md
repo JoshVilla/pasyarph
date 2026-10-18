@@ -269,7 +269,15 @@ Add unit tests for the stop-picking logic.
 
 ---
 
-## Prompt 10 — Turn-by-turn navigation
+## Prompt 10a — Ride with Google Maps (done)
+
+> Built instead of in-app navigation for now. START RIDE opens Google Maps with the loop as up to 9 ordered stops (the main stop is one of them) and back home. Pasyar keeps a ride session running in the background (Android location foreground service with a notification): it tracks the ridden route, alerts "You made it to …" after the rider stops within 150 m of the main stop for 20 s, ends the ride when they stop near home after half the loop, and saves a ride summary on the phone. The ride screen shows the ridden part grey, km and time, distance to the main stop, GOOGLE MAPS (back to navigation) and END RIDE. Google routes between the stops itself, so it may not follow the loop exactly.
+
+---
+
+## Prompt 10b — In-app turn-by-turn navigation (later, after rider feedback)
+
+Offer this next to "Open in Google Maps" for riders who want the exact loop. Reuse the 10a ride session (tracking, arrival, summary) and add:
 
 ```
 Build the Riding screen (mockup screen 3):

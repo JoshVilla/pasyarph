@@ -4,9 +4,11 @@ import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/core/notifications/ride_notifier.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
 import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/repositories/ride_history_repository.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
 
@@ -55,8 +57,13 @@ class FakePositionSource implements PositionSource {
   @override
   Future<RiderFix?> lastKnown() async => last;
 
+  bool background = false;
+
   @override
-  Stream<RiderFix> fixes() => controller.stream;
+  Stream<RiderFix> fixes({bool background = false}) {
+    this.background = background;
+    return controller.stream;
+  }
 
   @override
   Future<bool> openLocationSettings() async {
@@ -121,3 +128,28 @@ final demoStop = MainStop(
 final demoFuel = [
   FuelStop(location: DemoRoutes.point2, name: 'Petron', kmIntoRoute: 40),
 ];
+
+class FakeRideNotifier implements RideNotifier {
+  final events = <String>[];
+
+  @override
+  Future<void> prepare() async => events.add('prepare');
+
+  @override
+  Future<void> arrivedAtStop(String stopName) async =>
+      events.add('stop:$stopName');
+
+  @override
+  Future<void> rideFinished(String summary) async =>
+      events.add('finished:$summary');
+}
+
+class FakeRideHistory implements RideHistoryRepository {
+  final saved = <RideSummary>[];
+
+  @override
+  Future<void> save(RideSummary ride) async => saved.add(ride);
+
+  @override
+  Future<List<RideSummary>> all() async => saved;
+}

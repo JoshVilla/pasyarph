@@ -6,7 +6,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
+import 'package:pasyarph/features/ride/providers/ride_session_provider.dart';
 import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
+import 'package:pasyarph/features/ride/screens/ride_session_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
@@ -22,6 +24,9 @@ import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
 import 'support/fake_services.dart';
+
+/// Links the app tried to open (Google Maps).
+final openedUrls = <Uri>[];
 
 Future<FakeAuthRepository> pumpApp(
   WidgetTester tester,
@@ -48,6 +53,18 @@ Future<FakeAuthRepository> pumpApp(
         ),
         ChangeNotifierProvider(
           create: (_) => LoopPreviewProvider(FakeRouteRepository()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => RideSessionProvider(
+            location: context.read<LocationProvider>(),
+            notifier: FakeRideNotifier(),
+            history: FakeRideHistory(),
+            openUrl: (url) async {
+              openedUrls.add(url);
+              return true;
+            },
+            tickEvery: null,
+          ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
       ],
@@ -162,6 +179,44 @@ void main() {
     expect(find.byType(LoopPreviewScreen), findsOneWidget);
 
     await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RideScreen), findsOneWidget);
+  });
+
+  testWidgets('START RIDE opens Google Maps and the ride; END RIDE saves', (
+    tester,
+  ) async {
+    openedUrls.clear();
+    await pumpApp(
+      tester,
+      FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+    );
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pumpAndSettle();
+    // start() runs a chain of async steps (notification permission,
+    // background tracking, opening Maps); let it finish on the real clock.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('START RIDE'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RideSessionScreen), findsOneWidget);
+    expect(find.text('RIDE IN PROGRESS'), findsOneWidget);
+    expect(openedUrls.single.host, 'www.google.com');
+
+    await tester.tap(find.text('GOOGLE MAPS'));
+    await tester.pumpAndSettle();
+    expect(openedUrls, hasLength(2));
+
+    await tester.tap(find.text('END RIDE'));
+    await tester.pumpAndSettle();
+    expect(find.text('END THIS RIDE?'), findsOneWidget);
+    await tester.tap(find.text('END RIDE').last);
+    await tester.pumpAndSettle();
+    expect(find.text('LOOP DONE'), findsOneWidget);
+
+    await tester.tap(find.text('DONE'));
     await tester.pumpAndSettle();
     expect(find.byType(RideScreen), findsOneWidget);
   });

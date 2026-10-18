@@ -7,11 +7,14 @@ import 'core/env.dart';
 import 'core/location/location_permission.dart';
 import 'core/location/location_provider.dart';
 import 'core/location/position_source.dart';
+import 'core/notifications/ride_notifier.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
+import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/ride/providers/loop_preview_provider.dart';
+import 'features/ride/providers/ride_session_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +46,17 @@ Future<void> main() async {
           create: (context) => LocationProvider(
             permissions: context.read<LocationPermissionService>(),
             positions: const GeolocatorPositionSource(),
+          ),
+        ),
+        Provider<RideNotifier>(create: (_) => LocalRideNotifier()),
+        Provider<RideHistoryRepository>(
+          create: (_) => LocalRideHistoryRepository(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => RideSessionProvider(
+            location: context.read<LocationProvider>(),
+            notifier: context.read<RideNotifier>(),
+            history: context.read<RideHistoryRepository>(),
           ),
         ),
         ChangeNotifierProvider(

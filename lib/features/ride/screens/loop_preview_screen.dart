@@ -6,11 +6,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/map/pasyar_map.dart';
+import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/generated_loop.dart';
 import '../loop_stats.dart';
 import '../providers/loop_preview_provider.dart';
+import '../providers/ride_session_provider.dart';
 import '../widgets/home_controls.dart';
 import '../widgets/loop_map.dart';
 
@@ -105,6 +107,16 @@ extension on String {
   String? get ifNotEmpty => isEmpty ? null : this;
 }
 
+Future<void> _startRide(BuildContext context, StopInfo stop) async {
+  final preview = context.read<LoopPreviewProvider>();
+  await context.read<RideSessionProvider>().start(
+    loop: preview.loop!,
+    stop: stop,
+    request: preview.request!,
+  );
+  if (context.mounted) context.pushReplacement(Routes.rideSession);
+}
+
 class _PreviewSheet extends StatelessWidget {
   const _PreviewSheet({required this.preview, required this.loop});
 
@@ -161,8 +173,10 @@ class _PreviewSheet extends StatelessWidget {
               child: PrimaryButton(
                 label: 'START RIDE',
                 icon: Icons.play_arrow_rounded,
-                // Turn-by-turn navigation comes with Prompt 10.
-                onPressed: preview.loading ? null : () {},
+                // Google Maps navigates; Pasyar tracks the ride (Prompt 10a).
+                onPressed: preview.loading || stop == null
+                    ? null
+                    : () => _startRide(context, stop),
               ),
             ),
           ],

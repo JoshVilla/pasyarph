@@ -10,6 +10,7 @@ import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../providers/loop_preview_provider.dart';
 import '../providers/ride_options_provider.dart';
+import '../providers/ride_session_provider.dart';
 import '../widgets/home_controls.dart';
 import '../widgets/ride_map.dart';
 
@@ -71,6 +72,7 @@ class _RideHomeState extends State<_RideHome> {
     final location = context.watch<LocationProvider>();
     final options = context.watch<RideOptionsProvider>();
     final preview = context.watch<LoopPreviewProvider>();
+    final ride = context.watch<RideSessionProvider>();
     final status = location.status;
     final showBanner =
         status != LocationStatus.on && status != LocationStatus.checking;
@@ -111,7 +113,18 @@ class _RideHomeState extends State<_RideHome> {
                     ),
                   ],
                 ),
-                if (showBanner)
+                if (ride.active)
+                  Semantics(
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () => context.push(Routes.rideSession),
+                      child: const MapNotice(
+                        icon: LucideIcons.navigation,
+                        text: 'Ride in progress. Tap to open it.',
+                      ),
+                    ),
+                  )
+                else if (showBanner)
                   LocationOffBanner(status: status, onPressed: location.fix)
                 else if (generating)
                   const MapNotice.loading(text: 'Building your loop…')

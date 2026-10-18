@@ -19,6 +19,7 @@ import '../features/onboarding/screens/onboarding_location_screen.dart';
 import '../features/onboarding/screens/onboarding_profile_screen.dart';
 import '../features/ride/screens/loop_preview_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
+import '../features/ride/screens/ride_session_screen.dart';
 import 'auth_redirect.dart';
 import 'env.dart';
 import 'location/location_permission.dart';
@@ -32,6 +33,9 @@ abstract final class Routes {
 
   /// Full screen over the tabs; pushed from Ride after GENERATE LOOP.
   static const loopPreview = '/preview';
+
+  /// A ride navigated in Google Maps; replaces the preview.
+  static const rideSession = '/riding';
 
   /// Dev flavor only.
   static const devWidgets = '/dev/widgets';
@@ -106,6 +110,10 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
       GoRoute(
         path: Routes.loopPreview,
         builder: (context, state) => const LoopPreviewScreen(),
+      ),
+      GoRoute(
+        path: Routes.rideSession,
+        builder: (context, state) => const RideSessionScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
