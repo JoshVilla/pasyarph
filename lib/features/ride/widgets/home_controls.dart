@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../data/models/generated_loop.dart';
 import '../providers/ride_options_provider.dart';
 
 /// "Starting from / Current location" pill.

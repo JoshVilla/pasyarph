@@ -32,7 +32,7 @@ cp env/example.json env/prod.json
 # then fill in the real values
 ```
 
-Server-side secrets (like the OpenRouteService key) go in Supabase secrets, never in these files.
+Server-side secrets (like the GraphHopper key) go in Supabase secrets, never in these files.
 
 ## Run
 
@@ -86,6 +86,28 @@ Run the database tests against a local stack (needs Docker):
 npx supabase start
 npx supabase test db
 ```
+
+## Edge Functions
+
+`supabase/functions/generate-loop` builds loops with GraphHopper round trips (car profile). The key lives only in Supabase secrets:
+
+```sh
+npx supabase secrets set GRAPHHOPPER_API_KEY=your-key
+npx supabase functions deploy generate-loop --use-api
+```
+
+GraphHopper's free plan is for non-commercial use, about 500 credits a day, plus a per-minute limit (each round trip costs 2 credits; one Generate makes 1–3 calls). It offers no custom models, so highways and unpaved roads can't be avoided while routing. The function asks for road class and surface details instead, tries other seeds when a loop uses an expressway (or known unpaved road), and returns a warning when it can't find a clean one. A paid plan is needed before launch.
+
+OpenRouteService was tried first and dropped: its public API timed out on round trips and waypoint loops from Isabela.
+
+Unit tests (Deno, no install needed):
+
+```sh
+cd supabase/functions/generate-loop
+npx deno test
+```
+
+Loop lengths and the expressway/unpaved thresholds are in `plan.ts`. A loop more than 25% off its target is retried with a rescaled distance. Each user can generate 30 loops per rolling hour (`consume_generate_quota`).
 
 Notes for app code:
 

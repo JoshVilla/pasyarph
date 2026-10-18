@@ -9,6 +9,7 @@ import 'core/location/location_provider.dart';
 import 'core/location/position_source.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
+import 'data/repositories/route_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 Future<void> main() async {
@@ -26,6 +27,9 @@ Future<void> main() async {
       providers: [
         Provider<AvatarRepository>(
           create: (_) => SupabaseAvatarRepository(client),
+        ),
+        Provider<RouteRepository>(
+          create: (_) => SupabaseRouteRepository(client),
         ),
         Provider<LocationPermissionService>(
           create: (_) => const GeolocatorPermissionService(),

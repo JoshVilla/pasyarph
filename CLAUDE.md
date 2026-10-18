@@ -4,7 +4,7 @@ Motorcycle loop-route app for Filipino riders. A rider picks how long they want 
 ## Stack
 - Flutter (latest stable), Provider for state, go_router for navigation
 - Supabase: Auth, Postgres + PostGIS, Storage, Edge Functions (Deno/TypeScript)
-- OpenRouteService API called ONLY from Edge Functions, never from the app
+- GraphHopper routing API called ONLY from Edge Functions, never from the app (OpenRouteService was dropped: its public API timed out)
 - flutter_map with vector/raster tiles from maptiler, key in --dart-define
 - geolocator, flutter_tts, camera/image_picker, wakelock_plus
 
