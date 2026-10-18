@@ -13,6 +13,9 @@
          "while using the app" permission is enough), with a notification. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- The ride service holds a wake lock so fixes keep coming with the
+         screen off; without this the location stream fails to start. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- The ride notification and "You made it" alerts (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
