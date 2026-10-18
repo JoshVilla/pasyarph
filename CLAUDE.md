@@ -1,5 +1,5 @@
 # Pasyar (display name) / PasyarPH (handles)
-Motorcycle loop-route app for Filipino riders. A rider picks how long they want to ride, taps Generate, and gets a loop that starts and ends at their location. Shuffle gives a new loop. Each loop has a main stop (viewpoint, falls, food spot). After the loop, the rider can post up to 10 photos taken during the ride, with the route attached (every post is tied to a ride Pasyar tracked). Other riders see posts in a newsfeed and tap "Ride this loop". Riders can also create custom loops by tapping points on the map and share them publicly, to a club, or privately.
+Motorcycle loop-route app for Filipino riders. A rider picks how long they want to ride, taps Generate, and gets a loop that starts and ends at their location. Shuffle gives a new loop. Each loop has a main stop (viewpoint, falls, food spot). After the loop, the rider can post up to 10 photos with the route attached (every post is tied to a ride Pasyar tracked; which photos is up to the rider). Other riders see posts in a newsfeed and tap "Ride this loop". Riders can also create custom loops by tapping points on the map and share them publicly, to a club, or privately.
 
 ## Stack
 - Flutter (latest stable), Provider for state, go_router for navigation

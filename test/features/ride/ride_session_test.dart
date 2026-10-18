@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/data/ids.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
+import 'package:pasyarph/data/repositories/ride_history_repository.dart';
 import 'package:pasyarph/features/ride/loop_stats.dart';
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:pasyarph/features/ride/providers/ride_session_provider.dart';
@@ -225,6 +227,23 @@ void main() {
     }
     expect(ride.offLoop, isFalse);
     expect(notifier.events, isNot(contains('left')));
+  });
+
+  test('the saved ride carries what posting needs', () async {
+    await ride.start(loop: loop, stop: stop, request: request);
+    for (var i = 10; i <= 60; i += 10) {
+      await rideTo(i);
+    }
+    await ride.end();
+    final saved = history.saved.single;
+    expect(isId(saved.id), isTrue);
+    expect(saved.route, route);
+    expect(saved.preview, hasLength(RideSummary.previewPoints));
+    expect(saved.stop!.name, 'Talon');
+    expect(saved.stop!.type, 'waterfall');
+    expect(saved.loopDurationS, 1800);
+    expect(saved.canPost(now), isTrue); // 6 of 12 km ridden
+    expect(ride.summary!.id, saved.id);
   });
 
   test('END RIDE saves what was ridden, without a "done" alert', () async {

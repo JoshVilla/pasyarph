@@ -16,14 +16,14 @@ import '../../support/fake_services.dart';
 const _screen = BoxConstraints.tightFor(width: 390, height: 844);
 
 /// A ride a third of the way round the mockup loop.
-Future<RideSessionProvider> _ride() async {
+Future<RideSessionProvider> _ride({int loopM = 118000}) async {
   final gps = FakePositionSource(last: RiderFix(point: DemoRoutes.start));
   final location = LocationProvider(
     permissions: FakeLocationPermission(),
     positions: gps,
   );
   await location.start();
-  final loop = demoLoop(mainStop: demoStop, fuel: demoFuel);
+  final loop = demoLoop(mainStop: demoStop, fuel: demoFuel, distanceM: loopM);
   final ride = RideSessionProvider(
     location: location,
     notifier: FakeRideNotifier(),
@@ -86,5 +86,34 @@ void main() {
     expect(find.textContaining('TO GO'), findsOneWidget);
     expect(find.text('Mt. Palali Viewpoint'), findsOneWidget);
     expect(find.text('40 km/h'), findsOneWidget);
+  });
+
+  testWidgets('a finished ride offers POST THIS LOOP or POST LATER', (
+    tester,
+  ) async {
+    // A third of a short loop ridden: postable.
+    final done = (await tester.runAsync(() => _ride(loopM: 1000)))!;
+    await tester.runAsync(done.end);
+    await tester.pumpWidget(MaterialApp(home: _screenWith(done)));
+    await tester.pumpAndSettle();
+    expect(find.text('LOOP DONE'), findsOneWidget);
+    expect(find.text('POST THIS LOOP'), findsOneWidget);
+    expect(find.text('POST LATER'), findsOneWidget);
+    expect(find.text('FINISH LOOP'), findsNothing);
+  });
+
+  testWidgets('too little of the loop ridden: FINISH LOOP and why', (
+    tester,
+  ) async {
+    final done = (await tester.runAsync(_ride))!;
+    await tester.runAsync(done.end);
+    await tester.pumpWidget(MaterialApp(home: _screenWith(done)));
+    await tester.pumpAndSettle();
+    expect(find.text('FINISH LOOP'), findsOneWidget);
+    expect(find.text('POST THIS LOOP'), findsNothing);
+    expect(
+      find.text('Ride at least a quarter of the loop to post it.'),
+      findsOneWidget,
+    );
   });
 }

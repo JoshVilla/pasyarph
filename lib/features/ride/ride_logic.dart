@@ -249,8 +249,7 @@ Uri googleMapsLink({
   return Uri.https('www.google.com', '/maps/dir/', {
     'api': '1',
     'destination': fmt(route.last),
-    if (stops.isNotEmpty)
-      'waypoints': stops.map((s) => fmt(s.point)).join('|'),
+    if (stops.isNotEmpty) 'waypoints': stops.map((s) => fmt(s.point)).join('|'),
     'travelmode': 'driving',
     'dir_action': 'navigate',
     if (avoidHighways) 'avoid': 'highways',

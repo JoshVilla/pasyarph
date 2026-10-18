@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/location/location_provider.dart';
 import '../../../core/notifications/ride_notifier.dart';
+import '../../../data/ids.dart';
 import '../../../data/models/generated_loop.dart';
 import '../../../data/repositories/ride_history_repository.dart';
 import '../loop_stats.dart';
@@ -229,7 +230,9 @@ class RideSessionProvider extends ChangeNotifier {
     }
 
     final toStop = _distance(pos, _stop!.location);
-    final offRouteM = toStop <= _stopOffRouteM + _stopDetourM ? 0.0 : _offRouteM;
+    final offRouteM = toStop <= _stopOffRouteM + _stopDetourM
+        ? 0.0
+        : _offRouteM;
     final wasOff = _offLoop!.isOff;
     if (_offLoop!.update(offRouteM, now)) {
       _notifier.leftLoop();
@@ -245,8 +248,7 @@ class RideSessionProvider extends ChangeNotifier {
     final fromHome = _distance(pos, _loop!.route.first);
     _farthestFromHomeM = math.max(_farthestFromHomeM, fromHome);
     final nearHome =
-        (homeArmed || _farthestFromHomeM >= _awayM) &&
-        fromHome <= _homeRadiusM;
+        (homeArmed || _farthestFromHomeM >= _awayM) && fromHome <= _homeRadiusM;
     if (nearHome && !_nearHome) _notifier.backHome();
     _nearHome = nearHome;
     if (homeArmed && _atHome!.update(pos, speedKmh, now)) {
@@ -268,13 +270,22 @@ class RideSessionProvider extends ChangeNotifier {
     _location.removeListener(_onLocation);
     _offLoop = OffLoopDetector();
     _nearHome = false;
+    final loop = _loop!;
+    final stop = _stop;
     final summary = RideSummary(
+      id: newId(),
       startedAt: _startedAt!,
       endedAt: _endedAt!,
       riddenM: _riddenM,
-      loopM: _loop!.distanceM,
-      stopName: _stop?.title,
+      loopM: loop.distanceM,
+      loopDurationS: loop.durationS,
+      curvinessScore: loop.curvinessScore,
+      stop: stop == null
+          ? null
+          : RideStop(location: stop.location, type: stop.type, name: stop.name),
       reachedStop: _reachedStop,
+      route: loop.route,
+      preview: RideSummary.previewOf(loop.route),
     );
     _summary = summary;
     notifyListeners();

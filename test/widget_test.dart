@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
@@ -11,6 +13,9 @@ import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
 import 'package:pasyarph/features/ride/screens/ride_session_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/repositories/post_repository.dart';
+import 'package:pasyarph/data/repositories/ride_history_repository.dart';
+import 'package:pasyarph/features/post/post_draft.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
 import 'package:pasyarph/features/auth/screens/welcome_screen.dart';
@@ -23,6 +28,7 @@ import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
+import 'support/fake_post.dart';
 import 'support/fake_services.dart';
 
 /// Links the app tried to open (Google Maps).
@@ -36,9 +42,15 @@ Future<FakeAuthRepository> pumpApp(
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.reset);
+  final history = FakeRideHistory();
   await tester.pumpWidget(
     MultiProvider(
       providers: [
+        Provider<RideHistoryRepository>.value(value: history),
+        Provider<PostRepository>(create: (_) => FakePosts()),
+        Provider<PostDraftStore>(
+          create: (_) => MemoryDrafts(Directory.systemTemp),
+        ),
         Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
         Provider<LocationPermissionService>(
           create: (_) => location ?? FakeLocationPermission(),
@@ -58,7 +70,7 @@ Future<FakeAuthRepository> pumpApp(
           create: (context) => RideSessionProvider(
             location: context.read<LocationProvider>(),
             notifier: FakeRideNotifier(),
-            history: FakeRideHistory(),
+            history: history,
             openUrl: (url) async {
               openedUrls.add(url);
               return true;

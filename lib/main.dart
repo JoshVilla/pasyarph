@@ -10,9 +10,11 @@ import 'core/location/position_source.dart';
 import 'core/notifications/ride_notifier.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
+import 'data/repositories/post_repository.dart';
 import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/post/post_draft.dart';
 import 'features/ride/providers/loop_preview_provider.dart';
 import 'features/ride/providers/ride_session_provider.dart';
 
@@ -50,8 +52,12 @@ Future<void> main() async {
         ),
         Provider<RideNotifier>(create: (_) => LocalRideNotifier()),
         Provider<RideHistoryRepository>(
-          create: (_) => LocalRideHistoryRepository(),
+          create: (_) => LocalRideHistoryRepository(
+            uploader: SupabaseRideUploader(client),
+          ),
         ),
+        Provider<PostRepository>(create: (_) => SupabasePostRepository(client)),
+        Provider<PostDraftStore>(create: (_) => const LocalPostDraftStore()),
         ChangeNotifierProvider(
           create: (context) => RideSessionProvider(
             location: context.read<LocationProvider>(),

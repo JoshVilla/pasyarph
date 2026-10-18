@@ -34,7 +34,7 @@ If something breaks, fix it in the same step before continuing. Don't stack prom
 Create a file CLAUDE.md in the repo root with this project context, and read it at the start of every task:
 
 # Pasyar (display name) / PasyarPH (handles)
-Motorcycle loop-route app for Filipino riders. A rider picks how long they want to ride, taps Generate, and gets a loop that starts and ends at their location. Shuffle gives a new loop. Each loop has a main stop (viewpoint, falls, food spot). After the loop, the rider can post up to 10 photos taken during the ride, with the route attached (every post is tied to a ride Pasyar tracked). Other riders see posts in a newsfeed and tap "Ride this loop". Riders can also create custom loops by tapping points on the map and share them publicly, to a club, or privately.
+Motorcycle loop-route app for Filipino riders. A rider picks how long they want to ride, taps Generate, and gets a loop that starts and ends at their location. Shuffle gives a new loop. Each loop has a main stop (viewpoint, falls, food spot). After the loop, the rider can post up to 10 photos with the route attached (every post is tied to a ride Pasyar tracked; which photos is up to the rider). Other riders see posts in a newsfeed and tap "Ride this loop". Riders can also create custom loops by tapping points on the map and share them publicly, to a club, or privately.
 
 ## Stack
 - Flutter (latest stable), Provider for state, go_router for navigation
@@ -298,7 +298,7 @@ Match design/screenshots/03-riding.png and design/mockups/03-riding.html exactly
 
 ## Prompt 11 — Post the loop after the ride
 
-Posting at the stop was dropped: riders shouldn't handle a photo grid and caption at the roadside with gloves on, and most shoot with their own camera anyway. They post after the loop, from photos taken during it. The feed stays trustworthy because every post is tied to a ride Pasyar tracked.
+Posting at the stop was dropped: riders shouldn't handle a photo grid and caption at the roadside with gloves on, and most shoot with their own camera anyway. They post after the loop, any photos they like (no date or location checks: what they post is up to them). Every post is still tied to a ride Pasyar tracked.
 
 ```
 Build the post-after-ride flow (mockup screen 4, adapted):
@@ -307,13 +307,12 @@ Match design/screenshots/04-post-at-stop.png and design/mockups/04-post-at-stop.
 - Save every finished ride to Supabase (rides table, RLS: owner only): started/ended at, ridden km, loop geometry, main stop and whether it was reached. Keep the local history as an offline cache; sync rides saved while offline.
 - A ride can be posted once, within 7 days of finishing, from the summary or from ride history in the Me tab ("Not posted yet" rides on top with a POST button).
 - Post screen: 10-slot photo grid (gallery multi-pick and camera), counter "x / 10", caption, "Route attached" card, POST TO FEED, "Post later".
-- Gallery photos must be taken during the ride: EXIF time between the ride's start and finish (with 15 min slack), and, when EXIF has a location, within 1 km of the loop. Explain why a photo was refused; photos without EXIF time are refused.
 - Compress photos to max 1600 px long edge, ~80% JPEG, upload to post-photos/<user_id>/<post_id>/<n>.jpg with progress; create posts + post_photos rows in one transaction (RPC) that checks the ride belongs to the user, is under 7 days old and not posted yet.
 - Save the loop first if it's a generated loop that isn't saved yet (visibility public by default, editable later). Shared routes still get the first and last 800 m trimmed (Prompt 12).
 - Failed uploads retry; drafts survive an app restart.
 ```
 
-**Done when:** after a real (or emulator-played) loop you can post 3 photos taken during it, the post appears in the database with photos in storage, and a photo from before the ride is refused.
+**Done when:** after a real (or emulator-played) loop you can post 3 photos, the post appears in the database with photos in storage, and POST LATER rides show up in the Me tab.
 
 ---
 

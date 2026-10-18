@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/map/pasyar_map.dart';
+import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../loop_stats.dart';
@@ -44,9 +45,19 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
     super.dispose();
   }
 
+  /// Set when leaving for the post screen, so the closed session doesn't
+  /// pop it.
+  bool _leaving = false;
+
   void _done() {
     context.read<RideSessionProvider>().close();
     if (context.canPop()) context.pop();
+  }
+
+  void _post(String rideId) {
+    _leaving = true;
+    context.pushReplacement(Routes.post(rideId));
+    context.read<RideSessionProvider>().close();
   }
 
   Future<void> _confirmEnd() async {
@@ -90,6 +101,9 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
     final top = MediaQuery.paddingOf(context).top + PasyarSpacing.floatingTop;
 
     if (loop == null || stop == null) {
+      if (_leaving) {
+        return const Scaffold(backgroundColor: PasyarColors.mapGround);
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted && context.canPop()) context.pop();
       });
@@ -153,7 +167,7 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
                 attributionBottom: PasyarRadius.sheet,
               ),
               sheet: finished
-                  ? _SummarySheet(ride: ride, onDone: _done)
+                  ? _SummarySheet(ride: ride, onDone: _done, onPost: _post)
                   : _RidingSheet(ride: ride, onEnd: _confirmEnd),
             ),
             Positioned(
@@ -252,10 +266,15 @@ class _RidingSheet extends StatelessWidget {
 }
 
 class _SummarySheet extends StatelessWidget {
-  const _SummarySheet({required this.ride, required this.onDone});
+  const _SummarySheet({
+    required this.ride,
+    required this.onDone,
+    required this.onPost,
+  });
 
   final RideSessionProvider ride;
   final VoidCallback onDone;
+  final ValueChanged<String> onPost;
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +305,32 @@ class _SummarySheet extends StatelessWidget {
             ),
           ],
         ),
-        PrimaryButton(label: 'FINISH LOOP', onPressed: onDone),
+        // Just finished, so it can't have expired yet.
+        if (summary != null && summary.canPost(summary.endedAt))
+          Row(
+            spacing: PasyarSpacing.buttonGap,
+            children: [
+              SizedBox(
+                width: 148,
+                child: SecondaryButton(label: 'POST LATER', onPressed: onDone),
+              ),
+              Expanded(
+                child: PrimaryButton(
+                  label: 'POST THIS LOOP',
+                  icon: LucideIcons.camera,
+                  onPressed: () => onPost(summary.id),
+                ),
+              ),
+            ],
+          )
+        else ...[
+          if (summary != null && !summary.longEnough)
+            Text(
+              'Ride at least a quarter of the loop to post it.',
+              style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            ),
+          PrimaryButton(label: 'FINISH LOOP', onPressed: onDone),
+        ],
       ],
     );
   }

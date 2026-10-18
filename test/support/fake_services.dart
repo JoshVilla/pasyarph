@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/location/position_source.dart';
@@ -100,6 +100,7 @@ class FakeRouteRepository implements RouteRepository {
 /// The mockup's half-day loop: 118 km, 3 h 50, curvy.
 GeneratedLoop demoLoop({
   int seed = 1,
+  int distanceM = 118000,
   double backtracking = 0.02,
   double curviness = 340,
   List<String> warnings = const [],
@@ -107,7 +108,7 @@ GeneratedLoop demoLoop({
   List<FuelStop> fuel = const [],
 }) => GeneratedLoop(
   route: DemoRoutes.loop,
-  distanceM: 118000,
+  distanceM: distanceM,
   durationS: 13800,
   steps: const [],
   seed: seed,
@@ -158,9 +159,30 @@ class FakeRideNotifier implements RideNotifier {
 
 class FakeRideHistory implements RideHistoryRepository {
   final saved = <RideSummary>[];
+  final _revision = ValueNotifier(0);
 
   @override
-  Future<void> save(RideSummary ride) async => saved.add(ride);
+  ValueListenable<int> get revision => _revision;
+
+  @override
+  Future<void> save(RideSummary ride) async {
+    saved.insert(0, ride);
+    _revision.value++;
+  }
+
+  @override
+  Future<RideSummary?> byId(String id) async =>
+      saved.where((r) => r.id == id).firstOrNull;
+
+  @override
+  Future<bool> sync() async => true;
+
+  @override
+  Future<void> markPosted(String id) async {
+    final i = saved.indexWhere((r) => r.id == id);
+    if (i >= 0) saved[i] = saved[i].copyWith(posted: true);
+    _revision.value++;
+  }
 
   @override
   Future<List<RideSummary>> all() async => saved;
