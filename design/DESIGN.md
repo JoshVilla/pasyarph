@@ -40,7 +40,7 @@ Text in `[brackets]` and the sample numbers are placeholders for real data.
 | `accentTint` | `#FBE9DF` | Selected choice card background, camera slot |
 | `rider` | `#1D4ED8` | Rider location dot and heading arrow, location icon |
 | `verifiedTint` / `verifiedText` | `#E6EEFB` / `#1E3A8A` | "GPS confirmed at stop" badge |
-| `mapGround` | `#E7E9E1` | Map placeholder / loading background |
+| `mapGround` | `#F7F7F7` | Map placeholder / loading background; matches the land of the MapTiler `streets-v2-pastel` style |
 | `riddenRoute` | `#9CA0A8` | Part of the loop already ridden |
 
 ```dart
@@ -60,7 +60,7 @@ class PasyarColors {
   static const rider = Color(0xFF1D4ED8);
   static const verifiedTint = Color(0xFFE6EEFB);
   static const verifiedText = Color(0xFF1E3A8A);
-  static const mapGround = Color(0xFFE7E9E1);
+  static const mapGround = Color(0xFFF7F7F7);
   static const riddenRoute = Color(0xFF9CA0A8);
 }
 ```

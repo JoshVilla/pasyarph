@@ -14,7 +14,7 @@ class PasyarColors {
   static const rider = Color(0xFF1D4ED8);
   static const verifiedTint = Color(0xFFE6EEFB);
   static const verifiedText = Color(0xFF1E3A8A);
-  static const mapGround = Color(0xFFE7E9E1);
+  static const mapGround = Color(0xFFF7F7F7);
   static const riddenRoute = Color(0xFF9CA0A8);
 
   // Dark surfaces (Welcome, riding banner), from the approved mockups.
