@@ -16,6 +16,7 @@ import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/post_repository.dart';
 import 'package:pasyarph/data/repositories/ride_history_repository.dart';
+import 'package:pasyarph/data/repositories/social_repository.dart';
 import 'package:pasyarph/features/post/post_draft.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
@@ -33,6 +34,7 @@ import 'support/fake_auth_repository.dart';
 import 'support/fake_feed.dart';
 import 'support/fake_post.dart';
 import 'support/fake_services.dart';
+import 'support/fake_social.dart';
 
 /// Links the app tried to open (Google Maps).
 final openedUrls = <Uri>[];
@@ -52,6 +54,7 @@ Future<FakeAuthRepository> pumpApp(
         Provider<RideHistoryRepository>.value(value: history),
         Provider<PostRepository>(create: (_) => FakePosts()),
         Provider<FeedRepository>(create: (_) => FakeFeedRepository(const [])),
+        Provider<SocialRepository>(create: (_) => FakeSocialRepository()),
         Provider<PostDraftStore>(
           create: (_) => MemoryDrafts(Directory.systemTemp),
         ),
@@ -86,6 +89,7 @@ Future<FakeAuthRepository> pumpApp(
         ChangeNotifierProvider(
           create: (context) => FeedProvider(
             feed: context.read<FeedRepository>(),
+            social: context.read<SocialRepository>(),
             location: context.read<LocationProvider>(),
           ),
         ),

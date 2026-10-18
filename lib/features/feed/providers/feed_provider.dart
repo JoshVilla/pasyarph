@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
+import '../../../data/repositories/social_repository.dart';
 
 enum FeedFilter {
   nearYou('Near you'),
@@ -19,12 +20,15 @@ enum FeedFilter {
 class FeedProvider extends ChangeNotifier {
   FeedProvider({
     required FeedRepository feed,
+    required SocialRepository social,
     required LocationProvider location,
     this.pageSize = 20,
   }) : _feed = feed,
+       _social = social,
        _location = location;
 
   final FeedRepository _feed;
+  final SocialRepository _social;
   final LocationProvider _location;
   final int pageSize;
 
@@ -115,6 +119,46 @@ class FeedProvider extends ChangeNotifier {
       _loadingMore = false;
       notifyListeners();
     }
+  }
+
+  /// Flips the like at once; puts it back if the server refuses. Returns
+  /// why it failed, or null.
+  Future<String?> toggleLike(String postId) async {
+    final i = _posts.indexWhere((p) => p.id == postId);
+    if (i < 0) return null;
+    final before = _posts[i];
+    final liked = !before.likedByMe;
+    _posts[i] = before.copyWith(
+      likedByMe: liked,
+      likeCount: before.likeCount + (liked ? 1 : -1),
+    );
+    notifyListeners();
+    try {
+      liked ? await _social.like(postId) : await _social.unlike(postId);
+      return null;
+    } on SocialException catch (e) {
+      final j = _posts.indexWhere((p) => p.id == postId);
+      // Only undo if nothing changed it since (another tap, a refresh).
+      if (j >= 0 && _posts[j].likedByMe == liked) {
+        _posts[j] = _posts[j].copyWith(
+          likedByMe: before.likedByMe,
+          likeCount: _posts[j].likeCount + (liked ? -1 : 1),
+        );
+        notifyListeners();
+      }
+      return e.message;
+    }
+  }
+
+  /// After the comments sheet: the new count and first comment.
+  void updateComments(String postId, int count, FeedComment? first) {
+    final i = _posts.indexWhere((p) => p.id == postId);
+    if (i < 0) return;
+    _posts[i] = _posts[i].copyWith(
+      commentCount: count,
+      firstComment: () => first,
+    );
+    notifyListeners();
   }
 
   /// Loads as soon as the first GPS fix arrives.

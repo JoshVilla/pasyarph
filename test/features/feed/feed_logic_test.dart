@@ -5,11 +5,14 @@ import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/models/post.dart';
+import 'package:pasyarph/data/models/profile.dart';
+import 'package:pasyarph/data/repositories/social_repository.dart';
 import 'package:pasyarph/features/feed/feed_format.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
 
 import '../../support/fake_feed.dart';
 import '../../support/fake_services.dart';
+import '../../support/fake_social.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +52,7 @@ void main() {
   group('FeedProvider', () {
     late LocationProvider location;
     late FakePositionSource gps;
+    late FakeSocialRepository social;
 
     /// 45 posts, one every 30 minutes back from now.
     final posts = [
@@ -63,6 +67,7 @@ void main() {
       FakeFeedRepository repo, {
       bool fix = true,
     }) async {
+      social = FakeSocialRepository();
       gps = FakePositionSource(
         last: fix ? const RiderFix(point: LatLng(16.672, 121.457)) : null,
       );
@@ -71,7 +76,7 @@ void main() {
         positions: gps,
       );
       await location.start();
-      return FeedProvider(feed: repo, location: location);
+      return FeedProvider(feed: repo, social: social, location: location);
     }
 
     test('first page, then the next ones by cursor until the end', () async {
@@ -132,6 +137,48 @@ void main() {
       feed.setFilter(FeedFilter.myClubs);
       expect(feed.filter, FeedFilter.myClubs);
       expect(feed.needsLocation, isFalse);
+    });
+
+    test('like: flips at once, sticks when the server agrees', () async {
+      final feed = await provider(FakeFeedRepository(posts));
+      await feed.refresh();
+      final liking = feed.toggleLike('p0');
+      expect(feed.posts.first.likedByMe, isTrue); // before the server replies
+      expect(feed.posts.first.likeCount, 1);
+      expect(await liking, isNull);
+      expect(social.likes, {'p0'});
+
+      await feed.toggleLike('p0');
+      expect(feed.posts.first.likedByMe, isFalse);
+      expect(feed.posts.first.likeCount, 0);
+      expect(social.calls, ['like:p0', 'unlike:p0']);
+    });
+
+    test('like: rolled back with a message when it fails', () async {
+      final feed = await provider(FakeFeedRepository(posts));
+      await feed.refresh();
+      social.failNext = SocialException.offline;
+      final error = await feed.toggleLike('p0');
+      expect(error, contains("Couldn't reach Pasyar"));
+      expect(feed.posts.first.likedByMe, isFalse);
+      expect(feed.posts.first.likeCount, 0);
+    });
+
+    test('after the comments sheet: new count and preview', () async {
+      final feed = await provider(FakeFeedRepository(posts));
+      await feed.refresh();
+      feed.updateComments(
+        'p1',
+        4,
+        const FeedComment(
+          author: ProfileSummary(id: 'j', displayName: 'Jun'),
+          body: 'Paved?',
+        ),
+      );
+      expect(feed.posts[1].commentCount, 4);
+      expect(feed.posts[1].firstComment!.body, 'Paved?');
+      feed.updateComments('p1', 0, null);
+      expect(feed.posts[1].firstComment, isNull);
     });
 
     test('feed_near rows parse with their first comment', () {

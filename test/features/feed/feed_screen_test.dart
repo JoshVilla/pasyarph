@@ -6,6 +6,7 @@ import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
+import 'package:pasyarph/data/repositories/social_repository.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
@@ -15,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../support/fake_auth_repository.dart';
 import '../../support/fake_feed.dart';
 import '../../support/fake_services.dart';
+import '../../support/fake_social.dart';
 
 final _now = DateTime(2026, 10, 19, 15);
 
@@ -33,7 +35,8 @@ Future<Widget> _feed(List<FeedPost> posts) async {
   );
   await location.start();
   final repo = FakeFeedRepository(posts);
-  final feed = FeedProvider(feed: repo, location: location);
+  final social = FakeSocialRepository(comments: threadOf('p1', 3));
+  final feed = FeedProvider(feed: repo, social: social, location: location);
   await feed.refresh();
   final auth = AuthProvider(
     FakeAuthRepository(
@@ -45,6 +48,7 @@ Future<Widget> _feed(List<FeedPost> posts) async {
   return MultiProvider(
     providers: [
       Provider<FeedRepository>.value(value: repo),
+      Provider<SocialRepository>.value(value: social),
       ChangeNotifierProvider.value(value: location),
       ChangeNotifierProvider.value(value: feed),
       ChangeNotifierProvider.value(value: auth),

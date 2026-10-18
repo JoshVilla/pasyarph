@@ -113,7 +113,13 @@ class Comment {
     required this.authorId,
     required this.body,
     required this.createdAt,
+    this.author,
   });
+
+  /// Embedded author columns, for selects with `author:profiles(...)`.
+  static const columns =
+      'id,post_id,author_id,body,created_at,'
+      'author:profiles!comments_author_id_fkey(id,display_name,avatar_url)';
 
   final String id;
   final String postId;
@@ -121,12 +127,19 @@ class Comment {
   final String body;
   final DateTime createdAt;
 
+  /// Name and picture, when selected with [columns].
+  final ProfileSummary? author;
+
   factory Comment.fromJson(Json json) => Comment(
     id: json['id'] as String,
     postId: json['post_id'] as String,
     authorId: json['author_id'] as String,
     body: json['body'] as String,
     createdAt: parseTimestamp(json['created_at']),
+    author: switch (json['author']) {
+      final Json a => ProfileSummary.fromJson(a),
+      _ => null,
+    },
   );
 }
 
@@ -161,6 +174,26 @@ class FeedPost {
 
   /// The oldest comment, previewed under the card.
   final FeedComment? firstComment;
+
+  FeedPost copyWith({
+    int? likeCount,
+    bool? likedByMe,
+    int? commentCount,
+    FeedComment? Function()? firstComment,
+  }) => FeedPost(
+    id: id,
+    caption: caption,
+    createdAt: createdAt,
+    stopLocation: stopLocation,
+    distanceAwayM: distanceAwayM,
+    author: author,
+    photos: photos,
+    loop: loop,
+    likeCount: likeCount ?? this.likeCount,
+    likedByMe: likedByMe ?? this.likedByMe,
+    commentCount: commentCount ?? this.commentCount,
+    firstComment: firstComment == null ? this.firstComment : firstComment(),
+  );
 
   factory FeedPost.fromJson(Json json) => FeedPost(
     id: json['id'] as String,
