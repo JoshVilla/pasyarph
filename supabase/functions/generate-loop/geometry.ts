@@ -145,6 +145,78 @@ export function backtrackingRatio(
 }
 
 /**
+ * Marks the vertices of dead-end spurs: places where the route rides out,
+ * U-turns, and comes back over the same nodes. GraphHopper round trips get
+ * these when a random via point lands on a side road. Removing the marked
+ * vertices joins the route back up at the spur's mouth.
+ *
+ * Matching needs the same nodes (within [toleranceM]) in reverse order, so
+ * hairpins and parallel roads aren't spurs. Spurs shorter than [minSpurM]
+ * are left alone, as is anything that would cut more than [maxShare] of the
+ * route or its finish (the stem from home isn't a spur).
+ */
+export function spurMask(
+  coords: LngLat[],
+  { toleranceM = 5, minSpurM = 50, maxShare = 0.5 } = {},
+): Uint8Array {
+  const removed = new Uint8Array(coords.length);
+  if (coords.length < 5) return removed;
+  const project = projector(coords[0]);
+  const all = coords.map(project);
+  const totalM = lengthM(coords);
+
+  // Repeats on what's left so a spur off a spur goes too.
+  let kept = coords.map((_, i) => i);
+  for (let pass = 0; pass < 10; pass++) {
+    const n = kept.length;
+    const pts = kept.map((i) => all[i]);
+    const along = [0];
+    for (let i = 1; i < n; i++) {
+      along.push(
+        along[i - 1] +
+          Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
+      );
+    }
+    const near = (i: number, j: number) =>
+      Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]) <= toleranceM;
+
+    let cut = false;
+    let k = 1;
+    while (k < n - 1) {
+      // Walk back from a U-turn at k while both sides share nodes. After
+      // the first step one side may skip a vertex the other doesn't have.
+      let a = k;
+      let b = k;
+      while (a > 0 && b < n - 1) {
+        if (near(a - 1, b + 1)) {
+          a--;
+          b++;
+        } else if (a < b && near(a - 1, b)) {
+          a--;
+        } else if (a < b && near(a, b + 1)) {
+          b++;
+        } else {
+          break;
+        }
+      }
+      const isSpur = along[k] - along[a] >= minSpurM &&
+        b < n - 1 &&
+        along[b] - along[a] <= totalM * maxShare;
+      if (isSpur) {
+        for (let x = a + 1; x <= b; x++) removed[kept[x]] = 1;
+        cut = true;
+        k = b + 1;
+      } else {
+        k++;
+      }
+    }
+    if (!cut) break;
+    kept = kept.filter((i) => !removed[i]);
+  }
+  return removed;
+}
+
+/**
  * Douglas–Peucker simplification: keeps the shape within [toleranceM].
  * Used to send a short polyline to Overpass instead of thousands of points.
  */

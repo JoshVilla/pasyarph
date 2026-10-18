@@ -5,7 +5,7 @@
 // routing. Instead each route comes back with road_class and surface details
 // and the handler prefers loops that don't use them (see scoring.ts).
 
-import { haversineM, type LngLat } from './geometry.ts';
+import { haversineM, type LngLat, spurMask } from './geometry.ts';
 
 export const GRAPHHOPPER_URL = 'https://graphhopper.com/api/1/route';
 
@@ -52,9 +52,11 @@ const UNPAVED = new Set([
   'fine_gravel', 'mud',
 ]);
 
-/** Meters of [coords] covered by detail intervals whose value matches. */
+/** Meters of [coords] covered by detail intervals whose value matches,
+ * skipping segments that end in a [removed] vertex. */
 function metersWhere(
   coords: LngLat[],
+  removed: Uint8Array,
   intervals: unknown,
   matches: (value: string) => boolean,
 ): number {
@@ -63,12 +65,21 @@ function metersWhere(
   for (const [from, to, value] of intervals as [number, number, unknown][]) {
     if (!matches(String(value).toLowerCase())) continue;
     for (let i = from + 1; i <= to && i < coords.length; i++) {
-      total += haversineM(coords[i - 1], coords[i]);
+      if (!removed[i]) total += haversineM(coords[i - 1], coords[i]);
     }
   }
   return total;
 }
 
+/** GraphHopper U-turn signs (left, right, unknown). */
+const U_TURNS = new Set([-8, 8, -98]);
+
+/**
+ * The first path of a GraphHopper response, with dead-end spurs cut out
+ * (see [spurMask]): riders shouldn't ride into a side road and back just
+ * because a random via point landed there. Distance, time, steps and road
+ * meters describe the trimmed loop.
+ */
 export function parseRoute(json: unknown): Route {
   // deno-lint-ignore no-explicit-any
   const path = (json as any)?.paths?.[0];
@@ -76,30 +87,54 @@ export function parseRoute(json: unknown): Route {
   if (!Array.isArray(coords) || coords.length < 2) {
     throw new LoopError('no_route');
   }
-  const coordinates = coords.map((c: number[]) => [c[0], c[1]] as LngLat);
+  const raw = coords.map((c: number[]) => [c[0], c[1]] as LngLat);
+  const removed = spurMask(raw);
 
+  // Old index -> new index; a removed vertex maps to the spur's mouth.
+  const newIndex: number[] = [];
+  let next = -1;
+  let cutM = 0;
+  for (let i = 0; i < raw.length; i++) {
+    if (removed[i]) cutM += haversineM(raw[i - 1], raw[i]);
+    else next++;
+    newIndex.push(Math.max(0, next));
+  }
+  const coordinates = raw.filter((_, i) => !removed[i]);
+
+  const steps: Step[] = [];
   // deno-lint-ignore no-explicit-any
-  const steps: Step[] = ((path.instructions ?? []) as any[]).map((s) => ({
-    instruction: String(s.text ?? ''),
-    name: String(s.street_name ?? ''),
-    distance_m: Math.round(Number(s.distance ?? 0)),
-    duration_s: Math.round(Number(s.time ?? 0) / 1000),
-    sign: Number(s.sign ?? 0),
-    way_points: [s.interval?.[0] ?? 0, s.interval?.[1] ?? 0],
-  }));
+  for (const s of (path.instructions ?? []) as any[]) {
+    const from = Number(s.interval?.[0] ?? 0);
+    const to = Number(s.interval?.[1] ?? 0);
+    const sign = Number(s.sign ?? 0);
+    // Steps that only ride a spur: into it, the U-turn.
+    const inSpur = from < to && newIndex[from] === newIndex[to];
+    if (inSpur || (U_TURNS.has(sign) && removed[from])) continue;
+    steps.push({
+      instruction: String(s.text ?? ''),
+      name: String(s.street_name ?? ''),
+      distance_m: Math.round(Number(s.distance ?? 0)),
+      duration_s: Math.round(Number(s.time ?? 0) / 1000),
+      sign,
+      way_points: [newIndex[from] ?? 0, newIndex[to] ?? 0],
+    });
+  }
 
   const details = path.details ?? {};
+  const rawDistance = Number(path.distance ?? 0);
+  const distance = Math.max(0, rawDistance - cutM);
+  const share = rawDistance > 0 ? distance / rawDistance : 1;
   return {
     coordinates,
-    distance_m: Math.round(Number(path.distance ?? 0)),
-    duration_s: Math.round(Number(path.time ?? 0) / 1000),
+    distance_m: Math.round(distance),
+    duration_s: Math.round((Number(path.time ?? 0) / 1000) * share),
     steps,
     motorway_m: Math.round(
-      metersWhere(coordinates, details.road_class, (v) => v === 'motorway'),
+      metersWhere(raw, removed, details.road_class, (v) => v === 'motorway'),
     ),
     unpaved_m: Math.round(
-      metersWhere(coordinates, details.surface, (v) => UNPAVED.has(v)) +
-        metersWhere(coordinates, details.road_class, (v) => v === 'track'),
+      metersWhere(raw, removed, details.surface, (v) => UNPAVED.has(v)) +
+        metersWhere(raw, removed, details.road_class, (v) => v === 'track'),
     ),
   };
 }

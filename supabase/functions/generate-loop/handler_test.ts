@@ -110,6 +110,39 @@ Deno.test('parse: route, steps in seconds, and road meters', () => {
   assertAlmostEquals(r.unpaved_m, 2_000, 2);
 });
 
+Deno.test('parse: a dead-end spur is cut from the route, steps and meters', () => {
+  // The rectangle with a 1 km spur north from the top-left corner:
+  // 0 start, 1 corner, 2 spur end, 3 corner again, 4 far corner, ...
+  const corner = loop[1];
+  const tip = destination(corner, 0, 1_000);
+  const coordinates = [start, corner, tip, corner, loop[2], loop[3], start];
+  const r = parseRoute({
+    paths: [{
+      distance: 10_000,
+      time: 1_000_000,
+      points: { coordinates },
+      instructions: [
+        { text: 'Continue', distance: 2000, time: 100_000, sign: 0, interval: [0, 1] },
+        { text: 'Turn left', distance: 1000, time: 100_000, sign: -2, interval: [1, 2] },
+        { text: 'Make a U-turn', distance: 1000, time: 100_000, sign: -98, interval: [2, 3] },
+        { text: 'Turn right', distance: 2000, time: 100_000, sign: 2, interval: [3, 4] },
+        { text: 'Arrive', distance: 0, time: 0, sign: 4, interval: [6, 6] },
+      ],
+      details: {
+        road_class: [[0, 6, 'motorway']],
+        surface: [[1, 3, 'gravel']],
+      },
+    }],
+  });
+  assertEquals(r.coordinates, [start, corner, loop[2], loop[3], start]);
+  assertEquals(r.distance_m, 8_000);
+  assertEquals(r.duration_s, 800);
+  assertEquals(r.steps.map((s) => s.instruction), ['Continue', 'Turn right', 'Arrive']);
+  assertEquals(r.steps.map((s) => s.way_points), [[0, 1], [1, 2], [4, 4]]);
+  assertAlmostEquals(r.motorway_m, 8_000, 5);
+  assertEquals(r.unpaved_m, 0);
+});
+
 // --- handler --------------------------------------------------------------------
 
 function deps(overrides: Partial<Deps> & { responses?: Response[] } = {}) {
