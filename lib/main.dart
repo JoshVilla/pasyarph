@@ -11,6 +11,7 @@ import 'core/notifications/ride_notifier.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'data/repositories/feed_repository.dart';
+import 'data/repositories/loop_repository.dart';
 import 'data/repositories/post_repository.dart';
 import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
@@ -60,6 +61,7 @@ Future<void> main() async {
           ),
         ),
         Provider<PostRepository>(create: (_) => SupabasePostRepository(client)),
+        Provider<LoopRepository>(create: (_) => SupabaseLoopRepository(client)),
         Provider<PostDraftStore>(create: (_) => const LocalPostDraftStore()),
         Provider<FeedRepository>(create: (_) => SupabaseFeedRepository(client)),
         Provider<SocialRepository>(

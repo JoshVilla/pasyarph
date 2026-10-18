@@ -5,4 +5,7 @@ abstract final class AppLinks {
 
   static final terms = Uri.https(domain, '/terms');
   static final privacy = Uri.https(domain, '/privacy');
+
+  /// Share link for a loop. Opening it in the app comes with Prompt 18.
+  static Uri loop(String id) => Uri.https(domain, '/loop/$id');
 }

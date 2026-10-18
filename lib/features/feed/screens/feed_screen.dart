@@ -9,7 +9,7 @@ import '../../../core/widgets/widgets.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../ride/providers/loop_preview_provider.dart';
+import '../../ride/ride_this_loop.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/comments_sheet.dart';
 import '../widgets/feed_header.dart';
@@ -71,37 +71,9 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  /// RIDE IT / RIDE THIS LOOP: the loop from where the rider is, then the
-  /// normal preview (START RIDE as for a generated loop).
-  Future<void> _ride(FeedPost post) async {
-    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
-    final here = context.read<LocationProvider>().position;
-    if (here == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Turn on location to ride this loop.')),
-      );
-      return;
-    }
-    final preview = context.read<LoopPreviewProvider>();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Finding your way to ${post.loop.name}…'),
-        duration: const Duration(minutes: 1),
-      ),
-    );
-    final ready = await preview.rideLoop(
-      loopId: post.loop.id,
-      name: post.loop.name,
-      start: here,
-    );
-    if (!mounted) return;
-    messenger.hideCurrentSnackBar();
-    if (ready) {
-      context.push(Routes.loopPreview);
-    } else if (preview.error != null) {
-      messenger.showSnackBar(SnackBar(content: Text(preview.error!.message)));
-    }
-  }
+  /// RIDE IT / RIDE THIS LOOP.
+  Future<void> _ride(FeedPost post) =>
+      rideThisLoop(context, loopId: post.loop.id, name: post.loop.name);
 
   Future<void> _comments(FeedPost post) async {
     final feed = context.read<FeedProvider>();
@@ -139,7 +111,7 @@ class _FeedScreenState extends State<FeedScreen> {
       myAvatar: myAvatar == null ? null : repo.avatar(myAvatar),
       filter: feed.filter,
       onFilter: feed.setFilter,
-      onShare: () => context.go(Routes.create),
+      onShare: () => context.push(Routes.create),
       onAddPhotos: () => context.go(Routes.me),
       onSearch: () => _soon('Search'),
       onNotifications: () => _soon('Notifications'),

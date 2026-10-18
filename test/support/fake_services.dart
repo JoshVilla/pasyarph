@@ -6,8 +6,11 @@ import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/notifications/ride_notifier.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
+import 'package:pasyarph/data/models/club.dart';
 import 'package:pasyarph/data/models/loop.dart';
+import 'package:pasyarph/data/models/routed_leg.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/repositories/loop_repository.dart';
 import 'package:pasyarph/data/repositories/ride_history_repository.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
@@ -111,6 +114,94 @@ class FakeRouteRepository implements RouteRepository {
     if (next is RouteException) throw next;
     return next as GeneratedLoop;
   }
+
+  /// Runs sent to routeThroughPoints, one list per call.
+  final pointRuns = <List<List<LatLng>>>[];
+
+  /// Next routeThroughPoints call throws this.
+  RouteException? failRouteNext;
+
+  /// Leg for a pair of points; defaults to a straight line, 1 km and 2 min
+  /// per 0.01° (about).
+  RoutedLeg Function(LatLng a, LatLng b) legFor = straightLeg;
+
+  @override
+  Future<List<List<RoutedLeg>>> routeThroughPoints(
+    List<List<LatLng>> runs,
+  ) async {
+    pointRuns.add(runs);
+    await gate?.future;
+    final fail = failRouteNext;
+    if (fail != null) {
+      failRouteNext = null;
+      throw fail;
+    }
+    return [
+      for (final run in runs)
+        [for (var i = 0; i < run.length - 1; i++) legFor(run[i], run[i + 1])],
+    ];
+  }
+}
+
+RoutedLeg straightLeg(LatLng a, LatLng b) {
+  final m = const Distance().as(LengthUnit.Meter, a, b).round();
+  return RoutedLeg(points: [a, b], distanceM: m, durationS: m ~/ 10);
+}
+
+/// In-memory loops and clubs.
+class FakeLoopRepository implements LoopRepository {
+  FakeLoopRepository({List<Club>? clubs}) : clubs = clubs ?? [];
+
+  final List<Club> clubs;
+  final saved = <String, NewLoop>{};
+  final calls = <String>[];
+  final _revision = ValueNotifier(0);
+
+  /// Next write throws this.
+  LoopException? failNext;
+
+  @override
+  ValueListenable<int> get revision => _revision;
+
+  void _write(String call, String id, NewLoop loop) {
+    calls.add('$call:$id');
+    final f = failNext;
+    if (f != null) {
+      failNext = null;
+      throw f;
+    }
+    saved[id] = loop;
+    _revision.value++;
+  }
+
+  @override
+  Future<void> create(String id, NewLoop loop) async =>
+      _write('create', id, loop);
+
+  @override
+  Future<void> update(String id, NewLoop loop) async =>
+      _write('update', id, loop);
+
+  @override
+  Future<List<Loop>> mine() async => [
+    for (final MapEntry(key: id, value: l) in saved.entries)
+      Loop(
+        id: id,
+        ownerId: 'me',
+        name: l.name,
+        source: l.source,
+        sharedRoute: l.distanceM > 1800 ? l.route : null,
+        distanceM: l.distanceM,
+        durationS: l.durationS,
+        mainStop: l.mainStop,
+        visibility: l.visibility,
+        clubId: l.clubId,
+        createdAt: DateTime(2026, 10, 19),
+      ),
+  ];
+
+  @override
+  Future<List<Club>> myClubs() async => clubs;
 }
 
 /// The mockup's half-day loop: 118 km, 3 h 50, curvy.

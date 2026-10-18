@@ -22,7 +22,9 @@ import 'package:pasyarph/features/post/post_draft.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
 import 'package:pasyarph/features/auth/screens/welcome_screen.dart';
-import 'package:pasyarph/features/create/screens/create_screen.dart';
+import 'package:pasyarph/data/repositories/loop_repository.dart';
+import 'package:pasyarph/data/repositories/route_repository.dart';
+import 'package:pasyarph/features/create/screens/create_loop_screen.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
@@ -51,9 +53,12 @@ Future<FakeAuthRepository> pumpApp(
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.reset);
   final history = FakeRideHistory();
+  final routeRepo = routes ?? FakeRouteRepository();
   await tester.pumpWidget(
     MultiProvider(
       providers: [
+        Provider<RouteRepository>.value(value: routeRepo),
+        Provider<LoopRepository>(create: (_) => FakeLoopRepository()),
         Provider<RideHistoryRepository>.value(value: history),
         Provider<PostRepository>(create: (_) => FakePosts()),
         Provider<FeedRepository>(create: (_) => FakeFeedRepository(feedPosts)),
@@ -74,7 +79,7 @@ Future<FakeAuthRepository> pumpApp(
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => LoopPreviewProvider(routes ?? FakeRouteRepository()),
+          create: (_) => LoopPreviewProvider(routeRepo),
         ),
         ChangeNotifierProvider(
           create: (context) => RideSessionProvider(
@@ -283,13 +288,7 @@ void main() {
     );
     expect(find.byType(RideScreen), findsOneWidget);
 
-    final tabs = {
-      'Feed': FeedScreen,
-      'Create': CreateScreen,
-      'Me': MeScreen,
-      'Ride': RideScreen,
-    };
-    for (final MapEntry(key: label, value: screen) in tabs.entries) {
+    Future<void> tapTab(String label) async {
       await tester.tap(
         find.descendant(
           of: find.byType(PasyarBottomTabs),
@@ -297,8 +296,21 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+    }
+
+    final tabs = {'Feed': FeedScreen, 'Me': MeScreen, 'Ride': RideScreen};
+    for (final MapEntry(key: label, value: screen) in tabs.entries) {
+      await tapTab(label);
       expect(find.byType(screen), findsOneWidget, reason: label);
     }
+
+    // Create opens full screen over the tabs; Back returns to the tab.
+    await tapTab('Create');
+    expect(find.byType(CreateLoopScreen), findsOneWidget);
+    expect(find.byType(PasyarBottomTabs), findsNothing);
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RideScreen), findsOneWidget);
 
     await tester.tap(find.text('Me').last);
     await tester.pumpAndSettle();

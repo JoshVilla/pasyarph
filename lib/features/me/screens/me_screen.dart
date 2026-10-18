@@ -7,6 +7,7 @@ import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../widgets/my_loops_list.dart';
 import '../widgets/ride_history_list.dart';
 
 /// The Me tab: name, your rides (post the ones from the last 7 days), and
@@ -32,6 +33,8 @@ class MeScreen extends StatelessWidget {
           if (auth.user?.email != null)
             Text(auth.user!.email!, style: PasyarTextStyles.label),
           const SizedBox(height: 24),
+          const MyLoopsList(),
+          const SizedBox(height: 32),
           const RideHistoryList(),
           const SizedBox(height: 32),
           SecondaryButton(label: 'LOG OUT', onPressed: auth.signOut),

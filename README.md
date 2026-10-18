@@ -109,6 +109,13 @@ npx deno test
 
 Loop lengths and the expressway/unpaved thresholds are in `plan.ts`. A loop more than 25% off its target is retried with a rescaled distance. Each user can generate 30 loops per rolling hour (`consume_generate_quota`).
 
+`supabase/functions/route-through-points` snaps custom loops from the Create tab to roads (GraphHopper directions, S → 1 → … → n → S). The app sends only the legs that changed, 600 ms after the last edit, and caches the rest. The free plan allows 5 points per request, so longer runs are split into chunks of 5 that share their joining point (about 1 credit each). It uses the same `GRAPHHOPPER_API_KEY` secret and allows 200 calls per user per rolling hour (`consume_route_quota`).
+
+```sh
+npx supabase functions deploy route-through-points --use-api
+cd supabase/functions/route-through-points && npx deno test
+```
+
 Notes for app code:
 
 - `loops.route` (the full loop, which starts at the rider's home) is not readable through the API. Select `Loop.columns` instead of `*`; owners get their full route from `rpc('loop_route', {'p_loop_id': id})`.

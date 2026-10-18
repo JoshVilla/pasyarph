@@ -10,7 +10,10 @@ import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/welcome_screen.dart';
-import '../features/create/screens/create_screen.dart';
+import '../data/repositories/loop_repository.dart';
+import '../data/repositories/route_repository.dart';
+import '../features/create/providers/create_loop_controller.dart';
+import '../features/create/screens/create_loop_screen.dart';
 import '../features/dev/screens/widget_gallery_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
 import '../features/me/screens/me_screen.dart';
@@ -29,8 +32,10 @@ import 'widgets/app_shell.dart';
 abstract final class Routes {
   static const ride = '/ride';
   static const feed = '/feed';
-  static const create = '/create';
   static const me = '/me';
+
+  /// Create a loop: full screen over the tabs, pushed by the Create tab.
+  static const create = '/create';
 
   /// Full screen over the tabs; pushed from Ride after GENERATE LOOP.
   static const loopPreview = '/preview';
@@ -121,6 +126,16 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
         builder: (context, state) => const RideSessionScreen(),
       ),
       GoRoute(
+        path: Routes.create,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) => CreateLoopController(
+            routes: context.read<RouteRepository>(),
+            loops: context.read<LoopRepository>(),
+          ),
+          child: const CreateLoopScreen(),
+        ),
+      ),
+      GoRoute(
         path: Routes.postRide,
         builder: (context, state) =>
             PostLoopScreen(rideId: state.pathParameters['rideId']!),
@@ -141,14 +156,6 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
               GoRoute(
                 path: Routes.feed,
                 builder: (context, state) => const FeedScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: Routes.create,
-                builder: (context, state) => const CreateScreen(),
               ),
             ],
           ),

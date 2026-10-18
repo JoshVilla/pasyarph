@@ -22,7 +22,19 @@ class PasyarTextField extends StatefulWidget {
     this.autofillHints,
     this.onChanged,
     this.onSubmitted,
+    this.height = 52,
+    this.textStyle,
+    this.maxLength,
   });
+
+  /// 52 by default; the Create sheet's loop name field is 48.
+  final double height;
+
+  /// Text and hint style; defaults to 16 px body text.
+  final TextStyle? textStyle;
+
+  /// Limits input without showing a counter.
+  final int? maxLength;
 
   final String label;
   final TextEditingController? controller;
@@ -55,6 +67,9 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final textStyle =
+        widget.textStyle ??
+        PasyarTextStyles.body.copyWith(fontSize: 16, height: 1.2);
     final hasError = widget.error != null;
     final message = widget.error ?? widget.helper;
     final idle = hasError
@@ -81,20 +96,16 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
           onChanged: widget.onChanged,
           onSubmitted: widget.onSubmitted,
           textAlignVertical: TextAlignVertical.center,
-          style: PasyarTextStyles.body.copyWith(
-            fontSize: 16,
-            height: 1.2,
+          maxLength: widget.maxLength,
+          style: textStyle.copyWith(
             color: widget.enabled ? PasyarColors.ink : PasyarColors.muted,
           ),
           decoration: InputDecoration(
-            constraints: const BoxConstraints.tightFor(height: 52),
+            constraints: BoxConstraints.tightFor(height: widget.height),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            counterText: '',
             hintText: widget.hint,
-            hintStyle: PasyarTextStyles.body.copyWith(
-              fontSize: 16,
-              height: 1.2,
-              color: PasyarColors.muted,
-            ),
+            hintStyle: textStyle.copyWith(color: PasyarColors.muted),
             filled: true,
             fillColor: widget.enabled ? PasyarColors.card : PasyarColors.ground,
             border: idle,

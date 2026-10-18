@@ -6,13 +6,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/generated_loop.dart';
 import '../models/json.dart';
+import '../models/routed_leg.dart';
 
 /// Why a loop couldn't be generated. [message] is safe to show riders.
 class RouteException implements Exception {
   const RouteException(this.code, this.message);
 
-  /// `limit_reached`, `no_route`, `too_long`, `loop_not_found`,
-  /// `routing_busy`, `routing_down`,
+  /// `limit_reached`, `no_route`, `too_long`, `loop_not_found`, `off_road`
+  /// (route-through-points), `routing_busy`, `routing_down`,
   /// `unauthorized`, `bad_request`, or `offline` (no connection from the
   /// phone).
   final String code;
@@ -59,6 +60,11 @@ abstract interface class RouteRepository {
     required String loopId,
     required LatLng start,
   });
+
+  /// Create tab: snaps each run of points to roads (route-through-points
+  /// Edge Function). Returns one list per run with a leg per pair of
+  /// consecutive points. Throws [RouteException].
+  Future<List<List<RoutedLeg>>> routeThroughPoints(List<List<LatLng>> runs);
 }
 
 class SupabaseRouteRepository implements RouteRepository {
@@ -92,10 +98,38 @@ class SupabaseRouteRepository implements RouteRepository {
     'lng': start.longitude,
   });
 
-  Future<GeneratedLoop> _invoke(Json body) async {
+  @override
+  Future<List<List<RoutedLeg>>> routeThroughPoints(List<List<LatLng>> runs) =>
+      _call(
+        'route-through-points',
+        {
+          'runs': [
+            for (final run in runs)
+              [
+                for (final p in run) [p.longitude, p.latitude],
+              ],
+          ],
+        },
+        (data) => [
+          for (final run in (data as Json)['runs'] as List)
+            [for (final leg in run as List) RoutedLeg.fromJson(leg as Json)],
+        ],
+      );
+
+  Future<GeneratedLoop> _invoke(Json body) => _call(
+    'generate-loop',
+    body,
+    (data) => GeneratedLoop.fromJson(data as Json),
+  );
+
+  Future<T> _call<T>(
+    String function,
+    Json body,
+    T Function(Object? data) parse,
+  ) async {
     try {
-      final res = await _client.functions.invoke('generate-loop', body: body);
-      return GeneratedLoop.fromJson(res.data as Json);
+      final res = await _client.functions.invoke(function, body: body);
+      return parse(res.data);
     } on FunctionException catch (e) {
       throw RouteException.fromBody(e.details);
     } on SocketException {

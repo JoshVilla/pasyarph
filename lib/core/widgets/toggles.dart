@@ -160,3 +160,97 @@ class PasyarFilterChip extends StatelessWidget {
     );
   }
 }
+
+/// Segmented control ("Public / Group / Private"): `ground` track with 4 px
+/// padding, 44 px segments; the selected one is white with a soft shadow
+/// and `accentDark` text.
+class SegmentedChoice<T> extends StatelessWidget {
+  const SegmentedChoice({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onChanged,
+    this.semanticLabel,
+  });
+
+  /// Value → label, in display order.
+  final Map<T, String> options;
+  final T selected;
+  final ValueChanged<T>? onChanged;
+  final String? semanticLabel;
+
+  static const _selectedShadow = [
+    BoxShadow(color: Color(0x2415171C), offset: Offset(0, 1), blurRadius: 4),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: semanticLabel,
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: PasyarColors.ground,
+          borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
+        ),
+        child: Row(
+          children: [
+            for (final MapEntry(key: value, value: label) in options.entries)
+              Expanded(
+                child: _Segment(
+                  label: label,
+                  selected: value == selected,
+                  onTap: onChanged == null ? null : () => onChanged!(value),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Segment extends StatelessWidget {
+  const _Segment({required this.label, required this.selected, this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: selected,
+      button: true,
+      enabled: onTap != null,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 44,
+          alignment: Alignment.center,
+          decoration: selected
+              ? BoxDecoration(
+                  color: PasyarColors.card,
+                  borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
+                  boxShadow: SegmentedChoice._selectedShadow,
+                )
+              : null,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: PasyarTextStyles.body.copyWith(
+              height: 1.2,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              color: selected ? PasyarColors.accentDark : PasyarColors.ink,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
