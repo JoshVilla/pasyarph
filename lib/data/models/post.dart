@@ -144,6 +144,7 @@ class FeedPost {
     required this.commentCount,
     required this.likedByMe,
     this.caption,
+    this.firstComment,
   });
 
   final String id;
@@ -157,6 +158,9 @@ class FeedPost {
   final int likeCount;
   final int commentCount;
   final bool likedByMe;
+
+  /// The oldest comment, previewed under the card.
+  final FeedComment? firstComment;
 
   factory FeedPost.fromJson(Json json) => FeedPost(
     id: json['id'] as String,
@@ -172,5 +176,22 @@ class FeedPost {
     likeCount: (json['like_count'] as num).toInt(),
     commentCount: (json['comment_count'] as num).toInt(),
     likedByMe: json['liked_by_me'] as bool,
+    firstComment: switch (json['first_comment']) {
+      final Json c => FeedComment.fromJson(c),
+      _ => null,
+    },
+  );
+}
+
+/// A comment as the feed shows it: author and text.
+class FeedComment {
+  const FeedComment({required this.author, required this.body});
+
+  final ProfileSummary author;
+  final String body;
+
+  factory FeedComment.fromJson(Json json) => FeedComment(
+    author: ProfileSummary.fromJson(json['author'] as Json),
+    body: json['body'] as String,
   );
 }

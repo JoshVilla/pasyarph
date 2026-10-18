@@ -10,10 +10,12 @@ import 'core/location/position_source.dart';
 import 'core/notifications/ride_notifier.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
+import 'data/repositories/feed_repository.dart';
 import 'data/repositories/post_repository.dart';
 import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/feed/providers/feed_provider.dart';
 import 'features/post/post_draft.dart';
 import 'features/ride/providers/loop_preview_provider.dart';
 import 'features/ride/providers/ride_session_provider.dart';
@@ -58,6 +60,7 @@ Future<void> main() async {
         ),
         Provider<PostRepository>(create: (_) => SupabasePostRepository(client)),
         Provider<PostDraftStore>(create: (_) => const LocalPostDraftStore()),
+        Provider<FeedRepository>(create: (_) => SupabaseFeedRepository(client)),
         ChangeNotifierProvider(
           create: (context) => RideSessionProvider(
             location: context.read<LocationProvider>(),
@@ -67,6 +70,12 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(SupabaseAuthRepository(client)),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => FeedProvider(
+            feed: context.read<FeedRepository>(),
+            location: context.read<LocationProvider>(),
+          ),
         ),
       ],
       child: const PasyarApp(),

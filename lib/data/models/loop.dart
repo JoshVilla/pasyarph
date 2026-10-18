@@ -80,11 +80,12 @@ class Loop {
     this.curvinessScore,
     this.mainStop,
     this.clubId,
+    this.province,
   });
 
   static const columns =
       'id,owner_id,name,source,shared_route,distance_m,duration_s,'
-      'curviness_score,main_stop,visibility,club_id,created_at';
+      'curviness_score,main_stop,province,visibility,club_id,created_at';
 
   final String id;
   final String ownerId;
@@ -97,6 +98,10 @@ class Loop {
   final int durationS;
   final double? curvinessScore;
   final MainStop? mainStop;
+
+  /// Province the loop is in (where its main stop is), e.g. "Ifugao".
+  /// Null until provinces are loaded, or offshore.
+  final String? province;
   final LoopVisibility visibility;
   final String? clubId;
   final DateTime createdAt;
@@ -116,6 +121,7 @@ class Loop {
     },
     visibility: LoopVisibility.fromValue(json['visibility'] as String),
     clubId: json['club_id'] as String?,
+    province: json['province'] as String?,
     createdAt: parseTimestamp(json['created_at']),
   );
 }

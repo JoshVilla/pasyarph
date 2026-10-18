@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/pasyar_theme.dart';
+import '../../../core/widgets/route_thumbnail.dart';
 
 /// "Rode this loop": the verified badge (mockup 4, top right).
 class RodeBadge extends StatelessWidget {
@@ -234,14 +235,7 @@ class RouteAttachedCard extends StatelessWidget {
       child: Row(
         spacing: 14,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
-            child: SizedBox(
-              width: 72,
-              height: 56,
-              child: CustomPaint(painter: _RouteThumbPainter(route)),
-            ),
-          ),
+          RouteThumbnail(route: route),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,57 +256,4 @@ class RouteAttachedCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The loop scaled into the thumbnail: 3 px `accent` line, `rider` start dot.
-class _RouteThumbPainter extends CustomPainter {
-  const _RouteThumbPainter(this.route);
-
-  final List<LatLng> route;
-
-  static const _inset = 9.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = PasyarColors.mapGround,
-    );
-    if (route.length < 2) return;
-
-    // Flat projection: longitude shrinks with latitude.
-    final k = math.cos(route.first.latitude * math.pi / 180);
-    final xs = [for (final p in route) p.longitude * k];
-    final ys = [for (final p in route) -p.latitude];
-    final minX = xs.reduce(math.min), maxX = xs.reduce(math.max);
-    final minY = ys.reduce(math.min), maxY = ys.reduce(math.max);
-    final w = size.width - _inset * 2, h = size.height - _inset * 2;
-    final scale = math.min(
-      w / math.max(maxX - minX, 1e-9),
-      h / math.max(maxY - minY, 1e-9),
-    );
-    final dx = _inset + (w - (maxX - minX) * scale) / 2;
-    final dy = _inset + (h - (maxY - minY) * scale) / 2;
-    Offset at(int i) =>
-        Offset(dx + (xs[i] - minX) * scale, dy + (ys[i] - minY) * scale);
-
-    final path = Path()..moveTo(at(0).dx, at(0).dy);
-    for (var i = 1; i < route.length; i++) {
-      path.lineTo(at(i).dx, at(i).dy);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = PasyarColors.accent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeJoin = StrokeJoin.round
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawCircle(at(0), 3.5, Paint()..color = PasyarColors.rider);
-  }
-
-  @override
-  bool shouldRepaint(_RouteThumbPainter oldDelegate) =>
-      !identical(oldDelegate.route, route);
 }

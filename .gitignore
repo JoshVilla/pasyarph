@@ -54,3 +54,4 @@ app.*.map.json
 
 # Places export (large, regenerated from OpenStreetMap)
 /tools/places/out/
+/tools/provinces/out/

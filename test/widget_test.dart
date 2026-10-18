@@ -13,6 +13,7 @@ import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
 import 'package:pasyarph/features/ride/screens/ride_session_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/post_repository.dart';
 import 'package:pasyarph/data/repositories/ride_history_repository.dart';
 import 'package:pasyarph/features/post/post_draft.dart';
@@ -20,6 +21,7 @@ import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
 import 'package:pasyarph/features/auth/screens/welcome_screen.dart';
 import 'package:pasyarph/features/create/screens/create_screen.dart';
+import 'package:pasyarph/features/feed/providers/feed_provider.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_location_screen.dart';
@@ -28,6 +30,7 @@ import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
+import 'support/fake_feed.dart';
 import 'support/fake_post.dart';
 import 'support/fake_services.dart';
 
@@ -48,6 +51,7 @@ Future<FakeAuthRepository> pumpApp(
       providers: [
         Provider<RideHistoryRepository>.value(value: history),
         Provider<PostRepository>(create: (_) => FakePosts()),
+        Provider<FeedRepository>(create: (_) => FakeFeedRepository(const [])),
         Provider<PostDraftStore>(
           create: (_) => MemoryDrafts(Directory.systemTemp),
         ),
@@ -79,6 +83,12 @@ Future<FakeAuthRepository> pumpApp(
           ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
+        ChangeNotifierProvider(
+          create: (context) => FeedProvider(
+            feed: context.read<FeedRepository>(),
+            location: context.read<LocationProvider>(),
+          ),
+        ),
       ],
       child: const PasyarApp(),
     ),

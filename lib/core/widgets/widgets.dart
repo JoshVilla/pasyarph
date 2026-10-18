@@ -4,5 +4,6 @@ export 'buttons.dart';
 export 'choice_card.dart';
 export 'panels.dart';
 export 'pasyar_text_field.dart';
+export 'route_thumbnail.dart';
 export 'social_button.dart';
 export 'toggles.dart';
