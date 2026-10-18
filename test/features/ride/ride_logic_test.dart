@@ -87,11 +87,45 @@ void main() {
     });
   });
 
+  group('OffLoopDetector', () {
+    final t0 = DateTime(2026, 10, 18, 9);
+    DateTime at(int s) => t0.add(Duration(seconds: s));
+
+    test('off the loop for 20 s: one alert', () {
+      final d = OffLoopDetector();
+      expect(d.update(400, at(0)), isFalse);
+      expect(d.update(400, at(10)), isFalse);
+      expect(d.update(400, at(20)), isTrue);
+      expect(d.isOff, isTrue);
+      expect(d.update(600, at(40)), isFalse); // still off, no repeat
+    });
+
+    test('a short stray (a GPS jump) is not leaving', () {
+      final d = OffLoopDetector();
+      d.update(400, at(0));
+      d.update(20, at(10));
+      expect(d.update(400, at(25)), isFalse);
+      expect(d.isOff, isFalse);
+    });
+
+    test('back on needs to be well inside, then it can alert again', () {
+      final d = OffLoopDetector();
+      d.update(400, at(0));
+      d.update(400, at(20));
+      d.update(120, at(30)); // between return and leave: still off
+      expect(d.isOff, isTrue);
+      d.update(30, at(40));
+      expect(d.isOff, isFalse);
+      d.update(400, at(50));
+      expect(d.update(400, at(70)), isTrue);
+    });
+  });
+
   group('Google Maps link', () {
     String fmt(LatLng p) =>
         '${p.latitude.toStringAsFixed(6)},${p.longitude.toStringAsFixed(6)}';
 
-    test('9 stops in order, the main stop among them, back home', () {
+    test('3 stops in order, the main stop among them, back home', () {
       final mainStop = loop[61];
       final url = googleMapsLink(
         route: loop,
@@ -109,8 +143,8 @@ void main() {
       expect(q['destination'], fmt(loop.last));
 
       final stops = q['waypoints']!.split('|');
-      expect(stops, hasLength(9));
-      expect(stops, contains(fmt(mainStop)));
+      expect(stops, hasLength(3));
+      expect(stops[1], anyOf(fmt(loop[61]), fmt(loop[62])));
 
       final alongs = [
         for (final s in stops)
@@ -124,6 +158,30 @@ void main() {
               .alongM,
       ];
       expect(alongs, orderedEquals([...alongs]..sort()));
+    });
+
+    List<LatLng> stopsIn(Uri url) => [
+      for (final s in url.queryParameters['waypoints']!.split('|'))
+        LatLng(double.parse(s.split(',')[0]), double.parse(s.split(',')[1])),
+    ];
+
+    test('a main stop off the loop goes in as the loop point beside it', () {
+      final offLoop = _d.offset(loop[60], 800, 0); // 800 m north of the edge
+      final stops = stopsIn(googleMapsLink(route: loop, mainStop: offLoop));
+      final middle = stops[1];
+      expect(tracker.locate(middle).offRouteM, lessThan(1));
+      expect(_d(middle, loop[60]), lessThan(150));
+    });
+
+    test('mid-ride: only the stops still ahead', () {
+      final url = googleMapsLink(route: loop, fromAlongM: 7_000);
+      final stops = stopsIn(url);
+      expect(stops, hasLength(1)); // the one at 9 km
+      expect(tracker.locate(stops.single).alongM, closeTo(9_000, 100));
+      expect(url.queryParameters['destination'], fmt(loop.last));
+
+      final nearlyHome = googleMapsLink(route: loop, fromAlongM: 11_000);
+      expect(nearlyHome.queryParameters.containsKey('waypoints'), isFalse);
     });
 
     test('no highway avoidance unless asked', () {

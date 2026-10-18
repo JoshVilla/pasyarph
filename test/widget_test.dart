@@ -216,7 +216,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('LOOP DONE'), findsOneWidget);
 
-    await tester.tap(find.text('DONE'));
+    await tester.tap(find.text('FINISH LOOP'));
     await tester.pumpAndSettle();
     expect(find.byType(RideScreen), findsOneWidget);
   });

@@ -106,6 +106,21 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
             text:
                 "Couldn't open Google Maps. Install it, then tap GOOGLE MAPS.",
           )
+        : !ride.tracking
+        ? const MapNotice(
+            icon: LucideIcons.mapPinOff,
+            text: "Location stopped, so this ride isn't being tracked.",
+          )
+        : ride.atHome
+        ? const MapNotice(
+            icon: LucideIcons.house,
+            text: "You're back home. Tap FINISH RIDE to save your loop.",
+          )
+        : ride.offLoop
+        ? const MapNotice(
+            icon: LucideIcons.triangleAlert,
+            text: "You've left the loop. Head back to the orange line.",
+          )
         : ride.reachedStop
         ? MapNotice(
             icon: LucideIcons.flag,
@@ -207,22 +222,30 @@ class _RidingSheet extends StatelessWidget {
           name: stop.title,
           detail: stopDetail(stop, ride.loop!.fuelStops).ifNotEmpty,
         ),
-        Row(
-          spacing: PasyarSpacing.buttonGap,
-          children: [
-            SizedBox(
-              width: 132,
-              child: SecondaryButton(label: 'END RIDE', onPressed: onEnd),
-            ),
-            Expanded(
-              child: PrimaryButton(
-                label: 'GOOGLE MAPS',
-                icon: LucideIcons.navigation,
-                onPressed: ride.openMaps,
+        // Back home: finishing is the only thing left, no confirm needed.
+        if (ride.atHome)
+          PrimaryButton(
+            label: 'FINISH RIDE',
+            icon: LucideIcons.flag,
+            onPressed: ride.end,
+          )
+        else
+          Row(
+            spacing: PasyarSpacing.buttonGap,
+            children: [
+              SizedBox(
+                width: 132,
+                child: SecondaryButton(label: 'END RIDE', onPressed: onEnd),
               ),
-            ),
-          ],
-        ),
+              Expanded(
+                child: PrimaryButton(
+                  label: 'GOOGLE MAPS',
+                  icon: LucideIcons.navigation,
+                  onPressed: ride.openMaps,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -263,7 +286,7 @@ class _SummarySheet extends StatelessWidget {
             ),
           ],
         ),
-        PrimaryButton(label: 'DONE', onPressed: onDone),
+        PrimaryButton(label: 'FINISH LOOP', onPressed: onDone),
       ],
     );
   }

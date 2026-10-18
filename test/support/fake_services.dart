@@ -140,6 +140,18 @@ class FakeRideNotifier implements RideNotifier {
       events.add('stop:$stopName');
 
   @override
+  Future<void> leftLoop() async => events.add('left');
+
+  @override
+  Future<void> backOnLoop() async => events.add('back');
+
+  @override
+  Future<void> backHome() async => events.add('home');
+
+  @override
+  Future<void> clearAlerts() async => events.add('clear');
+
+  @override
   Future<void> rideFinished(String summary) async =>
       events.add('finished:$summary');
 }

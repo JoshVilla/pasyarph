@@ -148,6 +148,33 @@ void main() {
     now = now.add(const Duration(seconds: 60));
     ride.tick();
     expect(ride.active, isTrue);
+    expect(ride.atHome, isFalse);
+  });
+
+  test('a short ride away and back still offers FINISH RIDE', () async {
+    await ride.start(loop: loop, stop: stop, request: request);
+    await rideTo(12); // 1.2 km out, well short of half the loop
+    await rideTo(1, kmh: 10);
+    expect(ride.atHome, isTrue);
+    expect(ride.active, isTrue); // not finished on its own
+  });
+
+  test('back home after the loop: one alert, then FINISH RIDE saves', () async {
+    await ride.start(loop: loop, stop: stop, request: request);
+    for (var i = 10; i <= 110; i += 10) {
+      await rideTo(i);
+    }
+    expect(ride.atHome, isFalse); // 1 km out
+    await rideTo(route.length - 2, kmh: 20, seconds: 10);
+    await rideTo(route.length - 1, kmh: 10, seconds: 10);
+    expect(ride.atHome, isTrue);
+    expect(notifier.events.where((e) => e == 'home'), hasLength(1));
+
+    await ride.end();
+    expect(ride.phase, RidePhase.finished);
+    expect(ride.atHome, isFalse);
+    expect(history.saved, hasLength(1));
+    expect(notifier.events.last, 'clear');
   });
 
   test('riding past the stop without stopping is not an arrival', () async {
@@ -156,6 +183,48 @@ void main() {
       await rideTo(i, kmh: 35, seconds: 10);
     }
     expect(ride.reachedStop, isFalse);
+  });
+
+  /// Rides to [m] meters beside route point [i] (east of the west edge).
+  Future<void> rideBeside(int i, double m, {int seconds = 15}) async {
+    now = now.add(Duration(seconds: seconds));
+    gps.emit(RiderFix(point: _d.offset(route[i], m, 270), speedMps: 10));
+    await Future<void>.delayed(Duration.zero);
+  }
+
+  test('leaving the loop alerts once, coming back clears it', () async {
+    await ride.start(loop: loop, stop: stop, request: request);
+    await rideTo(10);
+    await rideBeside(15, 400);
+    expect(ride.offLoop, isFalse);
+    await rideBeside(18, 500, seconds: 25);
+    expect(ride.offLoop, isTrue);
+    await rideBeside(20, 500);
+    expect(notifier.events.where((e) => e == 'left'), hasLength(1));
+
+    await rideTo(22);
+    expect(ride.offLoop, isFalse);
+    expect(notifier.events.last, 'back');
+  });
+
+  test('riding to a main stop off the loop is not leaving it', () async {
+    final offStop = StopInfo(
+      location: _d.offset(route[60], 1000, 0),
+      metersIn: 6000,
+      name: 'Talon',
+      type: 'waterfall',
+    );
+    await ride.start(loop: loop, stop: offStop, request: request);
+    await rideTo(60);
+    for (var m = 200; m <= 1000; m += 200) {
+      now = now.add(const Duration(seconds: 30));
+      gps.emit(
+        RiderFix(point: _d.offset(route[60], m.toDouble(), 0), speedMps: 8),
+      );
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(ride.offLoop, isFalse);
+    expect(notifier.events, isNot(contains('left')));
   });
 
   test('END RIDE saves what was ridden, without a "done" alert', () async {

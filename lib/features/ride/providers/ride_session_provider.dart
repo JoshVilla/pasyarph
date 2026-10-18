@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
@@ -15,8 +16,8 @@ import 'loop_preview_provider.dart';
 enum RidePhase { idle, riding, finished }
 
 /// A ride navigated in Google Maps. Pasyar keeps tracking in the background
-/// to notice the main stop (and later offer photos) and the return home,
-/// then saves a summary.
+/// to notice the main stop (and later offer photos), the rider leaving the
+/// loop, and the return home, then saves a summary.
 class RideSessionProvider extends ChangeNotifier {
   RideSessionProvider({
     required LocationProvider location,
@@ -60,6 +61,15 @@ class RideSessionProvider extends ChangeNotifier {
   /// the main stop), so leaving home doesn't end the ride.
   static const _homeArmedShare = 0.5;
 
+  /// Within this of home the rider is back: FINISH RIDE shows, once they've
+  /// been at least [_awayM] from home (or the ride is armed).
+  static const _homeRadiusM = 200.0;
+  static const _awayM = 1000.0;
+
+  /// Riding to a main stop off the loop isn't leaving it: no alert within
+  /// the stop's distance from the loop plus this.
+  static const _stopDetourM = 500.0;
+
   static const _distance = Distance();
 
   RidePhase _phase = RidePhase.idle;
@@ -69,6 +79,11 @@ class RideSessionProvider extends ChangeNotifier {
   RouteTracker? _tracker;
   DwellDetector? _atStop;
   DwellDetector? _atHome;
+  bool _nearHome = false;
+  double _farthestFromHomeM = 0;
+  OffLoopDetector? _offLoop;
+  double _offRouteM = 0;
+  double _stopOffRouteM = 0;
   DateTime? _startedAt;
   DateTime? _endedAt;
   final _track = <LatLng>[];
@@ -85,12 +100,22 @@ class RideSessionProvider extends ChangeNotifier {
   StopInfo? get stop => _stop;
   LoopRequest? get request => _request;
   bool get reachedStop => _reachedStop;
+
+  /// The rider has strayed from the loop (see [OffLoopDetector]).
+  bool get offLoop => _offLoop?.isOff ?? false;
+
+  /// Back home after riding the loop: the ride can be finished.
+  bool get atHome => _nearHome;
   double get riddenM => _riddenM;
   List<LatLng> get track => List.unmodifiable(_track);
   RideSummary? get summary => _summary;
 
   /// False when Google Maps couldn't be opened (not installed).
   bool get mapsOpened => _mapsOpened;
+
+  /// False when location stopped (permission, phone setting, or the stream
+  /// failed): the ride isn't being tracked.
+  bool get tracking => _location.status == LocationStatus.on;
 
   double get speedKmh => _location.speedKmh;
   LatLng? get position => _location.position;
@@ -118,9 +143,15 @@ class RideSessionProvider extends ChangeNotifier {
     _stop = stop;
     _request = request;
     _tracker = RouteTracker(loop.route);
-    _stopAlongM = _tracker!.locate(stop.location).alongM;
+    final stopOnLoop = _tracker!.locate(stop.location);
+    _stopAlongM = stopOnLoop.alongM;
+    _stopOffRouteM = stopOnLoop.offRouteM;
     _atStop = DwellDetector(target: stop.location);
-    _atHome = DwellDetector(target: loop.route.first, radiusM: 200);
+    _atHome = DwellDetector(target: loop.route.first, radiusM: _homeRadiusM);
+    _nearHome = false;
+    _farthestFromHomeM = 0;
+    _offLoop = OffLoopDetector();
+    _offRouteM = 0;
     _startedAt = _now();
     _endedAt = null;
     _track.clear();
@@ -141,13 +172,16 @@ class RideSessionProvider extends ChangeNotifier {
     await openMaps();
   }
 
-  /// Opens (or returns to) Google Maps navigation for the loop.
+  /// Opens (or returns to) Google Maps navigation for the rest of the loop,
+  /// from where the rider is. Also the way out when Google won't move past
+  /// a stop.
   Future<void> openMaps() async {
     final loop = _loop;
     if (loop == null) return;
     final url = googleMapsLink(
       route: loop.route,
-      mainStop: _stop?.location,
+      mainStop: _reachedStop ? null : _stop?.location,
+      fromAlongM: _alongM,
       avoidHighways: _request?.avoidHighways ?? false,
     );
     bool opened;
@@ -172,6 +206,7 @@ class RideSessionProvider extends ChangeNotifier {
       _track.add(pos);
     }
     final at = _tracker!.locate(pos, near: _alongM);
+    _offRouteM = at.offRouteM;
     if (at.offRouteM <= _maxOffRouteM) _alongM = at.alongM;
     _evaluate(pos, speedKmh);
   }
@@ -193,11 +228,27 @@ class RideSessionProvider extends ChangeNotifier {
       _notifier.arrivedAtStop(_stop!.title);
     }
 
+    final toStop = _distance(pos, _stop!.location);
+    final offRouteM = toStop <= _stopOffRouteM + _stopDetourM ? 0.0 : _offRouteM;
+    final wasOff = _offLoop!.isOff;
+    if (_offLoop!.update(offRouteM, now)) {
+      _notifier.leftLoop();
+    } else if (wasOff && !_offLoop!.isOff) {
+      _notifier.backOnLoop();
+    }
+
     final length = _tracker!.lengthM;
     final homeArmed =
         _reachedStop ||
         _alongM > length * _homeArmedShare ||
         _riddenM > length * _homeArmedShare;
+    final fromHome = _distance(pos, _loop!.route.first);
+    _farthestFromHomeM = math.max(_farthestFromHomeM, fromHome);
+    final nearHome =
+        (homeArmed || _farthestFromHomeM >= _awayM) &&
+        fromHome <= _homeRadiusM;
+    if (nearHome && !_nearHome) _notifier.backHome();
+    _nearHome = nearHome;
     if (homeArmed && _atHome!.update(pos, speedKmh, now)) {
       _finish(auto: true);
       return;
@@ -215,6 +266,8 @@ class RideSessionProvider extends ChangeNotifier {
     _ticker?.cancel();
     _ticker = null;
     _location.removeListener(_onLocation);
+    _offLoop = OffLoopDetector();
+    _nearHome = false;
     final summary = RideSummary(
       startedAt: _startedAt!,
       endedAt: _endedAt!,
@@ -228,6 +281,7 @@ class RideSessionProvider extends ChangeNotifier {
 
     await _location.setBackground(false);
     await _history.save(summary);
+    await _notifier.clearAlerts();
     if (auto) {
       await _notifier.rideFinished(
         '${formatDistance(summary.riddenM.round())} in '

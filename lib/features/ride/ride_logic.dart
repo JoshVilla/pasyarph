@@ -141,18 +141,70 @@ class DwellDetector {
   }
 }
 
-/// Google Maps allows up to 9 stops in a link opened in its app.
-const googleMapsMaxWaypoints = 9;
+/// Notices the rider leaving the loop: farther than [leaveM] from it for
+/// [after]. Google Maps picks its own roads between the link's stops, so
+/// this is how the rider finds out it has strayed. Back within [returnM]
+/// counts as back on; the gap keeps GPS wobble at the edge from flapping.
+class OffLoopDetector {
+  OffLoopDetector({
+    this.leaveM = 150,
+    this.returnM = 75,
+    this.after = const Duration(seconds: 20),
+  });
+
+  final double leaveM;
+  final double returnM;
+  final Duration after;
+
+  bool _off = false;
+  DateTime? _since;
+
+  bool get isOff => _off;
+
+  /// Feeds the rider's distance from the loop. True once, the moment they
+  /// count as off it.
+  bool update(double offRouteM, DateTime now) {
+    if (offRouteM <= returnM) {
+      _off = false;
+      _since = null;
+      return false;
+    }
+    if (_off) return false;
+    if (offRouteM <= leaveM) {
+      _since = null;
+      return false;
+    }
+    _since ??= now;
+    if (now.difference(_since!) < after) return false;
+    _off = true;
+    return true;
+  }
+}
+
+/// Stops in the Google Maps link. Google allows 9, but pauses at every one
+/// until the rider taps Continue, so fewer stops means fewer taps with
+/// gloves on. Google strays more between them; the off-loop alert covers
+/// that.
+const googleMapsMaxWaypoints = 3;
 
 /// A Google Maps link that navigates the loop from where the rider is:
-/// up to [maxWaypoints] stops spread evenly along it, one of them the
+/// up to [maxWaypoints] stops spread evenly along it, one of them beside the
 /// [mainStop], then back to the start. Google routes between the stops
 /// itself, so the closer together they are the closer it follows the loop.
+///
+/// Every stop is a point on the loop: Google only moves on once the rider
+/// reaches the road spot it snapped a stop to, and a place's own
+/// coordinates (a building, up to 1.5 km off the loop) may snap to a road
+/// the rider never takes. Stops less than [skipM] ahead of [fromAlongM]
+/// (how far the rider is along the loop) are left out, so reopening Google
+/// mid-ride carries on from the rider instead of the start.
 Uri googleMapsLink({
   required List<LatLng> route,
   LatLng? mainStop,
   bool avoidHighways = false,
   int maxWaypoints = googleMapsMaxWaypoints,
+  double fromAlongM = 0,
+  double skipM = 300,
 }) {
   final tracker = RouteTracker(route);
   final stops = <({double along, LatLng point})>[];
@@ -172,7 +224,7 @@ Uri googleMapsLink({
     stops.add((along: along[j], point: route[j]));
   }
 
-  // The main stop replaces the waypoint nearest to it along the loop.
+  // The loop point beside the main stop replaces the stop nearest to it.
   if (mainStop != null && stops.isNotEmpty) {
     final stopAlong =
         tracker.locate(mainStop).alongM / tracker.lengthM * along.last;
@@ -183,8 +235,13 @@ Uri googleMapsLink({
         nearest = k;
       }
     }
-    stops[nearest] = (along: stopAlong, point: mainStop);
+    var i = 0;
+    while (i < along.length - 1 && along[i] < stopAlong) {
+      i++;
+    }
+    stops[nearest] = (along: along[i], point: route[i]);
   }
+  stops.removeWhere((s) => s.along < fromAlongM + skipM);
 
   String fmt(LatLng p) =>
       '${p.latitude.toStringAsFixed(6)},${p.longitude.toStringAsFixed(6)}';
@@ -192,7 +249,8 @@ Uri googleMapsLink({
   return Uri.https('www.google.com', '/maps/dir/', {
     'api': '1',
     'destination': fmt(route.last),
-    'waypoints': stops.map((s) => fmt(s.point)).join('|'),
+    if (stops.isNotEmpty)
+      'waypoints': stops.map((s) => fmt(s.point)).join('|'),
     'travelmode': 'driving',
     'dir_action': 'navigate',
     if (avoidHighways) 'avoid': 'highways',
