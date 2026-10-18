@@ -17,6 +17,7 @@ import '../features/me/screens/me_screen.dart';
 import '../features/onboarding/providers/onboarding_provider.dart';
 import '../features/onboarding/screens/onboarding_location_screen.dart';
 import '../features/onboarding/screens/onboarding_profile_screen.dart';
+import '../features/ride/screens/loop_preview_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
 import 'auth_redirect.dart';
 import 'env.dart';
@@ -28,6 +29,9 @@ abstract final class Routes {
   static const feed = '/feed';
   static const create = '/create';
   static const me = '/me';
+
+  /// Full screen over the tabs; pushed from Ride after GENERATE LOOP.
+  static const loopPreview = '/preview';
 
   /// Dev flavor only.
   static const devWidgets = '/dev/widgets';
@@ -98,6 +102,10 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
             builder: (context, state) => const OnboardingLocationScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: Routes.loopPreview,
+        builder: (context, state) => const LoopPreviewScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),

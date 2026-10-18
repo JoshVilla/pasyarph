@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
+import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
+import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
 import 'package:pasyarph/features/auth/providers/auth_provider.dart';
@@ -37,8 +41,13 @@ Future<FakeAuthRepository> pumpApp(
         ChangeNotifierProvider(
           create: (context) => LocationProvider(
             permissions: context.read<LocationPermissionService>(),
-            positions: FakePositionSource(),
+            positions: FakePositionSource(
+              last: const RiderFix(point: LatLng(16.672, 121.457)),
+            ),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LoopPreviewProvider(FakeRouteRepository()),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
       ],
@@ -132,6 +141,28 @@ void main() {
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(location.requests, 0);
+    expect(find.byType(RideScreen), findsOneWidget);
+  });
+
+  testWidgets('Generate opens the preview; Shuffle; Back returns to Ride', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+    );
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoopPreviewScreen), findsOneWidget);
+    expect(find.text('HALF-DAY LOOP'), findsOneWidget);
+    expect(find.byType(PasyarBottomTabs), findsNothing);
+
+    await tester.tap(find.text('SHUFFLE'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoopPreviewScreen), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
     expect(find.byType(RideScreen), findsOneWidget);
   });
 

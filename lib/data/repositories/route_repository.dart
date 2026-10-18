@@ -28,7 +28,9 @@ class RouteException implements Exception {
 
   /// Reads the `{error: {code, message}}` body generate-loop sends.
   static RouteException fromBody(Object? body) {
-    if (body case {'error': {'code': final String c, 'message': final String m}}) {
+    if (body case {
+      'error': {'code': final String c, 'message': final String m},
+    }) {
       return RouteException(c, m);
     }
     return unknown;

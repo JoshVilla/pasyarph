@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,8 @@ import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/map/map_markers.dart';
 import 'package:pasyarph/core/widgets/widgets.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
+import 'package:pasyarph/data/repositories/route_repository.dart';
+import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:pasyarph/features/ride/providers/ride_options_provider.dart';
 import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:pasyarph/features/ride/widgets/home_controls.dart';
@@ -20,15 +24,20 @@ const _screen = BoxConstraints.tightFor(width: 390, height: 844);
 const _cordon = LatLng(16.6720, 121.4570);
 
 /// Ride tab as it appears in the app: status bar inset on top, tabs below.
-Widget _home(LocationProvider location) {
+Widget _home(LocationProvider location, [FakeRouteRepository? routes]) {
   return Builder(
     builder: (context) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
         padding: const EdgeInsets.only(top: 44),
         viewPadding: const EdgeInsets.only(top: 44),
       ),
-      child: ChangeNotifierProvider.value(
-        value: location,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: location),
+          ChangeNotifierProvider(
+            create: (_) => LoopPreviewProvider(routes ?? FakeRouteRepository()),
+          ),
+        ],
         child: Scaffold(
           body: const RideScreen(),
           bottomNavigationBar: PasyarBottomTabs(currentIndex: 0, onTap: (_) {}),
@@ -47,7 +56,9 @@ LocationProvider _location({
 );
 
 PrimaryButton _generate(WidgetTester tester) => tester.widget<PrimaryButton>(
-  find.widgetWithText(PrimaryButton, 'GENERATE LOOP'),
+  find.byWidgetPredicate(
+    (w) => w is PrimaryButton && w.label == 'GENERATE LOOP',
+  ),
 );
 
 void main() {
@@ -92,12 +103,37 @@ void main() {
 
   testWidgets('denied forever: banner offers OPEN SETTINGS', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: _home(_location(access: LocationAccess.deniedForever)),
-      ),
+      MaterialApp(home: _home(_location(access: LocationAccess.deniedForever))),
     );
     await tester.pumpAndSettle();
     expect(find.text('OPEN SETTINGS'), findsOneWidget);
+  });
+
+  testWidgets('GENERATE LOOP shows progress on the map', (tester) async {
+    final routes = FakeRouteRepository()..gate = Completer();
+    await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pump();
+    expect(find.text('Building your loop…'), findsOneWidget);
+    expect(_generate(tester).loading, isTrue);
+    // Left pending: finishing would open the preview, which needs a router
+    // (covered in widget_test.dart).
+    expect(routes.seeds, hasLength(1));
+  });
+
+  testWidgets('a failed Generate explains why on the map', (tester) async {
+    final routes = FakeRouteRepository([
+      const RouteException('no_route', "Couldn't find a loop from here."),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pumpAndSettle();
+    expect(find.text("Couldn't find a loop from here."), findsOneWidget);
+    expect(_generate(tester).loading, isFalse);
   });
 
   testWidgets('duration and toggles update the options', (tester) async {

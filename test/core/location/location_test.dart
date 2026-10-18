@@ -34,10 +34,8 @@ void main() {
     late FakePositionSource source;
     late LocationProvider provider;
 
-    LocationProvider make() => provider = LocationProvider(
-      permissions: permission,
-      positions: source,
-    );
+    LocationProvider make() =>
+        provider = LocationProvider(permissions: permission, positions: source);
 
     setUp(() {
       permission = FakeLocationPermission();

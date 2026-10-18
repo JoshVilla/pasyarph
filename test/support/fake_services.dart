@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/data/models/generated_loop.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/repositories/route_repository.dart';
+import 'package:pasyarph/features/dev/demo_routes.dart';
 
 class FakeAvatarRepository implements AvatarRepository {
   final uploads = <String>[];
@@ -59,3 +63,45 @@ class FakePositionSource implements PositionSource {
     return true;
   }
 }
+
+/// Hands out queued results (a [GeneratedLoop] or a [RouteException]), then
+/// [demoLoop]. Set [gate] to hold calls until it completes.
+class FakeRouteRepository implements RouteRepository {
+  FakeRouteRepository([List<Object>? results]) : results = results ?? [];
+
+  final List<Object> results;
+  final seeds = <int>[];
+  Completer<void>? gate;
+
+  @override
+  Future<GeneratedLoop> generateLoop({
+    required LatLng start,
+    required LoopDuration duration,
+    required bool avoidHighways,
+    required bool avoidUnpaved,
+    required int seed,
+  }) async {
+    seeds.add(seed);
+    await gate?.future;
+    final next = results.isEmpty ? demoLoop(seed: seed) : results.removeAt(0);
+    if (next is RouteException) throw next;
+    return next as GeneratedLoop;
+  }
+}
+
+/// The mockup's half-day loop: 118 km, 3 h 50, curvy.
+GeneratedLoop demoLoop({
+  int seed = 1,
+  double backtracking = 0.02,
+  double curviness = 340,
+  List<String> warnings = const [],
+}) => GeneratedLoop(
+  route: DemoRoutes.loop,
+  distanceM: 118000,
+  durationS: 13800,
+  steps: const [],
+  seed: seed,
+  backtrackingRatio: backtracking,
+  curvinessScore: curviness,
+  warnings: warnings,
+);

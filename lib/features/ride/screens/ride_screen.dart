@@ -4,16 +4,19 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/location/location_provider.dart';
+import '../../../core/map/pasyar_map.dart';
 import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
+import '../providers/loop_preview_provider.dart';
 import '../providers/ride_options_provider.dart';
 import '../widgets/home_controls.dart';
 import '../widgets/ride_map.dart';
 
 /// Ride tab (Home). Matches design/screenshots/01-home.png: full-screen map,
 /// "Starting from" pill and profile button on top, "WHERE TO TODAY?" sheet
-/// at the bottom. Expects a [LocationProvider] above it.
+/// at the bottom. Expects [LocationProvider] and [LoopPreviewProvider]
+/// above it.
 class RideScreen extends StatelessWidget {
   const RideScreen({super.key});
 
@@ -34,43 +37,60 @@ class _RideHome extends StatefulWidget {
 }
 
 class _RideHomeState extends State<_RideHome> {
+  /// Errors from Generate show here only, not after returning from Preview.
+  bool _showError = false;
+
   @override
   void initState() {
     super.initState();
     context.read<LocationProvider>().start();
   }
 
+  Future<void> _generate() async {
+    final position = context.read<LocationProvider>().position;
+    if (position == null) return;
+    final options = context.read<RideOptionsProvider>();
+    setState(() => _showError = true);
+    final ready = await context.read<LoopPreviewProvider>().generate(
+      LoopRequest(
+        start: position,
+        duration: options.duration,
+        avoidHighways: options.avoidHighways,
+        avoidUnpaved: options.avoidUnpaved,
+      ),
+    );
+    if (!mounted) return;
+    if (ready) {
+      setState(() => _showError = false);
+      context.push(Routes.loopPreview);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final location = context.watch<LocationProvider>();
     final options = context.watch<RideOptionsProvider>();
+    final preview = context.watch<LoopPreviewProvider>();
     final status = location.status;
     final showBanner =
         status != LocationStatus.on && status != LocationStatus.checking;
+    final generating = preview.loading && preview.loop == null;
+    final error = _showError ? preview.error : null;
 
     return Scaffold(
       backgroundColor: PasyarColors.mapGround,
       body: Stack(
         children: [
-          CustomMultiChildLayout(
-            delegate: _MapUnderSheetLayout(),
-            children: [
-              LayoutId(
-                id: _Slot.map,
-                child: RideMap(
-                  rider: location.position,
-                  attributionBottom: PasyarRadius.sheet,
-                ),
-              ),
-              LayoutId(
-                id: _Slot.sheet,
-                child: WhereToSheet(
-                  options: options,
-                  // Generating comes with the next prompt.
-                  onGenerate: location.hasFix ? () {} : null,
-                ),
-              ),
-            ],
+          MapUnderSheet(
+            map: RideMap(
+              rider: location.position,
+              attributionBottom: PasyarRadius.sheet,
+            ),
+            sheet: WhereToSheet(
+              options: options,
+              generating: generating,
+              onGenerate: location.hasFix ? _generate : null,
+            ),
           ),
           Positioned(
             top: MediaQuery.paddingOf(context).top + PasyarSpacing.floatingTop,
@@ -92,7 +112,11 @@ class _RideHomeState extends State<_RideHome> {
                   ],
                 ),
                 if (showBanner)
-                  LocationOffBanner(status: status, onPressed: location.fix),
+                  LocationOffBanner(status: status, onPressed: location.fix)
+                else if (generating)
+                  const MapNotice.loading(text: 'Building your loop…')
+                else if (error != null)
+                  MapNotice(icon: LucideIcons.circleAlert, text: error.message),
               ],
             ),
           ),
@@ -100,34 +124,4 @@ class _RideHomeState extends State<_RideHome> {
       ),
     );
   }
-}
-
-enum _Slot { map, sheet }
-
-/// Sheet at the bottom at its natural height; the map fills the rest and
-/// runs under the sheet's rounded corners, so the rider dot is centered in
-/// the part of the map you can see.
-class _MapUnderSheetLayout extends MultiChildLayoutDelegate {
-  @override
-  void performLayout(Size size) {
-    final sheet = layoutChild(
-      _Slot.sheet,
-      BoxConstraints(
-        minWidth: size.width,
-        maxWidth: size.width,
-        maxHeight: size.height,
-      ),
-    );
-    positionChild(_Slot.sheet, Offset(0, size.height - sheet.height));
-
-    final mapHeight = (size.height - sheet.height + PasyarRadius.sheet).clamp(
-      0.0,
-      size.height,
-    );
-    layoutChild(_Slot.map, BoxConstraints.tight(Size(size.width, mapHeight)));
-    positionChild(_Slot.map, Offset.zero);
-  }
-
-  @override
-  bool shouldRelayout(_MapUnderSheetLayout oldDelegate) => false;
 }

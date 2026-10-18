@@ -11,6 +11,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'data/repositories/route_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/ride/providers/loop_preview_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,10 @@ Future<void> main() async {
         ),
         Provider<RouteRepository>(
           create: (_) => SupabaseRouteRepository(client),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              LoopPreviewProvider(context.read<RouteRepository>()),
         ),
         Provider<LocationPermissionService>(
           create: (_) => const GeolocatorPermissionService(),

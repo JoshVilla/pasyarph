@@ -3,6 +3,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/pasyar_theme.dart';
 
+/// Browsers render the mockups' Barlow text at about 1.2x its size;
+/// Flutter's default for Barlow is ~1.4x. Single-line text in stats and
+/// cards uses this so sizes match design/screenshots/.
+const _mockupLineHeight = 1.2;
+
 /// White sheet with 24 px top corners, the sheet shadow and a drag handle.
 /// Children are laid out in a column with [gap] between them.
 class BottomSheetPanel extends StatelessWidget {
@@ -120,8 +125,19 @@ class StatBlock extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: 2,
       children: [
-        Text(label, style: PasyarTextStyles.label, maxLines: 1),
-        Text(value, maxLines: 1, style: valueStyle.copyWith(color: valueColor)),
+        Text(
+          label,
+          maxLines: 1,
+          style: PasyarTextStyles.label.copyWith(height: _mockupLineHeight),
+        ),
+        Text(
+          value,
+          maxLines: 1,
+          style: valueStyle.copyWith(
+            color: valueColor,
+            height: _mockupLineHeight,
+          ),
+        ),
       ],
     );
   }
@@ -200,20 +216,27 @@ class StopCard extends StatelessWidget {
                       overline.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.overline,
+                      style: PasyarTextStyles.overline.copyWith(
+                        height: _mockupLineHeight,
+                      ),
                     ),
                     Text(
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodyLarge,
+                      style: PasyarTextStyles.bodyLarge.copyWith(
+                        height: _mockupLineHeight,
+                      ),
                     ),
                     if (detail != null)
                       Text(
                         detail!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: PasyarTextStyles.label.copyWith(fontSize: 14),
+                        style: PasyarTextStyles.label.copyWith(
+                          fontSize: 14,
+                          height: _mockupLineHeight,
+                        ),
                       ),
                   ],
                 ),

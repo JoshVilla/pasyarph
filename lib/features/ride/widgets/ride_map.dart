@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/env.dart';
 import '../../../core/map/map_markers.dart';
+import '../../../core/map/pasyar_map.dart';
 import '../../../core/theme/pasyar_theme.dart';
 
 /// Whole Philippines, shown until the first GPS fix.
@@ -69,58 +68,10 @@ class _RideMapState extends State<RideMap> {
         },
       ),
       children: [
-        // Tests and CI build without a tile URL; the map stays plain.
-        if (Env.mapTileUrl.isNotEmpty)
-          TileLayer(
-            urlTemplate: Env.mapTileUrl,
-            additionalOptions: const {'key': Env.mapTileKey},
-            // MapTiler raster tiles are 512 px.
-            tileDimension: 512,
-            zoomOffset: -1,
-            userAgentPackageName: Env.appId,
-          ),
+        ?pasyarTileLayer(),
         if (rider != null) MarkerLayer(markers: [PasyarMarkers.rider(rider)]),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: 8,
-              bottom: widget.attributionBottom + 4,
-            ),
-            child: const MapAttribution(),
-          ),
-        ),
+        MapAttributionLayer(bottom: widget.attributionBottom),
       ],
-    );
-  }
-}
-
-/// Required credit for MapTiler and OpenStreetMap. Tapping opens MapTiler's
-/// copyright page, which links to OpenStreetMap's.
-class MapAttribution extends StatelessWidget {
-  const MapAttribution({super.key});
-
-  static final _copyright = Uri.https('www.maptiler.com', '/copyright/');
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      link: true,
-      label: 'Map data credits',
-      child: GestureDetector(
-        onTap: () => launchUrl(_copyright),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: PasyarColors.card.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            '© MapTiler © OpenStreetMap contributors',
-            style: PasyarTextStyles.label.copyWith(fontSize: 11),
-          ),
-        ),
-      ),
     );
   }
 }

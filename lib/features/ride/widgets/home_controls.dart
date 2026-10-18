@@ -141,18 +141,78 @@ class LocationOffBanner extends StatelessWidget {
   }
 }
 
+/// White card floating over the map: a spinner while something loads, or an
+/// icon with a message (errors, warnings).
+class MapNotice extends StatelessWidget {
+  const MapNotice({super.key, required this.text, this.icon}) : loading = false;
+
+  const MapNotice.loading({super.key, required this.text})
+    : loading = true,
+      icon = null;
+
+  final String text;
+  final IconData? icon;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: PasyarColors.card,
+          borderRadius: BorderRadius.circular(PasyarRadius.panel),
+          boxShadow: PasyarShadows.floating,
+        ),
+        child: Row(
+          spacing: 14,
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: loading
+                  ? const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: PasyarColors.accent,
+                      ),
+                    )
+                  : Icon(
+                      icon ?? LucideIcons.info,
+                      size: 24,
+                      color: PasyarColors.accentDark,
+                    ),
+            ),
+            Expanded(
+              child: Text(
+                text,
+                style: PasyarTextStyles.body.copyWith(height: 1.35),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// "WHERE TO TODAY?" sheet: duration, avoid toggles, GENERATE LOOP.
 class WhereToSheet extends StatelessWidget {
   const WhereToSheet({
     super.key,
     required this.options,
     required this.onGenerate,
+    this.generating = false,
   });
 
   final RideOptionsProvider options;
 
   /// Null disables the button (no location yet).
   final VoidCallback? onGenerate;
+
+  /// Shows a spinner in the button while a loop is being built.
+  final bool generating;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +268,7 @@ class WhereToSheet extends StatelessWidget {
         PrimaryButton(
           label: 'GENERATE LOOP',
           icon: LucideIcons.rotateCw,
+          loading: generating,
           onPressed: onGenerate,
         ),
       ],
