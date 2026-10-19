@@ -8,7 +8,10 @@ import 'loop.dart';
 enum LoopDuration {
   quick('quick', 'QUICK', 'about 1 hr'),
   halfDay('half', 'HALF-DAY', 'about 4 hr'),
-  fullDay('full', 'FULL DAY', '6 hr +');
+  fullDay('full', 'FULL DAY', '6 hr +'),
+
+  /// One long loop over two days or more (about 500 km).
+  multiDay('multi', 'MULTI-DAY', '2+ days');
 
   const LoopDuration(this.value, this.title, this.subtitle);
 
@@ -76,6 +79,7 @@ class GeneratedLoop {
     this.fuelStops = const [],
     this.warnings = const [],
     this.approachM = 0,
+    this.overnights = const [],
   });
 
   final List<LatLng> route;
@@ -112,6 +116,9 @@ class GeneratedLoop {
   /// and back, both in [distanceM]). 0 for generated loops.
   final int approachM;
 
+  /// Multi-day loops: suggested overnight towns, in riding order.
+  final List<Overnight> overnights;
+
   factory GeneratedLoop.fromJson(Json json) => GeneratedLoop(
     route: GeoCodec.parseLineString(json['route'] as Json),
     distanceM: (json['distance_m'] as num).toInt(),
@@ -132,6 +139,32 @@ class GeneratedLoop {
         FuelStop.fromJson(f as Json),
     ],
     warnings: [for (final w in json['warnings'] as List? ?? []) w as String],
+    overnights: [
+      for (final o in json['overnights'] as List? ?? [])
+        Overnight.fromJson(o as Json),
+    ],
     approachM: toIntOrNull(json['approach_m']) ?? 0,
+  );
+}
+
+/// A suggested overnight town on a multi-day loop.
+class Overnight {
+  const Overnight({
+    required this.name,
+    required this.location,
+    required this.kmIntoRoute,
+  });
+
+  final String name;
+  final LatLng location;
+  final int kmIntoRoute;
+
+  factory Overnight.fromJson(Json json) => Overnight(
+    name: json['name'] as String,
+    location: LatLng(
+      (json['lat'] as num).toDouble(),
+      (json['lng'] as num).toDouble(),
+    ),
+    kmIntoRoute: (json['km_into_route'] as num).toInt(),
   );
 }

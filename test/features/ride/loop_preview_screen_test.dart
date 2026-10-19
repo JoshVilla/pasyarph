@@ -56,6 +56,51 @@ void main() {
     );
   });
 
+  testWidgets('multi-day: title by days, overnight stops, one try', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final base = demoLoop(backtracking: 0.5);
+    final repo = FakeRouteRepository([
+      GeneratedLoop(
+        route: base.route,
+        distanceM: 1380000,
+        durationS: 90000,
+        steps: const [],
+        seed: 4,
+        // Would be rerolled for a day loop; a multi-day loop costs too much.
+        backtrackingRatio: 0.5,
+        curvinessScore: 200,
+        overnights: [
+          Overnight(name: 'Baguio', location: DemoRoutes.point1, kmIntoRoute: 251),
+          Overnight(name: 'Vigan', location: DemoRoutes.point2, kmIntoRoute: 520),
+        ],
+      ),
+    ]);
+    final preview = LoopPreviewProvider(repo)
+      ..generate(
+        LoopRequest(
+          start: DemoRoutes.start,
+          duration: LoopDuration.multiDay,
+          avoidHighways: false,
+          avoidUnpaved: false,
+          days: 5,
+        ),
+      );
+    await tester.pumpWidget(MaterialApp(home: _screenWith(preview)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('5-DAY LOOP'), findsOneWidget);
+    expect(find.text('OVERNIGHT STOPS'), findsOneWidget);
+    expect(find.text('Night 1 · Baguio'), findsOneWidget);
+    expect(find.text('520 km in'), findsOneWidget);
+    expect(find.byType(LoopPointMarker), findsNWidgets(2));
+    expect(repo.seeds, hasLength(1));
+    expect(repo.sentDays, [5]);
+  });
+
   testWidgets('shows stats, main stop and the loop', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: _screenWith(_preview(FakeRouteRepository()))),

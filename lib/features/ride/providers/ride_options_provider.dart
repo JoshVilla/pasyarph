@@ -7,10 +7,20 @@ class RideOptionsProvider extends ChangeNotifier {
   LoopDuration _duration = LoopDuration.halfDay;
   bool _avoidHighways = true;
   bool _avoidUnpaved = false;
+  int _days = 3;
 
   LoopDuration get duration => _duration;
   bool get avoidHighways => _avoidHighways;
   bool get avoidUnpaved => _avoidUnpaved;
+
+  /// How many days, for [LoopDuration.multiDay] (2-7).
+  int get days => _days;
+
+  set days(int value) {
+    if (value == _days) return;
+    _days = value;
+    notifyListeners();
+  }
 
   set duration(LoopDuration value) {
     if (value == _duration) return;

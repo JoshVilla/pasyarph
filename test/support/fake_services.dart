@@ -82,6 +82,9 @@ class FakeRouteRepository implements RouteRepository {
 
   final List<Object> results;
   final seeds = <int>[];
+
+  /// Days sent with each generateLoop call (null unless multi-day).
+  final sentDays = <int?>[];
   Completer<void>? gate;
 
   @override
@@ -91,8 +94,10 @@ class FakeRouteRepository implements RouteRepository {
     required bool avoidHighways,
     required bool avoidUnpaved,
     required int seed,
+    int? days,
   }) async {
     seeds.add(seed);
+    sentDays.add(days);
     await gate?.future;
     final next = results.isEmpty ? demoLoop(seed: seed) : results.removeAt(0);
     if (next is RouteException) throw next;

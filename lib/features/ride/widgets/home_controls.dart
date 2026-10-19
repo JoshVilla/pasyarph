@@ -232,20 +232,43 @@ class WhereToSheet extends StatelessWidget {
             ),
           ],
         ),
-        Row(
+        // Two rows of two: four 72 px cards in one row would be too narrow
+        // for MULTI-DAY and for gloves.
+        Column(
           spacing: PasyarSpacing.buttonGap,
           children: [
-            for (final d in LoopDuration.values)
-              Expanded(
-                child: ChoiceCard(
-                  title: d.title,
-                  subtitle: d.subtitle,
-                  selected: options.duration == d,
-                  onTap: () => options.duration = d,
-                ),
+            for (var i = 0; i < LoopDuration.values.length; i += 2)
+              Row(
+                spacing: PasyarSpacing.buttonGap,
+                children: [
+                  for (final d in LoopDuration.values.skip(i).take(2))
+                    Expanded(
+                      child: ChoiceCard(
+                        title: d.title,
+                        subtitle: d.subtitle,
+                        selected: options.duration == d,
+                        onTap: () => options.duration = d,
+                      ),
+                    ),
+                ],
               ),
           ],
         ),
+        if (options.duration == LoopDuration.multiDay)
+          Row(
+            spacing: 12,
+            children: [
+              Text('Days', style: PasyarTextStyles.fieldLabel),
+              Expanded(
+                child: SegmentedChoice<int>(
+                  semanticLabel: 'Days',
+                  options: {for (var d = 2; d <= 7; d++) d: '$d'},
+                  selected: options.days,
+                  onChanged: (d) => options.days = d,
+                ),
+              ),
+            ],
+          ),
         Row(
           spacing: PasyarSpacing.buttonGap,
           children: [

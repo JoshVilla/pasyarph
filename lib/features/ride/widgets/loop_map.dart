@@ -16,6 +16,7 @@ class LoopMap extends StatefulWidget {
     required this.route,
     required this.mainStop,
     this.fuel = const [],
+    this.overnights = const [],
     this.ridden = const [],
     this.ahead,
     this.rider,
@@ -28,6 +29,9 @@ class LoopMap extends StatefulWidget {
 
   /// Fuel stations, drawn under the main stop and start markers.
   final List<LatLng> fuel;
+
+  /// Multi-day loops: overnight towns, numbered in riding order.
+  final List<LatLng> overnights;
 
   /// While riding: the part already ridden (grey), the part left (orange,
   /// defaults to the whole [route]) and the rider's position.
@@ -90,6 +94,8 @@ class _LoopMapState extends State<LoopMap> {
         MarkerLayer(
           markers: [
             for (final f in widget.fuel) PasyarMarkers.fuel(f),
+            for (final (i, n) in widget.overnights.indexed)
+              PasyarMarkers.loopPoint(n, i + 1),
             if (mainStop != null) PasyarMarkers.mainStop(mainStop),
             PasyarMarkers.rider(widget.route.first, halo: false),
             if (widget.rider != null) PasyarMarkers.rider(widget.rider!),

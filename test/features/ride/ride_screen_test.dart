@@ -162,4 +162,34 @@ void main() {
     expect(options.avoidUnpaved, isTrue);
     expect(options.avoidHighways, isFalse);
   });
+
+  testWidgets('MULTI-DAY asks how many days and sends them', (tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    // Held open: the preview opens via the router (widget_test.dart).
+    final routes = FakeRouteRepository()..gate = Completer();
+    await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
+    await tester.pumpAndSettle();
+    expect(find.text('Days'), findsNothing);
+
+    await tester.tap(find.text('MULTI-DAY'));
+    await tester.pumpAndSettle();
+    expect(find.text('Days'), findsOneWidget);
+    await tester.tap(find.text('5'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pump();
+    expect(routes.sentDays, [5]);
+  });
+
+  testWidgets('other durations send no days', (tester) async {
+    final routes = FakeRouteRepository()..gate = Completer();
+    await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.pump();
+    expect(routes.sentDays, [null]);
+  });
 }

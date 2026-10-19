@@ -58,6 +58,7 @@ class _RideHomeState extends State<_RideHome> {
         duration: options.duration,
         avoidHighways: options.avoidHighways,
         avoidUnpaved: options.avoidUnpaved,
+        days: options.days,
       ),
     );
     if (!mounted) return;

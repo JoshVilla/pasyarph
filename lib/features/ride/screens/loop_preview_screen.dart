@@ -58,6 +58,7 @@ class LoopPreviewScreen extends StatelessWidget {
               route: loop.route,
               mainStop: preview.mainStop?.location,
               fuel: [for (final f in loop.fuelStops) f.location],
+              overnights: [for (final n in loop.overnights) n.location],
               // Keep the loop clear of the top controls and the sheet edge.
               fitPadding: EdgeInsets.fromLTRB(
                 40,
@@ -101,6 +102,49 @@ class LoopPreviewScreen extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Multi-day loops: the suggested overnight towns, numbered as on the map.
+class _Overnights extends StatelessWidget {
+  const _Overnights(this.nights);
+
+  final List<Overnight> nights;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: PasyarColors.ground,
+        borderRadius: BorderRadius.circular(PasyarRadius.panel),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 4,
+        children: [
+          Text('OVERNIGHT STOPS', style: PasyarTextStyles.overline),
+          for (final (i, n) in nights.indexed)
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Night ${i + 1} · ${n.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PasyarTextStyles.bodySmall.copyWith(height: 1.3),
+                  ),
+                ),
+                Text(
+                  '${n.kmIntoRoute} km in',
+                  style: PasyarTextStyles.label.copyWith(height: 1.3),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -161,6 +205,7 @@ class _PreviewSheet extends StatelessWidget {
             name: stop.title,
             detail: stopDetail(stop, loop.fuelStops).ifNotEmpty,
           ),
+        if (loop.overnights.isNotEmpty) _Overnights(loop.overnights),
         // Ride this loop: the distance includes getting there and back.
         if (loop.approachM > 0)
           Text(

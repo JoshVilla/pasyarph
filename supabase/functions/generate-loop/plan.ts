@@ -1,12 +1,15 @@
 // Target lengths and how a generated loop is judged.
 
-export type Duration = 'quick' | 'half' | 'full';
+export type Duration = 'quick' | 'half' | 'full' | 'multi';
 
 /** Target loop length in meters. Tune here. */
 export const TARGET_LENGTH_M: Record<Duration, number> = {
   quick: 50_000,
   half: 120_000,
   full: 220_000,
+  // Multi-day loops: 3 days by default; the real target is the number of
+  // days times a day's ride (see multiday.ts).
+  multi: 840_000,
 };
 
 /** A loop within this share of the target is close enough. */

@@ -14,12 +14,21 @@ class LoopRequest {
     required this.duration,
     required this.avoidHighways,
     required this.avoidUnpaved,
+    this.days = 3,
   });
 
   final LatLng start;
   final LoopDuration duration;
   final bool avoidHighways;
   final bool avoidUnpaved;
+
+  /// Multi-day loops only.
+  final int days;
+
+  /// "HALF-DAY LOOP", "5-DAY LOOP".
+  String get title => duration == LoopDuration.multiDay
+      ? '$days-DAY LOOP'
+      : '${duration.title} LOOP';
 }
 
 /// The loop being previewed. App-wide so the preview screen (and later the
@@ -56,7 +65,7 @@ class LoopPreviewProvider extends ChangeNotifier {
 
   /// The top pill: "HALF-DAY LOOP", or the loop's name when riding a post.
   String get title =>
-      _rideLoopName?.toUpperCase() ?? '${_request?.duration.title} LOOP';
+      _rideLoopName?.toUpperCase() ?? _request?.title ?? '';
 
   /// Home's GENERATE LOOP. Returns true when a loop is ready to preview.
   Future<bool> generate(LoopRequest request) async {
@@ -129,6 +138,8 @@ class LoopPreviewProvider extends ChangeNotifier {
   /// the best. Failures after the first loop just end the search.
   Future<GeneratedLoop> _bestLoop(LoopRequest r) async {
     final candidates = [await _generate(r)];
+    // A multi-day loop costs several routing calls: one try per Generate.
+    if (r.duration == LoopDuration.multiDay) return candidates.single;
     for (var i = 0; i < extraSeeds; i++) {
       if (candidates.last.backtrackingRatio <= maxBacktracking) break;
       try {
@@ -146,5 +157,6 @@ class LoopPreviewProvider extends ChangeNotifier {
     avoidHighways: r.avoidHighways,
     avoidUnpaved: r.avoidUnpaved,
     seed: _random.nextInt(0x7fffffff),
+    days: r.duration == LoopDuration.multiDay ? r.days : null,
   );
 }

@@ -5,7 +5,12 @@ import 'package:pasyarph/data/repositories/route_repository.dart';
 
 void main() {
   test('durations send the values generate-loop expects', () {
-    expect(LoopDuration.values.map((d) => d.value), ['quick', 'half', 'full']);
+    expect(LoopDuration.values.map((d) => d.value), [
+      'quick',
+      'half',
+      'full',
+      'multi',
+    ]);
   });
 
   test('parses a generate-loop response', () {
@@ -46,6 +51,9 @@ void main() {
         {'name': 'Petron', 'lat': 16.68, 'lng': 121.46, 'km_into_route': 3.1},
       ],
       'warnings': ['Avoid unpaved isn\'t available yet.'],
+      'overnights': [
+        {'name': 'Baguio', 'lat': 16.4023, 'lng': 120.596, 'km_into_route': 251},
+      ],
     });
 
     expect(loop.route.first, const LatLng(16.672, 121.457));
@@ -62,6 +70,8 @@ void main() {
     expect(loop.mainStop!.kmIntoRoute, 24.6);
     expect(loop.fuelStops.single.name, 'Petron');
     expect(loop.warnings, hasLength(1));
+    expect(loop.overnights.single.name, 'Baguio');
+    expect(loop.overnights.single.kmIntoRoute, 251);
   });
 
   test('reads friendly errors from the function body', () {

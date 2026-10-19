@@ -17,7 +17,16 @@ import {
   type Route,
   routeBody,
   routingError,
+  viaBody,
 } from './graphhopper.ts';
+import {
+  chunks,
+  MAX_DAYS,
+  MIN_DAYS,
+  planRings,
+  targetMeters,
+  townPoint,
+} from './multiday.ts';
 import { MAX_OFF_ROUTE_M, type Place, pickStops } from './stops.ts';
 import {
   assembleRide,
@@ -46,6 +55,8 @@ export interface LoopRequest {
   avoidHighways: boolean;
   avoidUnpaved: boolean;
   seed: number;
+  /** Multi-day loops only: 2-7. */
+  days?: number;
 }
 
 export interface Deps {
@@ -112,7 +123,9 @@ export function parseRequest(json: unknown): LoopRequest {
     (b.avoidHighways === undefined || typeof b.avoidHighways === 'boolean') &&
     (b.avoidUnpaved === undefined || typeof b.avoidUnpaved === 'boolean') &&
     (b.seed === undefined ||
-      (Number.isInteger(b.seed) && b.seed >= 0 && b.seed <= MAX_SEED));
+      (Number.isInteger(b.seed) && b.seed >= 0 && b.seed <= MAX_SEED)) &&
+    (b.days === undefined ||
+      (Number.isInteger(b.days) && b.days >= MIN_DAYS && b.days <= MAX_DAYS));
   if (!ok) throw new LoopError('bad_request');
   return {
     lat,
@@ -121,6 +134,7 @@ export function parseRequest(json: unknown): LoopRequest {
     avoidHighways: b.avoidHighways ?? false,
     avoidUnpaved: b.avoidUnpaved ?? false,
     seed: b.seed ?? Math.floor(Math.random() * MAX_SEED),
+    ...(b.duration === 'multi' ? { days: b.days ?? 3 } : {}),
   };
 }
 
@@ -133,7 +147,11 @@ function route(
   return routeWith(deps, routeBody(start, distanceM, seed));
 }
 
-async function routeWith(deps: Deps, body: unknown): Promise<Route> {
+async function routeWith(
+  deps: Deps,
+  body: unknown,
+  opts?: { cutSpurs?: boolean },
+): Promise<Route> {
   let res: Response;
   try {
     res = await deps.callRouting(body);
@@ -143,7 +161,7 @@ async function routeWith(deps: Deps, body: unknown): Promise<Route> {
   }
   const json = await res.json().catch(() => null);
   if (!res.ok) throw routingError(res.status, json);
-  return parseRoute(json);
+  return parseRoute(json, opts);
 }
 
 /**
@@ -289,6 +307,94 @@ export async function rideLoop(deps: Deps, httpReq: Request, req: RideRequest) {
   };
 }
 
+/** Rings tried per multi-day Generate: each costs 1-2 GraphHopper calls. */
+const MULTI_ATTEMPTS = 2;
+
+/** Multi-day routes are long: simplified this much (shape kept) so the
+ * response stays small. */
+const MULTI_SIMPLIFY_M = 8;
+
+/** Shorter than this share of the days asked for: tell the rider. */
+const MULTI_SHORT_SHARE = 0.7;
+
+/**
+ * A multi-day loop: from the rider through a ring of overnight towns and
+ * back (see multiday.ts), routed in chunks of at most 5 points. When a ring
+ * can't be routed (a town off the road network), the next one is tried.
+ */
+async function multiDayLoop(deps: Deps, httpReq: Request, req: LoopRequest) {
+  const start: LngLat = [req.lng, req.lat];
+  const days = req.days ?? 3;
+  const rings = planRings(start, days, req.seed);
+  if (rings.length === 0) {
+    throw new LoopError('no_route', 'no overnight towns near the start');
+  }
+
+  let lastError: LoopError | undefined;
+  for (const ring of rings.slice(0, MULTI_ATTEMPTS)) {
+    const points = [start, ...ring.towns.map(townPoint), start];
+    const parts: Route[] = [];
+    try {
+      for (const chunk of chunks(points)) {
+        parts.push(await routeWith(deps, viaBody(chunk), { cutSpurs: false }));
+      }
+    } catch (e) {
+      if (!(e instanceof LoopError) || e.code !== 'no_route') throw e;
+      lastError = e;
+      continue;
+    }
+
+    const joined: LngLat[] = [];
+    for (const part of parts) {
+      joined.push(...(joined.length ? part.coordinates.slice(1) : part.coordinates));
+    }
+    const coordinates = simplify(joined, MULTI_SIMPLIFY_M);
+    const sum = (f: (r: Route) => number) => parts.reduce((s, r) => s + f(r), 0);
+    const total = {
+      distance_m: sum((r) => r.distance_m),
+      duration_s: sum((r) => r.duration_s),
+      motorway_m: sum((r) => r.motorway_m),
+      unpaved_m: sum((r) => r.unpaved_m),
+    };
+    const prefs: Preferences = {
+      targetM: targetMeters(days),
+      avoidHighways: req.avoidHighways,
+      avoidUnpaved: req.avoidUnpaved,
+    };
+    const { locate } = routeLocator(coordinates);
+    const { mainStop, fuel } = pickStops(
+      coordinates,
+      await placesNear(deps, httpReq, coordinates),
+    );
+    const warnings = warningsFor(total, prefs);
+    if (total.distance_m < prefs.targetM * MULTI_SHORT_SHARE) {
+      warnings.push(
+        `This loop is about ${Math.round(total.distance_m / 1000)} km: ` +
+          `there aren't enough roads around here for ${days} days.`,
+      );
+    }
+    return {
+      route: { type: 'LineString', coordinates },
+      ...total,
+      steps: [],
+      seed: req.seed,
+      backtracking_ratio: round(backtrackingRatio(coordinates), 3),
+      curviness_score: round(curvinessScore(coordinates), 1),
+      main_stop: mainStop,
+      fuel_stops: fuel,
+      warnings,
+      days,
+      overnights: ring.towns.map((t) => ({
+        name: t.name,
+        lat: t.lat,
+        lng: t.lng,
+        km_into_route: Math.round(locate(townPoint(t)).alongM / 1000),
+      })),
+    };
+  }
+  throw lastError ?? new LoopError('no_route');
+}
+
 export async function generateLoop(deps: Deps, httpReq: Request) {
   if (httpReq.method !== 'POST') throw new LoopError('bad_request');
   const body = await httpReq.json().catch(() => null);
@@ -299,6 +405,7 @@ export async function generateLoop(deps: Deps, httpReq: Request) {
   if (!(await deps.consumeQuota(httpReq))) {
     throw new LoopError('limit_reached');
   }
+  if (req.duration === 'multi') return multiDayLoop(deps, httpReq, req);
 
   const prefs: Preferences = {
     targetM: TARGET_LENGTH_M[req.duration],

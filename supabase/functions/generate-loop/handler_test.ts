@@ -172,6 +172,12 @@ const noPoint = () =>
     { status: 400 },
   );
 
+const noRoute = () =>
+  new Response(
+    JSON.stringify({ message: 'Connection between locations not found' }),
+    { status: 400 },
+  );
+
 const post = (body: unknown) =>
   new Request('http://local/generate-loop', {
     method: 'POST',
@@ -307,6 +313,65 @@ Deno.test('places unavailable: still a loop, farthest point as the stop', async 
   const body = await res.json();
   assertEquals(body.main_stop.type, 'turnaround');
   assertEquals(body.fuel_stops, []);
+});
+
+const manila = { lat: 14.5995, lng: 120.9842 };
+
+Deno.test('multi-day: home, overnight towns, home, at most 5 points a call', async () => {
+  const { deps: d, bodies } = deps({ responses: [ok(), ok()] });
+  const res = await createHandler(d)(
+    post({ ...valid, ...manila, duration: 'multi', days: 5 }),
+  );
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  assertEquals(body.days, 5);
+  assertEquals(body.overnights.length, 4);
+  // 6 points (home, 4 towns, home): one call of 5 and one of 2.
+  const points = bodies.map((b) => (b.points as unknown[]).length);
+  assertEquals(points, [5, 2]);
+  for (const b of bodies) {
+    assertEquals(b.profile, 'car');
+    assertEquals(b.algorithm, undefined);
+  }
+  assertEquals(bodies[0].points as unknown[][], [
+    [manila.lng, manila.lat],
+    ...body.overnights.slice(0, 4).map((o: { lng: number; lat: number }) => [o.lng, o.lat]),
+  ]);
+  assertEquals((bodies[1].points as unknown[][])[1], [manila.lng, manila.lat]);
+});
+
+Deno.test('multi-day: distance and ride time include the way home', async () => {
+  // Two chunks (out, then the last towns and home), each 52 km and 4000 s.
+  const { deps: d } = deps({ responses: [ok(), ok()] });
+  const res = await createHandler(d)(
+    post({ ...valid, ...manila, duration: 'multi', days: 5 }),
+  );
+  const body = await res.json();
+  assertEquals(body.distance_m, 2 * 52_346);
+  assertEquals(body.duration_s, 2 * 4000);
+});
+
+Deno.test('multi-day: a ring that cannot be routed tries the next one', async () => {
+  const { deps: d, bodies } = deps({
+    responses: [noRoute(), ok()],
+  });
+  const res = await createHandler(d)(
+    post({ ...valid, ...manila, duration: 'multi', days: 2 }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(bodies.length, 2);
+  assert((await res.json()).overnights.length === 1);
+});
+
+Deno.test('multi-day: days must be 2 to 7', async () => {
+  const { deps: d } = deps();
+  for (const days of [1, 8, 2.5, 'three']) {
+    const res = await createHandler(d)(
+      post({ ...valid, duration: 'multi', days }),
+    );
+    assertEquals(res.status, 400, String(days));
+    await res.body?.cancel();
+  }
 });
 
 Deno.test('bad input is a 400', async () => {

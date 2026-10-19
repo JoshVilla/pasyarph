@@ -44,13 +44,15 @@ class RouteException implements Exception {
 
 abstract interface class RouteRepository {
   /// Asks the generate-loop Edge Function for a loop that starts and ends at
-  /// [start]. Throws [RouteException].
+  /// [start]. [days] (2-7) only for [LoopDuration.multiDay]. Throws
+  /// [RouteException].
   Future<GeneratedLoop> generateLoop({
     required LatLng start,
     required LoopDuration duration,
     required bool avoidHighways,
     required bool avoidUnpaved,
     required int seed,
+    int? days,
   });
 
   /// Ride this loop: someone else's loop [loopId] ridden from [start] (to
@@ -79,6 +81,7 @@ class SupabaseRouteRepository implements RouteRepository {
     required bool avoidHighways,
     required bool avoidUnpaved,
     required int seed,
+    int? days,
   }) => _invoke({
     'lat': start.latitude,
     'lng': start.longitude,
@@ -86,6 +89,7 @@ class SupabaseRouteRepository implements RouteRepository {
     'avoidHighways': avoidHighways,
     'avoidUnpaved': avoidUnpaved,
     'seed': seed,
+    'days': ?days,
   });
 
   @override

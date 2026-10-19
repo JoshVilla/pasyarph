@@ -20,6 +20,18 @@ export function pointsBody(from: LngLat, to: LngLat) {
   };
 }
 
+/** A car route through [points] in order (multi-day loops: home, the
+ * overnight towns, home), at most 5 per request on the free plan. */
+export function viaBody(points: LngLat[]) {
+  return {
+    points,
+    profile: 'car',
+    points_encoded: false,
+    instructions: false,
+    details: ['road_class', 'surface'],
+  };
+}
+
 export function routeBody(start: LngLat, distanceM: number, seed: number) {
   return {
     points: [start],
@@ -91,7 +103,10 @@ const U_TURNS = new Set([-8, 8, -98]);
  * because a random via point landed there. Distance, time, steps and road
  * meters describe the trimmed loop.
  */
-export function parseRoute(json: unknown): Route {
+export function parseRoute(
+  json: unknown,
+  { cutSpurs = true }: { cutSpurs?: boolean } = {},
+): Route {
   // deno-lint-ignore no-explicit-any
   const path = (json as any)?.paths?.[0];
   const coords = path?.points?.coordinates;
@@ -99,7 +114,7 @@ export function parseRoute(json: unknown): Route {
     throw new LoopError('no_route');
   }
   const raw = coords.map((c: number[]) => [c[0], c[1]] as LngLat);
-  const removed = spurMask(raw);
+  const removed = cutSpurs ? spurMask(raw) : new Uint8Array(raw.length);
 
   // Old index -> new index; a removed vertex maps to the spur's mouth.
   const newIndex: number[] = [];
