@@ -24,7 +24,24 @@ import 'features/ride/providers/ride_session_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Env.ensureConfigured();
+  try {
+    Env.ensureConfigured();
+  } on MissingEnvError catch (e) {
+    // Show the error instead of a blank white screen.
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('$e'),
+            ),
+          ),
+        ),
+      ),
+    );
+    return;
+  }
 
   await Supabase.initialize(
     url: Env.supabaseUrl,
