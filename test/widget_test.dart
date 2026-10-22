@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
@@ -14,6 +15,8 @@ import 'package:pasyarph/features/ride/screens/ride_session_screen.dart';
 import 'package:pasyarph/core/widgets/bottom_tabs.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
+import 'package:pasyarph/data/models/profile.dart';
+import 'package:pasyarph/data/repositories/club_repository.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/post_repository.dart';
 import 'package:pasyarph/data/repositories/ride_history_repository.dart';
@@ -26,14 +29,20 @@ import 'package:pasyarph/data/repositories/loop_repository.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/create/screens/create_loop_screen.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
+import 'package:pasyarph/features/clubs/club_rules.dart';
+import 'package:pasyarph/features/clubs/screens/club_screen.dart';
+import 'package:pasyarph/features/clubs/screens/create_club_screen.dart';
+import 'package:pasyarph/features/clubs/screens/join_club_screen.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
+import 'package:pasyarph/features/riders/screens/rider_profile_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_location_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_profile_screen.dart';
 import 'package:pasyarph/features/ride/screens/ride_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
+import 'support/fake_clubs.dart';
 import 'support/fake_feed.dart';
 import 'support/fake_post.dart';
 import 'support/fake_services.dart';
@@ -48,6 +57,8 @@ Future<FakeAuthRepository> pumpApp(
   FakeLocationPermission? location,
   List<FeedPost> feedPosts = const [],
   FakeRouteRepository? routes,
+  FakeClubRepository? clubs,
+  FakeSocialRepository? social,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.75;
@@ -59,10 +70,13 @@ Future<FakeAuthRepository> pumpApp(
       providers: [
         Provider<RouteRepository>.value(value: routeRepo),
         Provider<LoopRepository>(create: (_) => FakeLoopRepository()),
+        Provider<ClubRepository>(create: (_) => clubs ?? FakeClubRepository()),
         Provider<RideHistoryRepository>.value(value: history),
         Provider<PostRepository>(create: (_) => FakePosts()),
         Provider<FeedRepository>(create: (_) => FakeFeedRepository(feedPosts)),
-        Provider<SocialRepository>(create: (_) => FakeSocialRepository()),
+        Provider<SocialRepository>(
+          create: (_) => social ?? FakeSocialRepository(),
+        ),
         Provider<PostDraftStore>(
           create: (_) => MemoryDrafts(Directory.systemTemp),
         ),
@@ -78,9 +92,7 @@ Future<FakeAuthRepository> pumpApp(
             ),
           ),
         ),
-        ChangeNotifierProvider(
-          create: (_) => LoopPreviewProvider(routeRepo),
-        ),
+        ChangeNotifierProvider(create: (_) => LoopPreviewProvider(routeRepo)),
         ChangeNotifierProvider(
           create: (context) => RideSessionProvider(
             location: context.read<LocationProvider>(),
@@ -317,5 +329,163 @@ void main() {
     await tester.tap(find.text('LOG OUT'));
     await tester.pumpAndSettle();
     expect(find.byType(WelcomeScreen), findsOneWidget);
+  });
+
+  group('clubs and follows (Prompt 17)', () {
+    final copied = <String>[];
+    setUp(() {
+      copied.clear();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copied.add((call.arguments as Map)['text'] as String);
+            }
+            return null;
+          });
+    });
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    Future<void> openMe(WidgetTester tester) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PasyarBottomTabs),
+          matching: find.text('Me'),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapScrolled(WidgetTester tester, Finder finder) async {
+      await tester.scrollUntilVisible(
+        finder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('make a club, copy its invite link, find it under Me', (
+      tester,
+    ) async {
+      final clubs = FakeClubRepository();
+      await pumpApp(
+        tester,
+        FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+        clubs: clubs,
+      );
+      await openMe(tester);
+      expect(find.text('YOUR CLUBS'), findsOneWidget);
+      await tapScrolled(tester, find.text('CREATE A CLUB'));
+      expect(find.byType(CreateClubScreen), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Cordon Riders');
+      await tester.pump();
+      await tester.tap(find.text('CREATE CLUB'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ClubScreen), findsOneWidget);
+      expect(find.text('Cordon Riders'), findsOneWidget);
+      expect(find.text('Owner · 1 member'), findsOneWidget);
+
+      await tester.tap(find.text('INVITE RIDERS'));
+      await tester.pumpAndSettle();
+      expect(copied.single, startsWith('https://pasyar.app/join/'));
+      expect(parseInviteCode(copied.single), clubs.codes.values.single);
+
+      await tester.tap(find.bySemanticsLabel('Back'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MeScreen), findsOneWidget);
+      expect(find.text('Owner · 1 member'), findsOneWidget);
+    });
+
+    testWidgets('join a club with a pasted link, then leave it', (
+      tester,
+    ) async {
+      final clubs = FakeClubRepository()
+        ..add(
+          'isa',
+          'Isabela Riders',
+          ownerId: 'rico',
+          memberIds: ['ana'],
+          code: '0123456789abcdef',
+        );
+      await pumpApp(
+        tester,
+        FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+        clubs: clubs,
+      );
+      await openMe(tester);
+      await tapScrolled(tester, find.text('JOIN WITH A LINK'));
+
+      await tester.enterText(
+        find.byType(TextField).last,
+        'https://pasyar.app/join/0123456789abcdef',
+      );
+      await tester.tap(find.text('CONTINUE'));
+      await tester.pumpAndSettle();
+      expect(find.byType(JoinClubScreen), findsOneWidget);
+      expect(find.text('Isabela Riders'), findsOneWidget);
+      expect(find.text('2 members'), findsOneWidget);
+
+      await tester.tap(find.text('JOIN CLUB'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ClubScreen), findsOneWidget);
+      expect(find.text('Member · 3 members'), findsOneWidget);
+      expect(find.text('MEMBERS'), findsOneWidget);
+
+      await tester.tap(find.text('LEAVE CLUB'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Leave'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MeScreen), findsOneWidget);
+      expect(find.text('Isabela Riders'), findsNothing);
+    });
+
+    testWidgets("a post's author opens their profile; FOLLOW", (tester) async {
+      final now = DateTime.now();
+      final social = FakeSocialRepository(
+        riders: {
+          'author-p1': const RiderProfile(
+            id: 'author-p1',
+            displayName: 'Rico Navarro',
+            homeArea: 'Cordon, Isabela',
+            followerCount: 2,
+          ),
+        },
+      );
+      await pumpApp(
+        tester,
+        FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+        feedPosts: [
+          feedPost(id: 'p1', createdAt: now, photos: const ['#A8B9A0']),
+        ],
+        social: social,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PasyarBottomTabs),
+          matching: find.text('Feed'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.textContaining('Rico Navarro rode', findRichText: true),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RiderProfileScreen), findsOneWidget);
+      expect(find.text('Cordon, Isabela'), findsOneWidget);
+
+      await tester.tap(find.text('FOLLOW'));
+      await tester.pumpAndSettle();
+      expect(find.text('FOLLOWING'), findsOneWidget);
+      expect(social.follows, {'author-p1'});
+      expect(
+        find.textContaining('3 followers', findRichText: true),
+        findsOneWidget,
+      );
+    });
   });
 }

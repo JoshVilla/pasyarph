@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/post.dart';
+import '../models/profile.dart';
 
 /// Why a like or comment failed, with a message safe to show riders.
 class SocialException implements Exception {
@@ -46,6 +47,14 @@ abstract interface class SocialRepository {
   /// the comment rules refuse it.
   Future<Comment> addComment(String postId, String body);
   Future<void> deleteComment(String commentId);
+
+  /// Another rider's profile with follow counts, or null if there's no such
+  /// rider.
+  Future<RiderProfile?> rider(String userId);
+
+  /// Following someone twice (or unfollowing twice) is fine.
+  Future<void> follow(String userId);
+  Future<void> unfollow(String userId);
 }
 
 class SupabaseSocialRepository implements SocialRepository {
@@ -125,5 +134,37 @@ class SupabaseSocialRepository implements SocialRepository {
   Future<void> deleteComment(String commentId) => _guard(
     'delete comment',
     () => _client.from('comments').delete().eq('id', commentId),
+  );
+
+  @override
+  Future<RiderProfile?> rider(String userId) => _guard('rider', () async {
+    final rows = await _client.rpc<List<dynamic>>(
+      'rider_profile',
+      params: {'p_user_id': userId},
+    );
+    return switch (rows.firstOrNull) {
+      final Map<String, dynamic> r => RiderProfile.fromJson(r),
+      _ => null,
+    };
+  });
+
+  @override
+  Future<void> follow(String userId) => _guard('follow', () async {
+    try {
+      await _client.from('follows').insert({'followee_id': userId});
+    } on PostgrestException catch (e) {
+      // Already following (a double tap or a retry).
+      if (e.code != '23505') rethrow;
+    }
+  });
+
+  @override
+  Future<void> unfollow(String userId) => _guard(
+    'unfollow',
+    () => _client
+        .from('follows')
+        .delete()
+        .eq('follower_id', this.userId ?? '')
+        .eq('followee_id', userId),
   );
 }

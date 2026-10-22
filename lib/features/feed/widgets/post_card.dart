@@ -21,6 +21,7 @@ class PostCardActions {
     required this.onRide,
     required this.onMore,
     required this.onPhoto,
+    this.onAuthor,
   });
 
   final ValueChanged<FeedPost> onLike;
@@ -31,11 +32,15 @@ class PostCardActions {
 
   /// Photo [int] of the post was tapped.
   final void Function(FeedPost post, int index) onPhoto;
+
+  /// The author's picture or name was tapped (opens their profile).
+  final ValueChanged<FeedPost>? onAuthor;
 }
 
 /// One post in the feed (mockup 5). With photos it's a ride post: caption,
 /// collage, loop card with RIDE IT. Without, it's a shared loop: a big map
-/// with stat chips and RIDE THIS LOOP.
+/// with stat chips and RIDE THIS LOOP. A loop shared without a post
+/// ([FeedPost.isLoopOnly]) has no likes or comments.
 class PostCard extends StatelessWidget {
   const PostCard({
     super.key,
@@ -65,7 +70,13 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Header(post: post, now: now, avatar: avatar, onMore: actions.onMore),
+          _Header(
+            post: post,
+            now: now,
+            avatar: avatar,
+            onMore: actions.onMore,
+            onAuthor: actions.onAuthor,
+          ),
           if (caption != null && caption.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -87,9 +98,19 @@ class PostCard extends StatelessWidget {
               child: _RideThisLoopButton(onPressed: () => actions.onRide(post)),
             ),
           ],
-          _Counts(post: post),
-          _ActionRow(post: post, actions: actions, lineBelow: comment != null),
-          if (comment != null)
+          if (post.isLoopOnly)
+            const SizedBox(height: 16)
+          else ...[
+            _Counts(post: post),
+            _ActionRow(
+              post: post,
+              actions: actions,
+              lineBelow: comment != null,
+            ),
+          ],
+          if (post.isLoopOnly)
+            const SizedBox.shrink()
+          else if (comment != null)
             _CommentPreview(
               comment: comment,
               total: post.commentCount,
@@ -110,12 +131,14 @@ class _Header extends StatelessWidget {
     required this.now,
     required this.avatar,
     required this.onMore,
+    this.onAuthor,
   });
 
   final FeedPost post;
   final DateTime now;
   final ImageProvider Function(String url) avatar;
   final ValueChanged<FeedPost> onMore;
+  final ValueChanged<FeedPost>? onAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -132,28 +155,42 @@ class _Header extends StatelessWidget {
       child: Row(
         spacing: 10,
         children: [
-          Avatar(name: name, image: url == null ? null : avatar(url)),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text.rich(
-                  TextSpan(
-                    children: post.photos.isNotEmpty
-                        ? [
-                            TextSpan(text: name, style: bold),
-                            const TextSpan(text: ' rode '),
-                            TextSpan(text: post.loop.name, style: bold),
-                          ]
-                        : [
-                            TextSpan(text: name, style: bold),
-                            const TextSpan(text: ' shared a new loop'),
-                          ],
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onAuthor == null ? null : () => onAuthor!(post),
+              child: Row(
+                spacing: 10,
+                children: [
+                  Avatar(name: name, image: url == null ? null : avatar(url)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: post.photos.isNotEmpty
+                                ? [
+                                    TextSpan(text: name, style: bold),
+                                    const TextSpan(text: ' rode '),
+                                    TextSpan(text: post.loop.name, style: bold),
+                                  ]
+                                : [
+                                    TextSpan(text: name, style: bold),
+                                    const TextSpan(text: ' shared a new loop'),
+                                  ],
+                          ),
+                          style: PasyarTextStyles.body.copyWith(height: 1.3),
+                        ),
+                        Text(
+                          meta,
+                          style: PasyarTextStyles.label.copyWith(height: 1.2),
+                        ),
+                      ],
+                    ),
                   ),
-                  style: PasyarTextStyles.body.copyWith(height: 1.3),
-                ),
-                Text(meta, style: PasyarTextStyles.label.copyWith(height: 1.2)),
-              ],
+                ],
+              ),
             ),
           ),
           SizedBox.square(
@@ -184,6 +221,10 @@ class _LoopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loop = post.loop;
+    final away = switch (post.distanceAwayM) {
+      final m? => distanceFromYou(m),
+      null => null,
+    };
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -212,6 +253,7 @@ class _LoopCard extends StatelessWidget {
                 ),
                 // With a province: "118 km · 3 h 50" then "Ifugao · 6 km
                 // from you" (three lines still fit beside the thumbnail).
+                // No distance when the feed loaded without a location.
                 if (loop.province case final province?) ...[
                   Text(
                     loopStats(loop),
@@ -220,14 +262,14 @@ class _LoopCard extends StatelessWidget {
                     style: PasyarTextStyles.label.copyWith(height: 1.2),
                   ),
                   Text(
-                    '$province · ${distanceFromYou(post.distanceAwayM)}',
+                    [province, ?away].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: PasyarTextStyles.label.copyWith(height: 1.2),
                   ),
                 ] else
                   Text(
-                    '${loopStats(loop)} · ${distanceFromYou(post.distanceAwayM)}',
+                    [loopStats(loop), ?away].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: PasyarTextStyles.label.copyWith(height: 1.2),

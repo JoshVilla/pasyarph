@@ -10,6 +10,7 @@ import 'core/location/position_source.dart';
 import 'core/notifications/ride_notifier.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
+import 'data/repositories/club_repository.dart';
 import 'data/repositories/feed_repository.dart';
 import 'data/repositories/loop_repository.dart';
 import 'data/repositories/post_repository.dart';
@@ -79,6 +80,7 @@ Future<void> main() async {
         ),
         Provider<PostRepository>(create: (_) => SupabasePostRepository(client)),
         Provider<LoopRepository>(create: (_) => SupabaseLoopRepository(client)),
+        Provider<ClubRepository>(create: (_) => SupabaseClubRepository(client)),
         Provider<PostDraftStore>(create: (_) => const LocalPostDraftStore()),
         Provider<FeedRepository>(create: (_) => SupabaseFeedRepository(client)),
         Provider<SocialRepository>(

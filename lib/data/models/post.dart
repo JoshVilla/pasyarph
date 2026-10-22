@@ -143,7 +143,10 @@ class Comment {
   );
 }
 
-/// A row from the `feed_near` RPC: post, author, photos, loop and counts.
+/// A row from the `feed_near` / `feed_page` RPCs: post, author, photos,
+/// loop and counts. From `feed_page` it can also be a loop shared without a
+/// post ([isLoopOnly]): then [id] is the loop's id and there are no photos,
+/// likes or comments.
 class FeedPost {
   const FeedPost({
     required this.id,
@@ -158,13 +161,16 @@ class FeedPost {
     required this.likedByMe,
     this.caption,
     this.firstComment,
+    this.isLoopOnly = false,
   });
 
   final String id;
   final String? caption;
   final DateTime createdAt;
   final LatLng stopLocation;
-  final double distanceAwayM;
+
+  /// Null when the feed was loaded without the rider's location.
+  final double? distanceAwayM;
   final ProfileSummary author;
   final List<PostPhoto> photos;
   final Loop loop;
@@ -174,6 +180,10 @@ class FeedPost {
 
   /// The oldest comment, previewed under the card.
   final FeedComment? firstComment;
+
+  /// A loop shared without a post: it can be ridden but not liked or
+  /// commented on.
+  final bool isLoopOnly;
 
   FeedPost copyWith({
     int? likeCount,
@@ -193,6 +203,7 @@ class FeedPost {
     likedByMe: likedByMe ?? this.likedByMe,
     commentCount: commentCount ?? this.commentCount,
     firstComment: firstComment == null ? this.firstComment : firstComment(),
+    isLoopOnly: isLoopOnly,
   );
 
   factory FeedPost.fromJson(Json json) => FeedPost(
@@ -200,7 +211,7 @@ class FeedPost {
     caption: json['caption'] as String?,
     createdAt: parseTimestamp(json['created_at']),
     stopLocation: GeoCodec.parsePoint(json['stop_location'] as Object),
-    distanceAwayM: (json['distance_away_m'] as num).toDouble(),
+    distanceAwayM: toDoubleOrNull(json['distance_away_m']),
     author: ProfileSummary.fromJson(json['author'] as Json),
     photos: [
       for (final p in json['photos'] as List) PostPhoto.fromJson(p as Json),
@@ -213,6 +224,7 @@ class FeedPost {
       final Json c => FeedComment.fromJson(c),
       _ => null,
     },
+    isLoopOnly: json['kind'] == 'loop',
   );
 }
 

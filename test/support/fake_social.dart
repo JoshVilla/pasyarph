@@ -2,16 +2,22 @@ import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/models/profile.dart';
 import 'package:pasyarph/data/repositories/social_repository.dart';
 
-/// In-memory likes and comments, oldest first, with switchable failures.
+/// In-memory likes, comments, riders and follows, with switchable failures.
 class FakeSocialRepository implements SocialRepository {
-  FakeSocialRepository({this.userId = 'me', List<Comment>? comments})
-    : stored = comments ?? [];
+  FakeSocialRepository({
+    this.userId = 'me',
+    List<Comment>? comments,
+    Map<String, RiderProfile>? riders,
+  }) : stored = comments ?? [],
+       riders = riders ?? {};
 
   @override
   final String? userId;
 
   final List<Comment> stored;
+  final Map<String, RiderProfile> riders;
   final likes = <String>{};
+  final follows = <String>{};
   final calls = <String>[];
 
   /// Next call of this kind throws this.
@@ -77,6 +83,27 @@ class FakeSocialRepository implements SocialRepository {
     calls.add('delete:$commentId');
     _maybeFail();
     stored.removeWhere((c) => c.id == commentId);
+  }
+
+  @override
+  Future<RiderProfile?> rider(String id) async {
+    calls.add('rider:$id');
+    _maybeFail();
+    return riders[id];
+  }
+
+  @override
+  Future<void> follow(String id) async {
+    calls.add('follow:$id');
+    _maybeFail();
+    follows.add(id);
+  }
+
+  @override
+  Future<void> unfollow(String id) async {
+    calls.add('unfollow:$id');
+    _maybeFail();
+    follows.remove(id);
   }
 }
 

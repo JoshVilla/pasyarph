@@ -1,7 +1,18 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repositories/avatar_repository.dart';
+import '../data/repositories/club_repository.dart';
+import '../data/repositories/feed_repository.dart';
+import '../data/repositories/social_repository.dart';
+import '../features/clubs/providers/club_controller.dart';
+import '../features/clubs/screens/club_screen.dart';
+import '../features/clubs/screens/create_club_screen.dart';
+import '../features/clubs/screens/join_club_screen.dart';
+import '../features/feed/providers/feed_provider.dart';
+import '../features/riders/providers/rider_profile_controller.dart';
+import '../features/riders/screens/rider_profile_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/check_email_screen.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
@@ -27,6 +38,7 @@ import '../features/ride/screens/ride_session_screen.dart';
 import 'auth_redirect.dart';
 import 'env.dart';
 import 'location/location_permission.dart';
+import 'location/location_provider.dart';
 import 'widgets/app_shell.dart';
 
 abstract final class Routes {
@@ -42,6 +54,17 @@ abstract final class Routes {
 
   /// A ride navigated in Google Maps; replaces the preview.
   static const rideSession = '/riding';
+
+  /// Clubs (Prompt 17), full screen over the tabs.
+  static const newClub = '/clubs/new';
+  static const joinClubPath = '/clubs/join/:code';
+  static String joinClub(String code) => '/clubs/join/$code';
+  static const clubPath = '/clubs/:clubId';
+  static String club(String id) => '/clubs/$id';
+
+  /// Another rider's profile, from a post or a club's members.
+  static const riderPath = '/riders/:userId';
+  static String rider(String id) => '/riders/$id';
 
   /// Posting a finished ride (from the ride summary or the Me tab).
   static const postRide = '/post/:rideId';
@@ -136,6 +159,55 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
         ),
       ),
       GoRoute(
+        path: Routes.newClub,
+        builder: (context, state) => const CreateClubScreen(),
+      ),
+      GoRoute(
+        path: Routes.joinClubPath,
+        builder: (context, state) =>
+            JoinClubScreen(code: state.pathParameters['code']!),
+      ),
+      GoRoute(
+        path: Routes.clubPath,
+        builder: (context, state) {
+          final id = state.pathParameters['clubId']!;
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(
+                create: (context) => ClubController(
+                  clubs: context.read<ClubRepository>(),
+                  clubId: id,
+                ),
+              ),
+              ChangeNotifierProvider(
+                create: (context) => _scopedFeed(context, FeedScope.club(id)),
+              ),
+            ],
+            child: const ClubScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: Routes.riderPath,
+        builder: (context, state) {
+          final id = state.pathParameters['userId']!;
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(
+                create: (context) => RiderProfileController(
+                  social: context.read<SocialRepository>(),
+                  userId: id,
+                ),
+              ),
+              ChangeNotifierProvider(
+                create: (context) => _scopedFeed(context, FeedScope.rider(id)),
+              ),
+            ],
+            child: const RiderProfileScreen(),
+          );
+        },
+      ),
+      GoRoute(
         path: Routes.postRide,
         builder: (context, state) =>
             PostLoopScreen(rideId: state.pathParameters['rideId']!),
@@ -177,3 +249,11 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
     ],
   );
 }
+
+/// Posts of one club or rider, for their page.
+FeedProvider _scopedFeed(BuildContext context, FeedScope scope) => FeedProvider(
+  feed: context.read<FeedRepository>(),
+  social: context.read<SocialRepository>(),
+  location: context.read<LocationProvider>(),
+  scope: scope,
+);

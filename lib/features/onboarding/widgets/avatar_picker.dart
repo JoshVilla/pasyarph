@@ -8,7 +8,7 @@ import '../../../core/theme/pasyar_theme.dart';
 
 /// 88 px profile photo button from mockup 10: dashed `lineStrong` circle on
 /// `ground` with a person icon, and an orange camera badge. Shows the photo
-/// once one is picked.
+/// once one is picked. Clubs use it with [icon] and [what] set.
 class AvatarPicker extends StatelessWidget {
   const AvatarPicker({
     super.key,
@@ -16,12 +16,20 @@ class AvatarPicker extends StatelessWidget {
     this.preview,
     this.url,
     this.uploading = false,
+    this.icon = LucideIcons.user,
+    this.what = 'profile photo',
   });
 
   final VoidCallback? onTap;
   final Uint8List? preview;
   final String? url;
   final bool uploading;
+
+  /// Shown in the empty circle.
+  final IconData icon;
+
+  /// For the screen reader: "Add [what]" / "Change [what]".
+  final String what;
 
   static const size = 88.0;
 
@@ -33,7 +41,7 @@ class AvatarPicker extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: image == null ? 'Add profile photo' : 'Change profile photo',
+      label: image == null ? 'Add $what' : 'Change $what',
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
@@ -46,9 +54,9 @@ class AvatarPicker extends StatelessWidget {
                 child: image == null
                     ? CustomPaint(
                         painter: _DashedCirclePainter(),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
-                            LucideIcons.user,
+                            icon,
                             size: 34,
                             color: PasyarColors.muted,
                           ),

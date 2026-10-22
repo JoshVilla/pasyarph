@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
@@ -6,6 +8,7 @@ import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/models/profile.dart';
+import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/social_repository.dart';
 import 'package:pasyarph/features/feed/feed_format.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
@@ -132,11 +135,78 @@ void main() {
       expect(feed.posts, hasLength(20));
     });
 
-    test('Following and My clubs are just filters for now', () async {
-      final feed = await provider(FakeFeedRepository(posts));
+    test(
+      'Following and My clubs load their scope, without a location',
+      () async {
+        final club = [
+          feedPost(id: 'c1', createdAt: now),
+          feedPost(id: 'c2', createdAt: now, loopOnly: true),
+        ];
+        final repo = FakeFeedRepository(
+          posts,
+          scoped: {
+            FeedScope.myClubs: club,
+            FeedScope.following: [feedPost(id: 'f1', createdAt: now)],
+          },
+        );
+        final feed = await provider(repo, fix: false);
+        feed.start();
+        await pumpEventQueue();
+        expect(feed.needsLocation, isTrue);
+
+        feed.setFilter(FeedFilter.myClubs);
+        expect(feed.needsLocation, isFalse);
+        await pumpEventQueue();
+        expect(repo.scopeCalls, [FeedScope.myClubs]);
+        expect([for (final p in feed.posts) p.id], ['c1', 'c2']);
+        expect(feed.posts.last.isLoopOnly, isTrue);
+
+        feed.setFilter(FeedFilter.following);
+        await pumpEventQueue();
+        expect([for (final p in feed.posts) p.id], ['f1']);
+
+        // A fix arriving later doesn't reload "Near you" into this filter.
+        gps.emit(const RiderFix(point: LatLng(16.672, 121.457)));
+        await pumpEventQueue();
+        expect(repo.calls, isEmpty);
+        expect([for (final p in feed.posts) p.id], ['f1']);
+      },
+    );
+
+    test('switching filters drops a page that arrives late', () async {
+      final repo = _SlowFeed(posts);
+      final feed = await provider(repo);
+      final nearby = feed.refresh();
       feed.setFilter(FeedFilter.myClubs);
+      repo.release();
+      await nearby;
+      await pumpEventQueue();
       expect(feed.filter, FeedFilter.myClubs);
+      expect(feed.posts, isEmpty);
+    });
+
+    test('a club page or profile has a fixed scope', () async {
+      final repo = FakeFeedRepository(
+        posts,
+        scoped: {
+          const FeedScope.club('k'): [feedPost(id: 'k1', createdAt: now)],
+        },
+      );
+      social = FakeSocialRepository();
+      location = LocationProvider(
+        permissions: FakeLocationPermission(),
+        positions: FakePositionSource(),
+      );
+      final feed = FeedProvider(
+        feed: repo,
+        social: social,
+        location: location,
+        scope: const FeedScope.club('k'),
+      );
       expect(feed.needsLocation, isFalse);
+      await feed.refresh();
+      expect([for (final p in feed.posts) p.id], ['k1']);
+      expect(repo.scopeCalls, [const FeedScope.club('k')]);
     });
 
     test('like: flips at once, sticks when the server agrees', () async {
@@ -217,6 +287,64 @@ void main() {
       });
       expect(post.firstComment!.body, 'Nice!');
       expect(post.firstComment!.author.displayName, 'Jun');
+      expect(post.isLoopOnly, isFalse);
+      expect(post.distanceAwayM, 6000);
+    });
+
+    test('feed_page loop rows: a loop without a post, no distance', () {
+      final item = FeedPost.fromJson({
+        'kind': 'loop',
+        'id': 'l',
+        'caption': null,
+        'created_at': '2026-10-19T05:00:00Z',
+        'stop_location': {
+          'type': 'Point',
+          'coordinates': [121.46, 16.70],
+        },
+        'distance_away_m': null,
+        'author': {'id': 'a', 'display_name': 'Rico', 'avatar_url': null},
+        'photos': [],
+        'loop': {
+          'id': 'l',
+          'owner_id': 'a',
+          'name': 'Loop',
+          'source': 'custom',
+          'shared_route': null,
+          'distance_m': 1000,
+          'duration_s': 100,
+          'curviness_score': null,
+          'main_stop': null,
+          'visibility': 'club',
+          'club_id': 'k',
+          'created_at': '2026-10-19T05:00:00Z',
+        },
+        'like_count': 0,
+        'comment_count': 0,
+        'liked_by_me': false,
+        'first_comment': null,
+      });
+      expect(item.isLoopOnly, isTrue);
+      expect(item.distanceAwayM, isNull);
+      expect(item.loop.clubId, 'k');
     });
   });
+}
+
+/// "Near you" pages that wait for [release].
+class _SlowFeed extends FakeFeedRepository {
+  _SlowFeed(super.posts);
+
+  final _gate = Completer<void>();
+  void release() => _gate.complete();
+
+  @override
+  Future<List<FeedPost>> near(
+    LatLng near, {
+    DateTime? before,
+    int limit = 20,
+    double radiusM = feedRadiusM,
+  }) async {
+    await _gate.future;
+    return super.near(near, before: before, limit: limit, radiusM: radiusM);
+  }
 }

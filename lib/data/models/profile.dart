@@ -68,3 +68,54 @@ class ProfileSummary {
     avatarUrl: json['avatar_url'] as String?,
   );
 }
+
+/// A row of the `rider_profile` RPC: what other riders see, with follows.
+class RiderProfile {
+  const RiderProfile({
+    required this.id,
+    this.displayName,
+    this.avatarUrl,
+    this.bikeType,
+    this.homeArea,
+    this.followerCount = 0,
+    this.followingCount = 0,
+    this.followedByMe = false,
+  });
+
+  final String id;
+  final String? displayName;
+  final String? avatarUrl;
+  final BikeType? bikeType;
+
+  /// Town only.
+  final String? homeArea;
+  final int followerCount;
+  final int followingCount;
+  final bool followedByMe;
+
+  RiderProfile copyWith({bool? followedByMe, int? followerCount}) =>
+      RiderProfile(
+        id: id,
+        displayName: displayName,
+        avatarUrl: avatarUrl,
+        bikeType: bikeType,
+        homeArea: homeArea,
+        followerCount: followerCount ?? this.followerCount,
+        followingCount: followingCount,
+        followedByMe: followedByMe ?? this.followedByMe,
+      );
+
+  factory RiderProfile.fromJson(Json json) => RiderProfile(
+    id: json['id'] as String,
+    displayName: json['display_name'] as String?,
+    avatarUrl: json['avatar_url'] as String?,
+    bikeType: switch (json['bike_type']) {
+      final String v => BikeType.fromValue(v),
+      _ => null,
+    },
+    homeArea: json['home_area'] as String?,
+    followerCount: toIntOrNull(json['follower_count']) ?? 0,
+    followingCount: toIntOrNull(json['following_count']) ?? 0,
+    followedByMe: json['followed_by_me'] as bool? ?? false,
+  );
+}

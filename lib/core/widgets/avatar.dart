@@ -47,7 +47,8 @@ class Avatar extends StatelessWidget {
       initialsOf(name),
       style: PasyarTextStyles.body.copyWith(
         height: 1,
-        fontSize: size <= 32 ? 12 : 15,
+        // Feed sizes use 12 / 15; profile and club headers (64+) scale.
+        fontSize: size <= 32 ? 12 : (size < 64 ? 15 : size * 0.36),
         fontWeight: FontWeight.w600,
         color: PasyarColors.card,
       ),

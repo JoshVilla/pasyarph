@@ -7,11 +7,12 @@ import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../clubs/widgets/my_clubs_list.dart';
 import '../widgets/my_loops_list.dart';
 import '../widgets/ride_history_list.dart';
 
-/// The Me tab: name, your rides (post the ones from the last 7 days), and
-/// log out. Prompt 19 builds the real profile.
+/// The Me tab: name, your loops, your clubs, your rides (post the ones from
+/// the last 7 days), and log out. Prompt 19 builds the real profile.
 class MeScreen extends StatelessWidget {
   const MeScreen({super.key});
 
@@ -34,6 +35,8 @@ class MeScreen extends StatelessWidget {
             Text(auth.user!.email!, style: PasyarTextStyles.label),
           const SizedBox(height: 24),
           const MyLoopsList(),
+          const SizedBox(height: 32),
+          const MyClubsList(),
           const SizedBox(height: 32),
           const RideHistoryList(),
           const SizedBox(height: 32),

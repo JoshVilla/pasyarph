@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/social_repository.dart';
@@ -11,6 +12,7 @@ import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/feed/screens/photo_gallery_screen.dart';
+import 'package:pasyarph/features/feed/widgets/post_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/fake_auth_repository.dart';
@@ -25,8 +27,12 @@ final _feedList = find.byWidgetPredicate(
   (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
 );
 
-/// The feed with [posts], already loaded, as "Mark Estrada" (ME).
-Future<Widget> _feed(List<FeedPost> posts) async {
+/// The feed with [posts] (and [scoped] for the other filters), already
+/// loaded, as "Mark Estrada" (ME).
+Future<Widget> _feed(
+  List<FeedPost> posts, {
+  Map<FeedScope, List<FeedPost>>? scoped,
+}) async {
   final location = LocationProvider(
     permissions: FakeLocationPermission(),
     positions: FakePositionSource(
@@ -34,7 +40,7 @@ Future<Widget> _feed(List<FeedPost> posts) async {
     ),
   );
   await location.start();
-  final repo = FakeFeedRepository(posts);
+  final repo = FakeFeedRepository(posts, scoped: scoped);
   final social = FakeSocialRepository(comments: threadOf('p1', 3));
   final feed = FeedProvider(feed: repo, social: social, location: location);
   await feed.refresh();
@@ -169,17 +175,88 @@ void main() {
     expect(find.text('Post 30'), findsOneWidget);
   });
 
-  testWidgets('Following and My clubs say what is coming', (tester) async {
+  testWidgets('My clubs: club posts, and loops shared without a post', (
+    tester,
+  ) async {
+    final club = [
+      feedPost(
+        id: 'c1',
+        createdAt: _now.subtract(const Duration(hours: 1)),
+        caption: 'Club Sunday',
+        photos: const ['#A8B9A0'],
+        visibility: LoopVisibility.club,
+      ),
+      feedPost(
+        id: 'c2',
+        createdAt: _now.subtract(const Duration(hours: 3)),
+        author: 'Ana Lopez',
+        visibility: LoopVisibility.club,
+        loopOnly: true,
+        awayM: null,
+      ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home:
+            await tester.runAsync(
+                  () => _feed(
+                    mockupPosts(_now),
+                    scoped: {FeedScope.myClubs: club},
+                  ),
+                )
+                as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My clubs'));
+    await tester.pumpAndSettle();
+    expect(find.text('Club Sunday'), findsOneWidget);
+    expect(find.text('Isabela · 6 km from you'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('RIDE THIS LOOP'),
+      300,
+      scrollable: _feedList,
+    );
+    // The loop without a post can be ridden but not liked.
+    final loopCard = find.ancestor(
+      of: find.text('RIDE THIS LOOP'),
+      matching: find.byType(PostCard),
+    );
+    expect(
+      find.descendant(of: loopCard, matching: find.text('Like')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: loopCard,
+        matching: find.textContaining(
+          'Ana Lopez shared a new loop',
+          findRichText: true,
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Following and My clubs, empty: how to fill them', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: await tester.runAsync(() => _feed(mockupPosts(_now))) as Widget,
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Following'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Rides from riders you follow'), findsOneWidget);
+    expect(find.text('RIDE IT'), findsNothing);
+
     await tester.tap(find.text('My clubs'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Clubs are coming soon'), findsOneWidget);
-    expect(find.text('RIDE IT'), findsNothing);
+    expect(find.textContaining('Create or join a club'), findsOneWidget);
+    expect(find.text('MY CLUBS'), findsOneWidget);
   });
 
   testWidgets('no posts nearby: an invitation to post', (tester) async {

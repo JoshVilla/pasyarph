@@ -17,6 +17,42 @@ class FeedException implements Exception {
   );
 }
 
+/// Which posts a feed shows besides "Near you" (`feed_page` scopes).
+class FeedScope {
+  const FeedScope._(this.name, [this.target]);
+
+  /// Posts near the rider (`feed_near`).
+  static const near = FeedScope._('near');
+
+  /// Riders the rider follows.
+  static const following = FeedScope._('following');
+
+  /// Club loops of the rider's clubs.
+  static const myClubs = FeedScope._('clubs');
+
+  /// One club's page.
+  const FeedScope.club(String clubId) : this._('club', clubId);
+
+  /// One rider's profile.
+  const FeedScope.rider(String userId) : this._('rider', userId);
+
+  /// The `feed_page` scope.
+  final String name;
+
+  /// Club or rider id.
+  final String? target;
+
+  @override
+  bool operator ==(Object other) =>
+      other is FeedScope && other.name == name && other.target == target;
+
+  @override
+  int get hashCode => Object.hash(name, target);
+
+  @override
+  String toString() => 'FeedScope($name${target == null ? '' : ', $target'})';
+}
+
 abstract interface class FeedRepository {
   /// Posts with their stop within [radiusM] of [near], newest first. Pass
   /// the last post's createdAt as [before] for the next page. Throws
@@ -26,6 +62,16 @@ abstract interface class FeedRepository {
     DateTime? before,
     int limit = 20,
     double radiusM = feedRadiusM,
+  });
+
+  /// Posts and loops shared without a post in [scope] (not
+  /// [FeedScope.near]), newest first. [near] only fills in distances. Throws
+  /// [FeedException].
+  Future<List<FeedPost>> page(
+    FeedScope scope, {
+    LatLng? near,
+    DateTime? before,
+    int limit = 20,
   });
 
   /// A post photo (storage path in post-photos), cached on the phone.
@@ -64,6 +110,33 @@ class SupabaseFeedRepository implements FeedRepository {
       return [for (final r in rows) FeedPost.fromJson(r as Json)];
     } on Exception catch (e) {
       debugPrint('feed: feed_near failed: $e');
+      throw FeedException.offline;
+    }
+  }
+
+  @override
+  Future<List<FeedPost>> page(
+    FeedScope scope, {
+    LatLng? near,
+    DateTime? before,
+    int limit = 20,
+  }) async {
+    assert(scope != FeedScope.near, 'Use near() for the Near you feed');
+    try {
+      final rows = await _client.rpc<List<dynamic>>(
+        'feed_page',
+        params: {
+          'p_scope': scope.name,
+          'p_target': scope.target,
+          'lat': near?.latitude,
+          'lng': near?.longitude,
+          'page_limit': limit,
+          'page_cursor': before?.toUtc().toIso8601String(),
+        },
+      );
+      return [for (final r in rows) FeedPost.fromJson(r as Json)];
+    } on Exception catch (e) {
+      debugPrint('feed: feed_page($scope) failed: $e');
       throw FeedException.offline;
     }
   }

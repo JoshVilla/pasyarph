@@ -16,12 +16,18 @@ ImageProvider solidPhoto(String hex) {
   return MemoryImage(img.encodePng(image));
 }
 
-/// Pages through [posts] like feed_near (newest first, cursor = createdAt).
+/// Pages through [posts] like feed_near (newest first, cursor = createdAt),
+/// and through [scoped] like feed_page.
 class FakeFeedRepository implements FeedRepository {
-  FakeFeedRepository(this.posts);
+  FakeFeedRepository(this.posts, {Map<FeedScope, List<FeedPost>>? scoped})
+    : scoped = scoped ?? {};
 
   final List<FeedPost> posts;
+  final Map<FeedScope, List<FeedPost>> scoped;
   final calls = <DateTime?>[];
+
+  /// The scopes asked for with page(), in order.
+  final scopeCalls = <FeedScope>[];
   bool fail = false;
   final _images = <String, ImageProvider>{};
 
@@ -35,6 +41,21 @@ class FakeFeedRepository implements FeedRepository {
     calls.add(before);
     if (fail) throw FeedException.offline;
     return posts
+        .where((p) => before == null || p.createdAt.isBefore(before))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<List<FeedPost>> page(
+    FeedScope scope, {
+    LatLng? near,
+    DateTime? before,
+    int limit = 20,
+  }) async {
+    scopeCalls.add(scope);
+    if (fail) throw FeedException.offline;
+    return (scoped[scope] ?? const <FeedPost>[])
         .where((p) => before == null || p.createdAt.isBefore(before))
         .take(limit)
         .toList();
@@ -59,13 +80,15 @@ FeedPost feedPost({
   int distanceM = 118000,
   int durationS = 13800,
   double? curviness,
-  double awayM = 6000,
+  double? awayM = 6000,
   LoopVisibility visibility = LoopVisibility.public,
   String? province,
   int likes = 0,
   int comments = 0,
   bool liked = false,
   FeedComment? firstComment,
+  bool loopOnly = false,
+  String? clubId,
 }) => FeedPost(
   id: id,
   createdAt: createdAt,
@@ -86,6 +109,7 @@ FeedPost feedPost({
     durationS: durationS,
     curvinessScore: curviness,
     visibility: visibility,
+    clubId: clubId,
     createdAt: createdAt,
     sharedRoute: DemoRoutes.loop,
     province: province,
@@ -99,6 +123,7 @@ FeedPost feedPost({
   commentCount: comments,
   likedByMe: liked,
   firstComment: firstComment,
+  isLoopOnly: loopOnly,
 );
 
 /// The three posts of mockup 5, relative to [now].

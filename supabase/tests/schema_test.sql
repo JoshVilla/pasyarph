@@ -81,9 +81,10 @@ select is(
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 insert into clubs (id, name) values ('10000000-0000-0000-0000-000000000001', 'Isabela Riders');
+-- B joins with the invite code only the owner can read (Prompt 17).
+select set_config('test.invite', club_invite_code('10000000-0000-0000-0000-000000000001'), true);
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
-insert into club_members (club_id, user_id)
-values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b');
+select join_club(current_setting('test.invite'));
 select pg_temp.act_as_postgres();
 
 select is(
