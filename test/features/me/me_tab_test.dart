@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -424,6 +426,37 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, 'DELETE'));
       await tester.pumpAndSettle();
       expect(w.me.deleted, isTrue);
+      expect(w.auth.calls, contains('signOut'));
+    });
+
+    testWidgets('a spinner shows while deleting; it can\'t be closed', (
+      tester,
+    ) async {
+      final w = _World();
+      w.me.deleteGate = Completer<void>();
+      await _pump(tester, world: w, initial: Routes.settings);
+      await tester.ensureVisible(find.text('DELETE ACCOUNT'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DELETE ACCOUNT'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'DELETE');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'DELETE'));
+      await tester.pump();
+
+      expect(find.text('Deleting your account and photos…'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('CANCEL'), findsNothing);
+      // Back and tapping outside don't close it.
+      await tester.binding.handlePopRoute();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pump();
+      expect(find.text('Deleting your account and photos…'), findsOneWidget);
+      expect(w.auth.calls, isNot(contains('signOut')));
+
+      w.me.deleteGate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Deleting your account and photos…'), findsNothing);
       expect(w.auth.calls, contains('signOut'));
     });
 

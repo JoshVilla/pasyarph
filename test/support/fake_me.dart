@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:pasyarph/core/settings/app_settings.dart';
 import 'package:pasyarph/data/models/loop.dart';
@@ -17,6 +19,9 @@ class FakeMeRepository implements MeRepository {
   final calls = <String>[];
   bool fail = false;
   bool deleted = false;
+
+  /// Holds deleteAccount() until it completes.
+  Completer<void>? deleteGate;
   final _revision = ValueNotifier(0);
 
   @override
@@ -32,10 +37,7 @@ class FakeMeRepository implements MeRepository {
   @override
   Future<List<Loop>> savedLoops() async {
     if (fail) throw MeException.loadFailed;
-    return [
-      for (final id in saved.reversed)
-        ?loops[id],
-    ];
+    return [for (final id in saved.reversed) ?loops[id]];
   }
 
   @override
@@ -60,6 +62,7 @@ class FakeMeRepository implements MeRepository {
   @override
   Future<void> deleteAccount() async {
     calls.add('delete');
+    await deleteGate?.future;
     if (fail) throw MeException.deleteFailed;
     deleted = true;
   }

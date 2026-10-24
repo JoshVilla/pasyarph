@@ -24,26 +24,21 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   Future<void> _delete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final me = context.read<MeRepository>();
+    final deleted = await showDialog<bool>(
       context: context,
-      builder: (_) => const DeleteAccountDialog(),
+      // Not while it's deleting; the dialog closes itself when done.
+      barrierDismissible: false,
+      builder: (_) => DeleteAccountDialog(onDelete: me.deleteAccount),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (deleted != true || !context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    try {
-      await context.read<MeRepository>().deleteAccount();
-      if (!context.mounted) return;
-      // The user is gone; signing out clears the session and the router
-      // goes to Welcome.
-      await context.read<AuthProvider>().signOut();
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Your account was deleted.')),
-      );
-    } on MeException catch (e) {
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
-    }
+    // The user is gone; signing out clears the session and the router goes
+    // to Welcome.
+    await context.read<AuthProvider>().signOut();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Your account was deleted.')),
+    );
   }
 
   @override
@@ -213,10 +208,14 @@ class _InfoPanel extends StatelessWidget {
   }
 }
 
-/// Asks the rider to type DELETE. Pops true to delete. No typing while
-/// moving.
+/// Asks the rider to type DELETE, then runs [onDelete] with a spinner and
+/// pops true once the account is gone. A failure shows in the dialog so
+/// the rider can try again. No typing while moving.
 class DeleteAccountDialog extends StatefulWidget {
-  const DeleteAccountDialog({super.key});
+  const DeleteAccountDialog({super.key, required this.onDelete});
+
+  /// Throws [MeException] when it fails.
+  final Future<void> Function() onDelete;
 
   @override
   State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
@@ -224,6 +223,8 @@ class DeleteAccountDialog extends StatefulWidget {
 
 class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
   final _typed = TextEditingController();
+  bool _deleting = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -231,44 +232,92 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
     super.dispose();
   }
 
+  Future<void> _delete() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _deleting = true;
+      _error = null;
+    });
+    try {
+      await widget.onDelete();
+      if (mounted) Navigator.of(context).pop(true);
+    } on MeException catch (e) {
+      if (mounted) {
+        setState(() {
+          _deleting = false;
+          _error = e.message;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final moving = context.watch<LocationProvider>().isMoving;
     final ok = _typed.text.trim().toUpperCase() == deleteConfirmWord;
-    return AlertDialog(
-      title: const Text('Delete your account?'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 12,
-        children: [
-          const Text(
-            'This deletes your profile, loops, rides, posts and photos, '
-            "likes, comments and clubs you own. It can't be undone.",
-          ),
-          PasyarTextField(
-            label: 'Type $deleteConfirmWord to confirm',
-            controller: _typed,
-            enabled: !moving,
-            textCapitalization: TextCapitalization.characters,
-            error: moving ? 'Stop riding first.' : null,
-            onChanged: (_) => setState(() {}),
-          ),
-        ],
+    return PopScope(
+      // Back can't interrupt a delete halfway.
+      canPop: !_deleting,
+      child: AlertDialog(
+        title: const Text('Delete your account?'),
+        content: _deleting
+            ? Semantics(
+                liveRegion: true,
+                child: Row(
+                  spacing: 16,
+                  children: [
+                    const SizedBox.square(
+                      dimension: 28,
+                      child: CircularProgressIndicator(
+                        color: PasyarColors.accent,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Deleting your account and photos…',
+                        style: PasyarTextStyles.body,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 12,
+                children: [
+                  const Text(
+                    'This deletes your profile, loops, rides, posts and '
+                    "photos, likes, comments and clubs you own. It can't be "
+                    'undone.',
+                  ),
+                  PasyarTextField(
+                    label: 'Type $deleteConfirmWord to confirm',
+                    controller: _typed,
+                    enabled: !moving,
+                    textCapitalization: TextCapitalization.characters,
+                    error: moving ? 'Stop riding first.' : _error,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+              ),
+        actions: _deleting
+            ? const []
+            : [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: ok && !moving ? _delete : null,
+                  style: TextButton.styleFrom(
+                    foregroundColor: PasyarColors.accentDark,
+                  ),
+                  child: const Text('DELETE'),
+                ),
+              ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('CANCEL'),
-        ),
-        TextButton(
-          onPressed: ok && !moving
-              ? () => Navigator.of(context).pop(true)
-              : null,
-          style: TextButton.styleFrom(foregroundColor: PasyarColors.accentDark),
-          child: const Text('DELETE'),
-        ),
-      ],
     );
   }
 }
