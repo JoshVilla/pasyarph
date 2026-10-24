@@ -49,7 +49,7 @@ Widget _home(LocationProvider location, [FakeRouteRepository? routes]) {
         ],
         child: Scaffold(
           body: const RideScreen(),
-          bottomNavigationBar: PasyarBottomTabs(currentIndex: 0, onTap: (_) {}),
+          bottomNavigationBar: PasyarBottomTabs(currentIndex: 1, onTap: (_) {}),
         ),
       ),
     ),

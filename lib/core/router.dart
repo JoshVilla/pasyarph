@@ -305,16 +305,16 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.ride,
-                builder: (context, state) => const RideScreen(),
+                path: Routes.feed,
+                builder: (context, state) => const FeedScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.feed,
-                builder: (context, state) => const FeedScreen(),
+                path: Routes.ride,
+                builder: (context, state) => const RideScreen(),
               ),
             ],
           ),

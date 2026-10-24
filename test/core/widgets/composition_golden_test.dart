@@ -99,7 +99,7 @@ void main() {
                         ),
                       ],
                     ),
-                    PasyarBottomTabs(currentIndex: 0, onTap: (_) {}),
+                    PasyarBottomTabs(currentIndex: 1, onTap: (_) {}),
                   ],
                 ),
               ),

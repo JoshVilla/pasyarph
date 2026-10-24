@@ -16,7 +16,7 @@ Motorcycle loop-route app for Filipino riders. A rider picks how long they want 
 - After building a screen, add a 390x844 golden test and compare it with the screenshot; fix any differences before finishing.
 - The maps in the mockups are illustrations: use a real flutter_map full-screen behind the controls, but keep the route line, markers, and controls exactly as drawn.
 - Touch targets ≥ 44px (riders may wear gloves); navigation screens use big, glanceable text.
-- Bottom tabs: Ride, Feed, Create, Me.
+- Bottom tabs: Feed, Ride, Create, Me (Feed first; it's the home screen after logging in).
 
 ## Rules
 - Folder structure: lib/core (theme, router, env), lib/data (models, repositories), lib/features/<feature>/(screens, widgets, providers)

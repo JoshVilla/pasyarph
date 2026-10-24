@@ -12,10 +12,10 @@ class PasyarTab {
   final String label;
 }
 
-/// Ride, Feed, Create, Me — in this order.
+/// Feed, Ride, Create, Me — in this order.
 const pasyarTabs = [
-  PasyarTab(icon: LucideIcons.rotateCw, label: 'Ride'),
   PasyarTab(icon: LucideIcons.image, label: 'Feed'),
+  PasyarTab(icon: LucideIcons.rotateCw, label: 'Ride'),
   PasyarTab(icon: LucideIcons.route, label: 'Create'),
   PasyarTab(icon: LucideIcons.user, label: 'Me'),
 ];

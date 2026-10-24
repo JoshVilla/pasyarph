@@ -8,7 +8,7 @@ import 'bottom_tabs.dart';
 /// full-screen Create a loop screen over the tabs (design/mockups/06).
 const createTab = 2;
 
-/// Bottom navigation shell for the four main tabs: Ride, Feed, Create, Me.
+/// Bottom navigation shell for the four main tabs: Feed, Ride, Create, Me.
 /// Branches are the tabs without Create, in order (see `createRouter()`).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
