@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/map/map_markers.dart';
+import '../../../core/map/route_arrows.dart';
 import '../../../core/map/pasyar_map.dart';
 import '../../../core/map/route_style.dart';
 import '../../../core/theme/pasyar_theme.dart';
@@ -127,6 +128,8 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
             for (final line in shape.dashed) ...routePolylines(closing: line),
           ],
         ),
+        // Which way the loop goes, S → 1 → 2 → … → S.
+        RouteArrowsLayer(routes: shape.solid),
         MarkerLayer(
           markers: [
             for (var i = 0; i < widget.points.length; i++)

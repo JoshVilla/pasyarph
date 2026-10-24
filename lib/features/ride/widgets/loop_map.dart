@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/map/map_markers.dart';
+import '../../../core/map/route_arrows.dart';
 import '../../../core/map/pasyar_map.dart';
 import '../../../core/map/route_style.dart';
 import '../../../core/theme/pasyar_theme.dart';
@@ -91,6 +92,8 @@ class _LoopMapState extends State<LoopMap> {
             ridden: widget.ridden,
           ),
         ),
+        // Which way to ride (on the part still ahead).
+        RouteArrowsLayer(routes: [widget.ahead ?? widget.route]),
         MarkerLayer(
           markers: [
             for (final f in widget.fuel) PasyarMarkers.fuel(f),
