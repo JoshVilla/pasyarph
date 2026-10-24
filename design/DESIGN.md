@@ -19,13 +19,15 @@ This folder is the source of truth for how Pasyar looks. **Match it. Don't redes
 | 10 | Onboarding — rider profile | `screenshots/10-onboarding-profile.png` | `mockups/10-onboarding-profile.html` |
 | 11 | Onboarding — location + safety | `screenshots/11-onboarding-location.png` | `mockups/11-onboarding-location.html` |
 
-**The maps in the mockups are illustrations.** In the app, a real `flutter_map` fills the whole screen behind the floating controls and bottom sheets. Keep the route style (orange line with white casing), markers, and controls exactly as drawn.
+**The maps in the mockups are illustrations.** In the app, a real `flutter_map` fills the whole screen behind the floating controls and bottom sheets. Keep the route style (blue `accent` line with white casing), markers, and controls exactly as drawn.
 
 Text in `[brackets]` and the sample numbers are placeholders for real data.
 
 ---
 
 ## Colors
+
+The theme moved from orange to deep blue (October 2026). The screenshots and HTML mockups still show the old orange: match their layout, but take every color from this table.
 
 | Token | Hex | Used for |
 |---|---|---|
@@ -35,10 +37,10 @@ Text in `[brackets]` and the sample numbers are placeholders for real data.
 | `card` | `#FFFFFF` | Sheets, cards, floating controls |
 | `line` | `#E2E0DA` | Borders, dividers, feed separators |
 | `lineStrong` | `#D3D5CC` | Drag handles, chip borders, empty photo slots (dashed) |
-| `accent` | `#C2410C` | Primary buttons, route line, active tab, selected states |
-| `accentDark` | `#9A3412` | Text on accent tint, overlines like "MAIN STOP · 52 KM IN" |
-| `accentTint` | `#FBE9DF` | Selected choice card background, camera slot |
-| `rider` | `#1D4ED8` | Rider location dot and heading arrow, location icon |
+| `accent` | `#1D4ED8` | Primary buttons, route line, active tab, selected states |
+| `accentDark` | `#1E3A8A` | Text on accent tint, overlines like "MAIN STOP · 52 KM IN" |
+| `accentTint` | `#EAF0FE` | Selected choice card background, camera slot |
+| `rider` | `#0F172A` | Rider location dot and heading arrow, location icon, start point "S" (dark so it stands out on the blue route) |
 | `verifiedTint` / `verifiedText` | `#E6EEFB` / `#1E3A8A` | "GPS confirmed at stop" badge |
 | `mapGround` | `#F7F7F7` | Map placeholder / loading background; matches the land of the MapTiler `streets-v2-pastel` style |
 | `riddenRoute` | `#9CA0A8` | Part of the loop already ridden |
@@ -54,10 +56,10 @@ class PasyarColors {
   static const card = Color(0xFFFFFFFF);
   static const line = Color(0xFFE2E0DA);
   static const lineStrong = Color(0xFFD3D5CC);
-  static const accent = Color(0xFFC2410C);
-  static const accentDark = Color(0xFF9A3412);
-  static const accentTint = Color(0xFFFBE9DF);
-  static const rider = Color(0xFF1D4ED8);
+  static const accent = Color(0xFF1D4ED8);
+  static const accentDark = Color(0xFF1E3A8A);
+  static const accentTint = Color(0xFFEAF0FE);
+  static const rider = Color(0xFF0F172A);
   static const verifiedTint = Color(0xFFE6EEFB);
   static const verifiedText = Color(0xFF1E3A8A);
   static const mapGround = Color(0xFFF7F7F7);
@@ -74,7 +76,7 @@ Two families from Google Fonts: **Barlow Condensed** (display) and **Barlow** (b
 | Style | Font | Size / weight | Notes |
 |---|---|---|---|
 | `wordmark` | Barlow Condensed | 72 / 700 | "PASYAR" on Welcome only, letter-spacing 1, line-height 0.95 |
-| `tagline` | Barlow Condensed | 26 / 600 | Welcome tagline, color `#F2A27A` on ink |
+| `tagline` | Barlow Condensed | 26 / 600 | Welcome tagline, color `taglineOnInk` `#93B4FB` on ink |
 | `screenTitle` | Barlow Condensed | 30–36 / 700 | UPPERCASE, letter-spacing 0.5. Home 30, Feed 32, Onboarding 34, Post / Log in / Register 36 |
 | `navDistance` | Barlow Condensed | 40 / 700 | Riding banner, line-height 1.0 |
 | `statValue` | Barlow Condensed | 28 / 700 | Distance, ride time; 22 inside feed cards |

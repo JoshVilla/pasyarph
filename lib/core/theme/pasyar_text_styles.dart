@@ -33,7 +33,7 @@ abstract final class PasyarTextStyles {
   static final tagline = _display.copyWith(
     fontSize: 26,
     fontWeight: FontWeight.w600,
-    color: const Color(0xFFF2A27A),
+    color: PasyarColors.taglineOnInk,
   );
 
   /// UPPERCASE screen titles. Home 30, Feed 32, Onboarding 34,
