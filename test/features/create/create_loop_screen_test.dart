@@ -12,6 +12,7 @@ import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/routed_leg.dart';
 import 'package:pasyarph/features/create/providers/create_loop_controller.dart';
 import 'package:pasyarph/features/create/screens/create_loop_screen.dart';
+import 'package:pasyarph/features/create/widgets/create_loop_map.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
 import 'package:pasyarph/features/ride/loop_stats.dart';
 import 'package:provider/provider.dart';
@@ -203,6 +204,34 @@ void main() {
           'https://pasyar.pages.dev/l/loop-1',
     ]);
     expect(loops.calls, ['create:loop-1']);
+  });
+
+  testWidgets('drag the sheet down to see the map; back up on a tap', (
+    tester,
+  ) async {
+    await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
+    final saveOpen = tester.getTopLeft(find.text('SAVE')).dy;
+    final mapOpen = tester.getSize(find.byType(CreateLoopMap)).height;
+
+    await tester.drag(find.text('Who can see it'), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('SAVE')).dy, greaterThan(844));
+    expect(
+      tester.getSize(find.byType(CreateLoopMap)).height,
+      greaterThan(mapOpen + 300),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Show details'));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('SAVE')).dy, saveOpen);
+  });
+
+  testWidgets('the sheet stays up while typing', (tester) async {
+    await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300 * 3);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Hide details to see the map'), findsNothing);
   });
 
   testWidgets('no typing or saving while moving', (tester) async {

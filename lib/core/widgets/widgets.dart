@@ -3,6 +3,7 @@ export 'avatar.dart';
 export 'bottom_tabs.dart';
 export 'buttons.dart';
 export 'choice_card.dart';
+export 'collapsible_sheet.dart';
 export 'panels.dart';
 export 'pasyar_text_field.dart';
 export 'route_thumbnail.dart';

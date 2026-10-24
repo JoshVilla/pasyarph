@@ -11,6 +11,7 @@ import 'package:pasyarph/features/ride/loop_stats.dart';
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
 import 'package:pasyarph/features/ride/widgets/home_controls.dart';
+import 'package:pasyarph/features/ride/widgets/loop_map.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/fake_services.dart';
@@ -54,6 +55,61 @@ void main() {
         ),
       ),
     );
+    // Dragged down to see the map: the handle and stats stay.
+    goldenTest(
+      'Loop preview, sheet down',
+      fileName: 'loop_preview_sheet_down',
+      constraints: _screen,
+      pumpBeforeTest: (tester) async {
+        await tester.pumpAndSettle();
+        await tester.tap(find.bySemanticsLabel('Hide details to see the map'));
+        await tester.pumpAndSettle();
+      },
+      builder: () => _screenWith(
+        _preview(
+          FakeRouteRepository([demoLoop(mainStop: demoStop, fuel: demoFuel)]),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('drag the sheet down to see the map, up to bring it back', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(home: _screenWith(_preview(FakeRouteRepository()))),
+    );
+    await tester.pumpAndSettle();
+    final mapOpen = tester.getSize(find.byType(LoopMap)).height;
+    final startOpen = tester.getTopLeft(find.text('START RIDE')).dy;
+
+    await tester.drag(find.text('118 km'), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byType(LoopMap)).height,
+      greaterThan(mapOpen + 150),
+    );
+    // The stats peek out; the buttons are below the screen.
+    expect(tester.getTopLeft(find.text('118 km')).dy, lessThan(844));
+    expect(tester.getTopLeft(find.text('START RIDE')).dy, greaterThan(844));
+
+    await tester.drag(find.text('118 km'), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
+
+    // A small drag snaps back open; the handle toggles.
+    await tester.drag(find.text('118 km'), const Offset(0, 40));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
+    await tester.tap(find.bySemanticsLabel('Hide details to see the map'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Show details'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Show details'));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
   });
 
   testWidgets('multi-day: title by days, overnight stops, one try', (
@@ -74,8 +130,16 @@ void main() {
         backtrackingRatio: 0.5,
         curvinessScore: 200,
         overnights: [
-          Overnight(name: 'Baguio', location: DemoRoutes.point1, kmIntoRoute: 251),
-          Overnight(name: 'Vigan', location: DemoRoutes.point2, kmIntoRoute: 520),
+          Overnight(
+            name: 'Baguio',
+            location: DemoRoutes.point1,
+            kmIntoRoute: 251,
+          ),
+          Overnight(
+            name: 'Vigan',
+            location: DemoRoutes.point2,
+            kmIntoRoute: 520,
+          ),
         ],
       ),
     ]);

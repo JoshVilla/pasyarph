@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../env.dart';
 import '../theme/pasyar_theme.dart';
+import '../widgets/collapsible_sheet.dart';
 
 /// MapTiler raster tiles from [Env]. Null when no tile URL is configured
 /// (tests and CI), so the map stays plain `mapGround`.
@@ -70,23 +71,29 @@ class MapAttribution extends StatelessWidget {
 
 /// A bottom sheet at its natural height with a map filling the rest. The
 /// map runs [overlap] px under the sheet's rounded corners, so whatever is
-/// centered on the map is centered in the part you can see.
+/// centered on the map is centered in the part you can see. With
+/// [collapsed] above 0 the sheet slides down (to [peek] px at 1) and the
+/// map grows into the space (see CollapsibleSheet).
 class MapUnderSheet extends StatelessWidget {
   const MapUnderSheet({
     super.key,
     required this.map,
     required this.sheet,
     this.overlap = PasyarRadius.sheet,
+    this.collapsed = 0,
+    this.peek = sheetPeekHeight,
   });
 
   final Widget map;
   final Widget sheet;
   final double overlap;
+  final double collapsed;
+  final double peek;
 
   @override
   Widget build(BuildContext context) {
     return CustomMultiChildLayout(
-      delegate: _MapUnderSheetLayout(overlap),
+      delegate: _MapUnderSheetLayout(overlap, collapsed, peek),
       children: [
         LayoutId(id: _Slot.map, child: map),
         LayoutId(id: _Slot.sheet, child: sheet),
@@ -98,9 +105,11 @@ class MapUnderSheet extends StatelessWidget {
 enum _Slot { map, sheet }
 
 class _MapUnderSheetLayout extends MultiChildLayoutDelegate {
-  _MapUnderSheetLayout(this.overlap);
+  _MapUnderSheetLayout(this.overlap, this.collapsed, this.peek);
 
   final double overlap;
+  final double collapsed;
+  final double peek;
 
   @override
   void performLayout(Size size) {
@@ -112,17 +121,19 @@ class _MapUnderSheetLayout extends MultiChildLayoutDelegate {
         maxHeight: size.height,
       ),
     );
-    positionChild(_Slot.sheet, Offset(0, size.height - sheet.height));
+    // How far the sheet has slid down; what's still showing of it.
+    final down = collapsed * (sheet.height - peek).clamp(0.0, sheet.height);
+    final showing = sheet.height - down;
+    positionChild(_Slot.sheet, Offset(0, size.height - showing));
 
-    final mapHeight = (size.height - sheet.height + overlap).clamp(
-      0.0,
-      size.height,
-    );
+    final mapHeight = (size.height - showing + overlap).clamp(0.0, size.height);
     layoutChild(_Slot.map, BoxConstraints.tight(Size(size.width, mapHeight)));
     positionChild(_Slot.map, Offset.zero);
   }
 
   @override
   bool shouldRelayout(_MapUnderSheetLayout oldDelegate) =>
-      oldDelegate.overlap != overlap;
+      oldDelegate.overlap != overlap ||
+      oldDelegate.collapsed != collapsed ||
+      oldDelegate.peek != peek;
 }

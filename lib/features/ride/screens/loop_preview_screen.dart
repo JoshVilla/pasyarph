@@ -54,22 +54,26 @@ class LoopPreviewScreen extends StatelessWidget {
       backgroundColor: PasyarColors.mapGround,
       body: Stack(
         children: [
-          MapUnderSheet(
-            map: LoopMap(
-              route: loop.route,
-              mainStop: preview.mainStop?.location,
-              fuel: [for (final f in loop.fuelStops) f.location],
-              overnights: [for (final n in loop.overnights) n.location],
-              // Keep the loop clear of the top controls and the sheet edge.
-              fitPadding: EdgeInsets.fromLTRB(
-                40,
-                top + 48 + 32,
-                40,
-                PasyarRadius.sheet + 40,
+          // Drag the sheet down to see more of the loop.
+          CollapsibleSheet(
+            builder: (context, collapsed, wrapSheet) => MapUnderSheet(
+              collapsed: collapsed,
+              map: LoopMap(
+                route: loop.route,
+                mainStop: preview.mainStop?.location,
+                fuel: [for (final f in loop.fuelStops) f.location],
+                overnights: [for (final n in loop.overnights) n.location],
+                // Keep the loop clear of the top controls and the sheet edge.
+                fitPadding: EdgeInsets.fromLTRB(
+                  40,
+                  top + 48 + 32,
+                  40,
+                  PasyarRadius.sheet + 40,
+                ),
+                attributionBottom: PasyarRadius.sheet,
               ),
-              attributionBottom: PasyarRadius.sheet,
+              sheet: wrapSheet(_PreviewSheet(preview: preview, loop: loop)),
             ),
-            sheet: _PreviewSheet(preview: preview, loop: loop),
           ),
           Positioned(
             top: top,

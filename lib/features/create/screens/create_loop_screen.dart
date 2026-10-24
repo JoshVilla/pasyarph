@@ -163,93 +163,110 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
       child: Scaffold(
         backgroundColor: PasyarColors.mapGround,
         resizeToAvoidBottomInset: false,
-        body: Stack(
-          children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: mapHeight,
-              child: CreateLoopMap(
-                start: loop.start,
-                points: loop.points,
-                mainStop: loop.mainStopIndex,
-                shape: loop.shape,
-                onAdd: loop.addPoint,
-                onMainStop: loop.setMainStop,
-                onRemove: loop.removePoint,
-                onDrag: loop.dragPoint,
-                onDragEnd: loop.endDrag,
-                attributionBottom: PasyarRadius.sheet,
-              ),
-            ),
-            Positioned(
-              top: top,
-              left: PasyarSpacing.screen,
-              right: PasyarSpacing.screen,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 12,
-                children: [
-                  Row(
+        // Drag the sheet down to see more of the map (not while typing).
+        body: CollapsibleSheet(
+          enabled: keyboard == 0,
+          builder: (context, collapsed, wrapSheet) {
+            final down = collapsed * (sheetHeight - sheetPeekHeight);
+            return Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: mapHeight + down,
+                  child: CreateLoopMap(
+                    start: loop.start,
+                    points: loop.points,
+                    mainStop: loop.mainStopIndex,
+                    shape: loop.shape,
+                    onAdd: loop.addPoint,
+                    onMainStop: loop.setMainStop,
+                    onRemove: loop.removePoint,
+                    onDrag: loop.dragPoint,
+                    onDragEnd: loop.endDrag,
+                    attributionBottom: PasyarRadius.sheet,
+                  ),
+                ),
+                Positioned(
+                  top: top,
+                  left: PasyarSpacing.screen,
+                  right: PasyarSpacing.screen,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: 12,
                     children: [
-                      RoundIconButton.floating(
-                        icon: LucideIcons.chevronLeft,
-                        semanticLabel: 'Back',
-                        onPressed: _back,
-                      ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: _HintPill(
-                            text: loop.start == null
-                                ? 'Finding your location…'
-                                : error != null
-                                ? '${error.message} Tap to retry.'
-                                : hintFor(loop.points.length),
-                            onTap: error == null ? null : loop.retryRoute,
+                      Row(
+                        spacing: 12,
+                        children: [
+                          RoundIconButton.floating(
+                            icon: LucideIcons.chevronLeft,
+                            semanticLabel: 'Back',
+                            onPressed: _back,
                           ),
-                        ),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: _HintPill(
+                                text: loop.start == null
+                                    ? 'Finding your location…'
+                                    : error != null
+                                    ? '${error.message} Tap to retry.'
+                                    : hintFor(loop.points.length),
+                                onTap: error == null ? null : loop.retryRoute,
+                              ),
+                            ),
+                          ),
+                          if (loop.points.isNotEmpty)
+                            RoundIconButton.floating(
+                              icon: LucideIcons.undo2,
+                              semanticLabel: 'Undo last point',
+                              onPressed: loop.undo,
+                            ),
+                        ],
                       ),
-                      if (loop.points.isNotEmpty)
-                        RoundIconButton.floating(
-                          icon: LucideIcons.undo2,
-                          semanticLabel: 'Undo last point',
-                          onPressed: loop.undo,
+                      if (locationOff)
+                        LocationOffBanner(
+                          status: status,
+                          onPressed: location.fix,
                         ),
                     ],
                   ),
-                  if (locationOff)
-                    LocationOffBanner(status: status, onPressed: location.fix),
-                ],
-              ),
-            ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 150),
-              left: 0,
-              right: 0,
-              bottom: keyboard,
-              height: sheetHeight,
-              child: CreateLoopSheet(
-                name: _name,
-                pointCount: loop.points.length,
-                totals: loop.totals,
-                routing: loop.routing,
-                routeFailed: error != null,
-                visibility: loop.visibility,
-                clubs: loop.clubs,
-                club: loop.club,
-                moving: moving,
-                onVisibility: loop.setVisibility,
-                onPickClub: _pickClub,
-                saving: loop.saving,
-                bottomInset: keyboard > 0 ? 0 : bottomInset,
-                onSave: loop.canSave && loop.dirty && !moving ? _save : null,
-                onShare: loop.canShareNow && !moving ? _share : null,
-              ),
-            ),
-          ],
+                ),
+                AnimatedPositioned(
+                  // Follows the keyboard smoothly; follows a drag at once.
+                  duration: collapsed > 0
+                      ? Duration.zero
+                      : const Duration(milliseconds: 150),
+                  left: 0,
+                  right: 0,
+                  bottom: keyboard - down,
+                  height: sheetHeight,
+                  child: wrapSheet(
+                    CreateLoopSheet(
+                      name: _name,
+                      pointCount: loop.points.length,
+                      totals: loop.totals,
+                      routing: loop.routing,
+                      routeFailed: error != null,
+                      visibility: loop.visibility,
+                      clubs: loop.clubs,
+                      club: loop.club,
+                      moving: moving,
+                      onVisibility: loop.setVisibility,
+                      onPickClub: _pickClub,
+                      saving: loop.saving,
+                      bottomInset: keyboard > 0 ? 0 : bottomInset,
+                      onSave: loop.canSave && loop.dirty && !moving
+                          ? _save
+                          : null,
+                      onShare: loop.canShareNow && !moving ? _share : null,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
