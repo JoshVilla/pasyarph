@@ -89,7 +89,7 @@ Widget _app({
         ),
       ),
       GoRoute(
-        path: Routes.ride,
+        path: Routes.home,
         builder: (context, state) => const Scaffold(body: Text('HOME')),
       ),
     ],

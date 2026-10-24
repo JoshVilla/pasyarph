@@ -93,6 +93,7 @@ class _World {
     loops: {'saved-1': _loop('saved-1', 'Tanay Sunrise Loop')},
   );
   final loops = FakeLoopRepository();
+  final moderation = FakeModerationRepository();
   final history = FakeRideHistory();
   final sharer = FakeSharer();
   final settings = AppSettings(MemorySettingsStore());
@@ -158,9 +159,7 @@ class _World {
     return MultiProvider(
       providers: [
         Provider<MeRepository>.value(value: me),
-        Provider<ModerationRepository>(
-          create: (_) => FakeModerationRepository(),
-        ),
+        Provider<ModerationRepository>.value(value: moderation),
         Provider<LoopRepository>.value(value: loops),
         Provider<RideHistoryRepository>.value(value: history),
         Provider<FeedRepository>.value(value: feed),
@@ -394,6 +393,42 @@ void main() {
     showPostMore(context, post, onShare: () {});
     await tester.pumpAndSettle();
     expect(find.text('Remove from saved loops'), findsOneWidget);
+  });
+
+  testWidgets("a post's ⋯ blocks just that post, with UNDO", (tester) async {
+    final w = _World();
+    await _pump(tester, world: w);
+    var reloads = 0;
+    final post = feedPost(id: 'x', createdAt: _now);
+    final context = tester.element(find.byType(MeScreen));
+    // ignore: unawaited_futures
+    showPostMore(context, post, onShare: () {}, onBlocked: () => reloads++);
+    await tester.pumpAndSettle();
+    expect(find.text('Block Rico Navarro'), findsOneWidget);
+    await tester.tap(find.text('Block this post'));
+    await tester.pumpAndSettle();
+    expect(w.moderation.blockedItems, [(BlockedItem.post, 'x')]);
+    expect(w.moderation.blockedIds, isEmpty, reason: 'the rider stays');
+    expect(reloads, 1);
+    expect(find.text("Post blocked. You won't see it again."), findsOneWidget);
+
+    await tester.tap(find.text('UNDO'));
+    await tester.pumpAndSettle();
+    expect(w.moderation.blockedItems, isEmpty);
+    expect(reloads, 2);
+  });
+
+  testWidgets("a shared loop's ⋯ blocks the loop", (tester) async {
+    final w = _World();
+    await _pump(tester, world: w);
+    final post = feedPost(id: 'l', createdAt: _now, loopOnly: true);
+    final context = tester.element(find.byType(MeScreen));
+    // ignore: unawaited_futures
+    showPostMore(context, post, onShare: () {});
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Block this loop'));
+    await tester.pumpAndSettle();
+    expect(w.moderation.blockedItems, [(BlockedItem.loop, post.loop.id)]);
   });
 
   group('Settings', () {

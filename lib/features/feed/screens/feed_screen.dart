@@ -36,7 +36,11 @@ class _FeedScreenState extends State<FeedScreen> {
     super.initState();
     _scroll.addListener(_maybeLoadMore);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<FeedProvider>().start();
+      if (!mounted) return;
+      // The Feed is the first screen after logging in, so it starts
+      // location itself ("Near you" waits for the first fix).
+      context.read<LocationProvider>().start();
+      context.read<FeedProvider>().start();
     });
   }
 

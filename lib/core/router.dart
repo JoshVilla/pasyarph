@@ -57,6 +57,9 @@ abstract final class Routes {
   static const feed = '/feed';
   static const me = '/me';
 
+  /// Where riders land after logging in or opening the app: the Feed.
+  static const home = feed;
+
   /// Create a loop: full screen over the tabs, pushed by the Create tab.
   static const create = '/create';
 
@@ -109,17 +112,17 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
   // A link opened while signed out opens after signing in.
   final pending = PendingLink();
   return GoRouter(
-    initialLocation: Routes.ride,
+    initialLocation: Routes.home,
     refreshListenable: auth,
     redirect: (context, state) => pending.redirect(
       path: state.uri.path,
-      home: Routes.ride,
+      home: Routes.home,
       target: authRedirect(
         status: auth.status,
         onboardingCompleted: auth.onboardingCompleted,
         passwordRecovery: auth.passwordRecovery,
         location: state.matchedLocation,
-        home: Routes.ride,
+        home: Routes.home,
         alwaysAllowed: {if (dev) Routes.devWidgets},
       ),
     ),

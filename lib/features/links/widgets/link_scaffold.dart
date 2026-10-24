@@ -42,7 +42,7 @@ class LinkScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = this.message;
-    void home() => context.go(Routes.ride);
+    void home() => context.go(Routes.home);
     return AuthScaffold(
       title: message?.title ?? title,
       subtitle: message?.text ?? text,

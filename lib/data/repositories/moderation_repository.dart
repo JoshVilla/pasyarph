@@ -23,6 +23,9 @@ class ModerationException implements Exception {
   String toString() => 'ModerationException: $message';
 }
 
+/// What a rider can block on its own (`blocked_items.target_type`).
+enum BlockedItem { post, loop }
+
 /// What an admin does with reported content.
 enum ModerationAction {
   /// Hide it from everyone but its author; closes its reports.
@@ -97,6 +100,11 @@ abstract interface class ModerationRepository {
   /// Reporting the same thing twice is fine. Throws [ModerationException].
   Future<void> report(ReportTarget target, String id, String reason);
 
+  /// Hides one post or loop from this rider's feeds without blocking its
+  /// rider. Throws [ModerationException].
+  Future<void> blockItem(BlockedItem item, String id);
+  Future<void> unblockItem(BlockedItem item, String id);
+
   /// Throws [ModerationException].
   Future<void> block(String userId);
   Future<void> unblock(String userId);
@@ -165,6 +173,28 @@ class SupabaseModerationRepository implements ModerationRepository {
           // Already reported: nothing more to do.
           if (e.code != '23505') rethrow;
         }
+      });
+
+  @override
+  Future<void> blockItem(BlockedItem item, String id) =>
+      _guard('blockItem', () async {
+        await _client.from('blocked_items').upsert({
+          'target_type': item.name,
+          'target_id': id,
+        }, ignoreDuplicates: true);
+        _blocks.value++;
+      });
+
+  @override
+  Future<void> unblockItem(BlockedItem item, String id) =>
+      _guard('unblockItem', () async {
+        await _client
+            .from('blocked_items')
+            .delete()
+            .eq('user_id', _uid)
+            .eq('target_type', item.name)
+            .eq('target_id', id);
+        _blocks.value++;
       });
 
   @override

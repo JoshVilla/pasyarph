@@ -19,6 +19,7 @@ class FakeModerationRepository implements ModerationRepository {
   final Map<String, String> names;
   final reports = <(ReportTarget, String, String)>[];
   final blockedIds = <String>[];
+  final blockedItems = <(BlockedItem, String)>[];
   final moderated = <(ReportTarget, String, ModerationAction)>[];
   bool fail = false;
   final _blocks = ValueNotifier(0);
@@ -34,6 +35,20 @@ class FakeModerationRepository implements ModerationRepository {
   Future<void> report(ReportTarget target, String id, String reason) async {
     _check();
     reports.add((target, id, reason));
+  }
+
+  @override
+  Future<void> blockItem(BlockedItem item, String id) async {
+    _check();
+    blockedItems.add((item, id));
+    _blocks.value++;
+  }
+
+  @override
+  Future<void> unblockItem(BlockedItem item, String id) async {
+    _check();
+    blockedItems.remove((item, id));
+    _blocks.value++;
   }
 
   @override

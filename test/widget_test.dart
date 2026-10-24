@@ -140,6 +140,17 @@ Future<FakeAuthRepository> pumpApp(
   return repo;
 }
 
+/// Taps a bottom tab.
+Future<void> openTab(WidgetTester tester, String label) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(PasyarBottomTabs),
+      matching: find.text(label),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('signed out: Welcome, then Log in', (tester) async {
     await pumpApp(tester, FakeAuthRepository());
@@ -169,7 +180,7 @@ void main() {
     expect(repo.calls, contains('signInWithPassword:ana@test.ph'));
   });
 
-  testWidgets('new account: onboarding step 1 → step 2 → Ride', (tester) async {
+  testWidgets('new account: onboarding step 1 → step 2 → Feed', (tester) async {
     final location = FakeLocationPermission(LocationAccess.denied);
     final repo = await pumpApp(
       tester,
@@ -205,7 +216,7 @@ void main() {
     await tester.tap(find.text('ALLOW LOCATION'));
     await tester.pumpAndSettle();
     expect(location.requests, 1);
-    expect(find.byType(RideScreen), findsOneWidget);
+    expect(find.byType(FeedScreen), findsOneWidget);
   });
 
   testWidgets('"Not now" finishes without asking for location', (tester) async {
@@ -223,7 +234,7 @@ void main() {
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(location.requests, 0);
-    expect(find.byType(RideScreen), findsOneWidget);
+    expect(find.byType(FeedScreen), findsOneWidget);
   });
 
   testWidgets('Generate opens the preview; Shuffle; Back returns to Ride', (
@@ -233,6 +244,7 @@ void main() {
       tester,
       FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
     );
+    await openTab(tester, 'Ride');
     await tester.tap(find.text('GENERATE LOOP'));
     await tester.pumpAndSettle();
     expect(find.byType(LoopPreviewScreen), findsOneWidget);
@@ -256,6 +268,7 @@ void main() {
       tester,
       FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
     );
+    await openTab(tester, 'Ride');
     await tester.tap(find.text('GENERATE LOOP'));
     await tester.pumpAndSettle();
     // start() runs a chain of async steps (notification permission,
@@ -317,19 +330,12 @@ void main() {
       tester,
       FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
     );
-    expect(find.byType(RideScreen), findsOneWidget);
+    // Logged in, the app opens on the Feed.
+    expect(find.byType(FeedScreen), findsOneWidget);
 
-    Future<void> tapTab(String label) async {
-      await tester.tap(
-        find.descendant(
-          of: find.byType(PasyarBottomTabs),
-          matching: find.text(label),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
+    Future<void> tapTab(String label) => openTab(tester, label);
 
-    final tabs = {'Feed': FeedScreen, 'Me': MeScreen, 'Ride': RideScreen};
+    final tabs = {'Ride': RideScreen, 'Me': MeScreen, 'Feed': FeedScreen};
     for (final MapEntry(key: label, value: screen) in tabs.entries) {
       await tapTab(label);
       expect(find.byType(screen), findsOneWidget, reason: label);
@@ -341,7 +347,7 @@ void main() {
     expect(find.byType(PasyarBottomTabs), findsNothing);
     await tester.tap(find.bySemanticsLabel('Back'));
     await tester.pumpAndSettle();
-    expect(find.byType(RideScreen), findsOneWidget);
+    expect(find.byType(FeedScreen), findsOneWidget);
 
     // Me → Settings → LOG OUT.
     await tester.tap(find.text('Me').last);

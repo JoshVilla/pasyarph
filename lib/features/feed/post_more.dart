@@ -8,14 +8,15 @@ import '../../core/widgets/widgets.dart';
 import '../../data/models/enums.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/me_repository.dart';
+import '../../data/repositories/moderation_repository.dart';
 import '../../data/repositories/social_repository.dart';
 import '../moderation/widgets/report_sheet.dart';
 
-enum _PostAction { save, unsave, share, report, block }
+enum _PostAction { save, unsave, share, report, blockItem, block }
 
 /// A post's ⋯ menu: save its loop to ride later (Me → Saved), share it,
-/// report it, or block its rider. [onBlocked] runs after blocking (the
-/// feed reloads without their posts).
+/// report it, block just this post, or block its rider. [onBlocked] runs
+/// after blocking either (the feed reloads without them).
 Future<void> showPostMore(
   BuildContext context,
   FeedPost post, {
@@ -73,6 +74,12 @@ Future<void> showPostMore(
           icon: LucideIcons.flag,
         ),
         SheetAction(
+          value: _PostAction.blockItem,
+          label: post.isLoopOnly ? 'Block this loop' : 'Block this post',
+          icon: LucideIcons.eyeOff,
+          destructive: true,
+        ),
+        SheetAction(
           value: _PostAction.block,
           label: 'Block $name',
           icon: LucideIcons.ban,
@@ -128,5 +135,44 @@ Future<void> showPostMore(
         name: name,
       );
       if (blocked) onBlocked?.call();
+    case _PostAction.blockItem:
+      if (!context.mounted) return;
+      await _blockItem(context, post, onChanged: onBlocked);
   }
+}
+
+/// Blocks just this post (or shared loop) for the rider, with UNDO.
+Future<void> _blockItem(
+  BuildContext context,
+  FeedPost post, {
+  VoidCallback? onChanged,
+}) async {
+  final moderation = context.read<ModerationRepository>();
+  final messenger = ScaffoldMessenger.of(context);
+  final (item, id, what) = post.isLoopOnly
+      ? (BlockedItem.loop, post.loop.id, 'Loop')
+      : (BlockedItem.post, post.id, 'Post');
+  void show(String text, {SnackBarAction? action}) => messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text), action: action));
+  try {
+    await moderation.blockItem(item, id);
+  } on ModerationException catch (e) {
+    return show(e.message);
+  }
+  onChanged?.call();
+  show(
+    "$what blocked. You won't see it again.",
+    action: SnackBarAction(
+      label: 'UNDO',
+      onPressed: () async {
+        try {
+          await moderation.unblockItem(item, id);
+          onChanged?.call();
+        } on ModerationException catch (e) {
+          show(e.message);
+        }
+      },
+    ),
+  );
 }
