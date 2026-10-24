@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/links.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../core/router.dart';
+import '../../../core/share.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../ride/widgets/home_controls.dart';
@@ -77,8 +78,14 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
       _snack(_loop.saveError?.message ?? 'Finish your loop first.');
       return;
     }
-    await Clipboard.setData(ClipboardData(text: link.toString()));
-    if (mounted) _snack('Link copied. Paste it anywhere to share your loop.');
+    await context.read<Sharer>().share(
+      shareMessage(
+        loopName: _loop.savedName,
+        distanceM: _loop.totals.distanceM,
+        link: link,
+      ),
+      subject: _loop.savedName,
+    );
   }
 
   Future<void> _pickClub() async {

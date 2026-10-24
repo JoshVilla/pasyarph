@@ -1,0 +1,14 @@
+{
+  "name": "pasyar-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "esbuild test/site.test.ts --bundle --platform=node --format=esm --outfile=.wrangler/test.mjs --log-level=warning && node --test .wrangler/test.mjs",
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "wrangler": "4.42.0"
+  }
+}

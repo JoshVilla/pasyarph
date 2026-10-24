@@ -36,10 +36,13 @@ class FeedScope {
   /// One rider's profile.
   const FeedScope.rider(String userId) : this._('rider', userId);
 
+  /// Just one post, opened from a share link.
+  const FeedScope.post(String postId) : this._('post', postId);
+
   /// The `feed_page` scope.
   final String name;
 
-  /// Club or rider id.
+  /// Club, rider or post id.
   final String? target;
 
   @override

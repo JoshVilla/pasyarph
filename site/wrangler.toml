@@ -1,0 +1,5 @@
+# Cloudflare Pages project for share links (Prompt 18). Deploy from this
+# folder with `npx wrangler pages deploy`; see README.md.
+name = "pasyar"
+pages_build_output_dir = "public"
+compatibility_date = "2025-06-01"

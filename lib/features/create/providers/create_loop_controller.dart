@@ -62,6 +62,10 @@ class CreateLoopController extends ChangeNotifier {
   RouteException? get routeError => _routeError;
 
   String get name => _name;
+
+  /// The name the loop is saved with: what was typed, or "82 km loop".
+  String get savedName =>
+      _name.trim().isEmpty ? defaultLoopName(totals.distanceM) : _name.trim();
   LoopVisibility get visibility => _visibility;
 
   /// Null until loaded.
@@ -223,9 +227,8 @@ class CreateLoopController extends ChangeNotifier {
     final totals = this.totals;
     final stop = mainStopIndex!;
     final metersIn = metersToPoint(_start!, _points, stop, _legs);
-    final trimmed = _name.trim();
     final loop = NewLoop(
-      name: trimmed.isEmpty ? defaultLoopName(totals.distanceM) : trimmed,
+      name: savedName,
       source: LoopSource.custom,
       route: route,
       distanceM: totals.distanceM,
@@ -291,4 +294,5 @@ class CreateLoopController extends ChangeNotifier {
 }
 
 /// Name for a loop saved without one: "62 km loop".
-String defaultLoopName(int distanceM) => '${(distanceM / 1000).round()} km loop';
+String defaultLoopName(int distanceM) =>
+    '${(distanceM / 1000).round()} km loop';

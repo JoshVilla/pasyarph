@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pasyarph.app",
+      "sha256_cert_fingerprints": [
+        "3D:5B:A0:70:95:8D:5B:FD:A1:A5:60:01:C5:EF:23:57:52:79:34:9C:07:CC:0C:49:FE:97:6C:6E:66:9C:AC:DC"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pasyarph.app.dev",
+      "sha256_cert_fingerprints": [
+        "3D:5B:A0:70:95:8D:5B:FD:A1:A5:60:01:C5:EF:23:57:52:79:34:9C:07:CC:0C:49:FE:97:6C:6E:66:9C:AC:DC"
+      ]
+    }
+  }
+]

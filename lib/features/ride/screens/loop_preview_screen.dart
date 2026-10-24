@@ -32,7 +32,7 @@ class LoopPreviewScreen extends StatelessWidget {
     if (loop == null || request == null) {
       // Nothing generated (e.g. the app was restored here): back to Home.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted && context.canPop()) context.pop();
+        if (context.mounted) _back(context);
       });
       return const Scaffold(backgroundColor: PasyarColors.mapGround);
     }
@@ -84,7 +84,7 @@ class LoopPreviewScreen extends StatelessWidget {
                     RoundIconButton.floating(
                       icon: LucideIcons.chevronLeft,
                       semanticLabel: 'Back',
-                      onPressed: () => context.pop(),
+                      onPressed: () => _back(context),
                     ),
                     Flexible(
                       child: FloatingPill(
@@ -107,6 +107,10 @@ class LoopPreviewScreen extends StatelessWidget {
     );
   }
 }
+
+/// Opened from a share link, the preview is the only screen: back goes Home.
+void _back(BuildContext context) =>
+    context.canPop() ? context.pop() : context.go(Routes.ride);
 
 /// Multi-day loops: the suggested overnight towns, numbered as on the map.
 class _Overnights extends StatelessWidget {

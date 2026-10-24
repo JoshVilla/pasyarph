@@ -6,8 +6,8 @@ import '../../data/models/enums.dart';
 final _code = RegExp(r'^[0-9a-f]{16}$');
 
 /// The invite code in what a rider pasted: the whole link
-/// (https://pasyar.app/join/<code>, with or without https://), or just the
-/// code. Null when it isn't one.
+/// (https://pasyar.pages.dev/join/<code>, with or without https://), or
+/// just the code. Null when it isn't one.
 String? parseInviteCode(String input) {
   var text = input.trim();
   if (text.isEmpty) return null;

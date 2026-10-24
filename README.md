@@ -122,6 +122,12 @@ Notes for app code:
 - Geography columns come back as hex EWKB. RPCs return GeoJSON. `GeoCodec` reads both and writes EWKT.
 - Storage paths: `avatars/<user_id>/...` and `post-photos/<user_id>/<post_id>/<n>.jpg`.
 
+## Share links
+
+Loops, posts and club invites are shared as `https://pasyar.pages.dev/l/<loop id>`, `/p/<post id>` and `/join/<code>` (`AppLinks` in `lib/core/links.dart`). On Android they open in the app (App Links, `AndroidManifest.xml`), and go_router routes them like any other path. Opened while signed out, the link opens after signing in (`PendingLink`). Without the app, the link shows a web page with the loop's stats, map and store buttons.
+
+The site lives in `site/` (Cloudflare Pages). Setup, deploys, and adding signing keys to `assetlinks.json` are in [site/README.md](site/README.md).
+
 ## Sign-in setup
 
 Only email + password is on for now. Apple and Google are built but hidden; turn them on with `Features.socialSignIn` in `lib/core/features.dart` after steps 2 and 3.

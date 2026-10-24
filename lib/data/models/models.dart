@@ -7,3 +7,4 @@ export 'profile.dart';
 export 'report.dart';
 export 'generated_loop.dart';
 export 'routed_leg.dart';
+export 'link_preview.dart';

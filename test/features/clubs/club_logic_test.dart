@@ -16,11 +16,14 @@ void main() {
     const code = '3f9a0c2b7d1e4a56';
 
     test('the whole link, with or without https://', () {
-      expect(parseInviteCode('https://pasyar.app/join/$code'), code);
-      expect(parseInviteCode('pasyar.app/join/$code'), code);
-      expect(parseInviteCode('  https://www.pasyar.app/join/$code/ \n'), code);
+      expect(parseInviteCode('https://pasyar.pages.dev/join/$code'), code);
+      expect(parseInviteCode('pasyar.pages.dev/join/$code'), code);
       expect(
-        parseInviteCode('https://pasyar.app/join/${code.toUpperCase()}'),
+        parseInviteCode('  https://www.pasyar.pages.dev/join/$code/ \n'),
+        code,
+      );
+      expect(
+        parseInviteCode('https://pasyar.pages.dev/join/${code.toUpperCase()}'),
         code,
       );
     });
@@ -36,8 +39,11 @@ void main() {
       expect(parseInviteCode('3f9a0c2b7d1e4a5'), isNull, reason: 'too short');
       expect(parseInviteCode('3f9a0c2b7d1e4a5z'), isNull, reason: 'not hex');
       expect(parseInviteCode('https://evil.example/join/$code'), isNull);
-      expect(parseInviteCode('https://pasyar.app/loop/$code'), isNull);
-      expect(parseInviteCode('https://pasyar.app/join/$code/extra'), isNull);
+      expect(parseInviteCode('https://pasyar.pages.dev/l/$code'), isNull);
+      expect(
+        parseInviteCode('https://pasyar.pages.dev/join/$code/extra'),
+        isNull,
+      );
     });
   });
 
@@ -126,7 +132,10 @@ void main() {
       final c = ClubController(clubs: repo, clubId: 'mine');
       await c.load();
       final link = await c.inviteLink();
-      expect(link.toString(), 'https://pasyar.app/join/${repo.codes['mine']}');
+      expect(
+        link.toString(),
+        'https://pasyar.pages.dev/join/${repo.codes['mine']}',
+      );
       final fresh = await c.resetInviteLink();
       expect(fresh, isNot(link));
       expect(parseInviteCode(fresh.toString()), repo.codes['mine']);

@@ -17,6 +17,8 @@ import 'data/repositories/post_repository.dart';
 import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
 import 'data/repositories/social_repository.dart';
+import 'data/repositories/link_repository.dart';
+import 'core/share.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/feed/providers/feed_provider.dart';
 import 'features/post/post_draft.dart';
@@ -56,6 +58,8 @@ Future<void> main() async {
         Provider<AvatarRepository>(
           create: (_) => SupabaseAvatarRepository(client),
         ),
+        Provider<LinkRepository>(create: (_) => SupabaseLinkRepository(client)),
+        Provider<Sharer>(create: (_) => const PlatformSharer()),
         Provider<RouteRepository>(
           create: (_) => SupabaseRouteRepository(client),
         ),

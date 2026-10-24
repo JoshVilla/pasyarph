@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/links.dart';
 import '../../../core/router.dart';
+import '../../../core/share.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
@@ -13,9 +15,9 @@ import 'comments_sheet.dart';
 import 'feed_skeleton.dart';
 import 'post_card.dart';
 
-/// What post cards do, for posts loaded by [feed]: like, comments, RIDE IT,
-/// photos, and the author's profile. Used by the Feed tab, club pages and
-/// rider profiles.
+/// What post cards do, for posts loaded by [feed]: like, comments, share,
+/// RIDE IT, photos, and the author's profile. Used by the Feed tab, club
+/// pages, rider profiles and posts opened from a link.
 PostCardActions feedCardActions(
   BuildContext context,
   FeedProvider feed, {
@@ -42,7 +44,16 @@ PostCardActions feedCardActions(
       feed.updateComments(post.id, c.count, first);
       c.dispose();
     },
-    onShare: (_) => snack('Sharing is coming soon.'),
+    onShare: (post) => context.read<Sharer>().share(
+      shareMessage(
+        loopName: post.loop.name,
+        distanceM: post.loop.distanceM,
+        link: post.isLoopOnly
+            ? AppLinks.loop(post.loop.id)
+            : AppLinks.post(post.id),
+      ),
+      subject: post.loop.name,
+    ),
     onRide: (post) =>
         rideThisLoop(context, loopId: post.loop.id, name: post.loop.name),
     onMore: (_) => snack('Reporting and hiding posts is coming soon.'),

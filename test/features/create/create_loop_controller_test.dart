@@ -229,7 +229,7 @@ void main() {
         ..addPoint(p2);
       await settle();
       final link = await c.shareLink();
-      expect(link.toString(), 'https://pasyar.app/loop/loop-1');
+      expect(link.toString(), 'https://pasyar.pages.dev/l/loop-1');
       expect(loops.calls, ['create:loop-1']);
 
       // Unchanged: no second save.

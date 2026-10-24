@@ -392,7 +392,7 @@ void main() {
 
       await tester.tap(find.text('INVITE RIDERS'));
       await tester.pumpAndSettle();
-      expect(copied.single, startsWith('https://pasyar.app/join/'));
+      expect(copied.single, startsWith('https://pasyar.pages.dev/join/'));
       expect(parseInviteCode(copied.single), clubs.codes.values.single);
 
       await tester.tap(find.bySemanticsLabel('Back'));
@@ -422,7 +422,7 @@ void main() {
 
       await tester.enterText(
         find.byType(TextField).last,
-        'https://pasyar.app/join/0123456789abcdef',
+        'https://pasyar.pages.dev/join/0123456789abcdef',
       );
       await tester.tap(find.text('CONTINUE'));
       await tester.pumpAndSettle();

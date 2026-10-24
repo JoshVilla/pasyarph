@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.pasyarph.app", "TEAMID.com.pasyarph.app.dev"],
+        "components": [
+          { "/": "/l/*" },
+          { "/": "/p/*" },
+          { "/": "/join/*" }
+        ]
+      }
+    ]
+  }
+}

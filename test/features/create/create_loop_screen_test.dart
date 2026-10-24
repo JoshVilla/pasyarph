@@ -1,11 +1,11 @@
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/map/map_markers.dart';
+import 'package:pasyarph/core/share.dart';
 import 'package:pasyarph/core/widgets/widgets.dart';
 import 'package:pasyarph/data/models/club.dart';
 import 'package:pasyarph/data/models/enums.dart';
@@ -13,8 +13,10 @@ import 'package:pasyarph/data/models/routed_leg.dart';
 import 'package:pasyarph/features/create/providers/create_loop_controller.dart';
 import 'package:pasyarph/features/create/screens/create_loop_screen.dart';
 import 'package:pasyarph/features/dev/demo_routes.dart';
+import 'package:pasyarph/features/ride/loop_stats.dart';
 import 'package:provider/provider.dart';
 
+import '../../support/fake_links.dart';
 import '../../support/fake_services.dart';
 
 /// Compare with design/screenshots/06-create-loop.png.
@@ -62,6 +64,7 @@ CreateLoopController _mockupLoop(FakeRouteRepository routes) =>
 Widget _screenWith(
   CreateLoopController loop, {
   LocationProvider? location,
+  Sharer? sharer,
 }) => Builder(
   builder: (context) => MediaQuery(
     data: MediaQuery.of(context).copyWith(
@@ -72,6 +75,7 @@ Widget _screenWith(
       providers: [
         ChangeNotifierProvider.value(value: loop),
         ChangeNotifierProvider.value(value: location ?? _location()),
+        Provider<Sharer>.value(value: sharer ?? FakeSharer()),
       ],
       child: const CreateLoopScreen(),
     ),
@@ -94,6 +98,7 @@ void main() {
     CreateLoopController? loop,
     LocationProvider? location,
     FakeLoopRepository? loops,
+    Sharer? sharer,
   }) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
     tester.view.devicePixelRatio = 3;
@@ -106,7 +111,9 @@ void main() {
           debounce: Duration.zero,
         );
     await tester.pumpWidget(
-      MaterialApp(home: _screenWith(c, location: location)),
+      MaterialApp(
+        home: _screenWith(c, location: location, sharer: sharer),
+      ),
     );
     await tester.pumpAndSettle();
     return c;
@@ -161,26 +168,17 @@ void main() {
     expect(loop.points, [DemoRoutes.point1, DemoRoutes.mainStop]);
   });
 
-  testWidgets('SAVE stores the loop; SHARE LINK copies its link', (
+  testWidgets('SAVE stores the loop; SHARE LINK shares its link', (
     tester,
   ) async {
-    final copied = <String>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        if (call.method == 'Clipboard.setData') {
-          copied.add((call.arguments as Map)['text'] as String);
-        }
-        return null;
-      },
-    );
+    final sharer = FakeSharer();
     final loops = FakeLoopRepository(clubs: [_club]);
     final loop = CreateLoopController(
       routes: FakeRouteRepository()..legFor = _mockupLeg,
       loops: loops,
       debounce: Duration.zero,
     )..createId = (() => 'loop-1');
-    await pump(tester, loop: loop);
+    await pump(tester, loop: loop, sharer: sharer);
     loop
       ..addPoint(DemoRoutes.point1)
       ..addPoint(DemoRoutes.point2);
@@ -199,7 +197,11 @@ void main() {
 
     await tester.tap(find.text('SHARE LINK'));
     await tester.pumpAndSettle();
-    expect(copied, ['https://pasyar.app/loop/loop-1']);
+    expect(sharer.shared, [
+      'Pasyar tayo! Sunday Falls Loop · '
+          '${formatDistance(loop.totals.distanceM)}\n'
+          'https://pasyar.pages.dev/l/loop-1',
+    ]);
     expect(loops.calls, ['create:loop-1']);
   });
 

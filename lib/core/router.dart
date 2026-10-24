@@ -11,6 +11,8 @@ import '../features/clubs/screens/club_screen.dart';
 import '../features/clubs/screens/create_club_screen.dart';
 import '../features/clubs/screens/join_club_screen.dart';
 import '../features/feed/providers/feed_provider.dart';
+import '../features/links/screens/loop_link_screen.dart';
+import '../features/links/screens/post_link_screen.dart';
 import '../features/riders/providers/rider_profile_controller.dart';
 import '../features/riders/screens/rider_profile_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
@@ -36,6 +38,7 @@ import '../features/ride/screens/loop_preview_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
 import '../features/ride/screens/ride_session_screen.dart';
 import 'auth_redirect.dart';
+import 'deep_links.dart';
 import 'env.dart';
 import 'location/location_permission.dart';
 import 'location/location_provider.dart';
@@ -70,24 +73,56 @@ abstract final class Routes {
   static const postRide = '/post/:rideId';
   static String post(String rideId) => '/post/$rideId';
 
+  /// Share links (Prompt 18), the same paths as on the web
+  /// (https://pasyar.pages.dev/l/id). See AppLinks.
+  static const loopLinkPath = '/l/:loopId';
+  static const postLinkPath = '/p/:postId';
+  static const inviteLinkPath = '/join/:code';
+
   /// Dev flavor only.
   static const devWidgets = '/dev/widgets';
 }
 
 GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
   final dev = includeDevRoutes ?? Env.isDev;
+  // A link opened while signed out opens after signing in.
+  final pending = PendingLink();
   return GoRouter(
     initialLocation: Routes.ride,
     refreshListenable: auth,
-    redirect: (context, state) => authRedirect(
-      status: auth.status,
-      onboardingCompleted: auth.onboardingCompleted,
-      passwordRecovery: auth.passwordRecovery,
-      location: state.matchedLocation,
+    redirect: (context, state) => pending.redirect(
+      path: state.uri.path,
       home: Routes.ride,
-      alwaysAllowed: {if (dev) Routes.devWidgets},
+      target: authRedirect(
+        status: auth.status,
+        onboardingCompleted: auth.onboardingCompleted,
+        passwordRecovery: auth.passwordRecovery,
+        location: state.matchedLocation,
+        home: Routes.ride,
+        alwaysAllowed: {if (dev) Routes.devWidgets},
+      ),
     ),
     routes: [
+      GoRoute(
+        path: Routes.loopLinkPath,
+        builder: (context, state) =>
+            LoopLinkScreen(loopId: state.pathParameters['loopId']!),
+      ),
+      GoRoute(
+        path: Routes.postLinkPath,
+        builder: (context, state) {
+          final id = state.pathParameters['postId']!;
+          return ChangeNotifierProvider(
+            create: (context) => _scopedFeed(context, FeedScope.post(id)),
+            child: PostLinkScreen(postId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: Routes.inviteLinkPath,
+        redirect: (context, state) =>
+            Routes.joinClub(state.pathParameters['code']!.toLowerCase()),
+      ),
       GoRoute(
         path: AuthRoutes.welcome,
         builder: (context, state) => const WelcomeScreen(),
