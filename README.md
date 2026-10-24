@@ -135,6 +135,27 @@ Loops, posts and club invites are shared as `https://pasyar.pages.dev/l/<loop id
 
 The site lives in `site/` (Cloudflare Pages). Setup, deploys, and adding signing keys to `assetlinks.json` are in [site/README.md](site/README.md).
 
+## Moderation
+
+Riders report posts, loops, comments and riders (⋯ menus, Report on comments), and can block riders, which hides that rider's content for them only. Hiding and blocking are enforced by the RLS policies on `loops`, `posts` and `comments` (`is_hidden`, `author_visible()`), so every feed follows.
+
+To make someone a moderator, run this in the SQL editor:
+
+```sql
+insert into public.admins (user_id)
+select id from auth.users where email = 'you@example.com';
+```
+
+They then see Settings → MODERATION → REVIEW REPORTS: open reports, most reported first, with HIDE (hides it from everyone but its author), UNHIDE and DISMISS. The same works from the SQL editor:
+
+```sql
+select * from public.reports where status = 'open' order by created_at desc;
+-- Hide: run as yourself in the app, or directly:
+update public.posts set is_hidden = true where id = '<post id>';
+update public.reports set status = 'hidden', resolved_at = now()
+where target_type = 'post' and target_id = '<post id>' and status = 'open';
+```
+
 ## Sign-in setup
 
 Only email + password is on for now. Apple and Google are built but hidden; turn them on with `Features.socialSignIn` in `lib/core/features.dart` after steps 2 and 3.

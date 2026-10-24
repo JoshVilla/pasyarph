@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../location/moving_lock.dart';
 import '../theme/pasyar_theme.dart';
 
 /// Label above a 52 px field, with optional helper or error text below.
 /// Set [password] for a hidden field with a 44 × 44 show/hide toggle.
+/// Disabled while the phone is moving (see [watchMoving]).
 class PasyarTextField extends StatefulWidget {
   const PasyarTextField({
     super.key,
@@ -70,8 +72,12 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
     final textStyle =
         widget.textStyle ??
         PasyarTextStyles.body.copyWith(fontSize: 16, height: 1.2);
+    // Every field locks while riding, wherever it is.
+    final moving = watchMoving(context);
+    final enabled = widget.enabled && !moving;
     final hasError = widget.error != null;
-    final message = widget.error ?? widget.helper;
+    final message =
+        widget.error ?? (moving ? movingLockMessage : null) ?? widget.helper;
     final idle = hasError
         ? _border(PasyarColors.accent, 2)
         : _border(PasyarColors.line, 1.5);
@@ -85,7 +91,7 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
         TextField(
           controller: widget.controller,
           focusNode: widget.focusNode,
-          enabled: widget.enabled,
+          enabled: enabled,
           obscureText: widget.password && _obscured,
           enableSuggestions: !widget.password,
           autocorrect: !widget.password,
@@ -98,7 +104,7 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
           textAlignVertical: TextAlignVertical.center,
           maxLength: widget.maxLength,
           style: textStyle.copyWith(
-            color: widget.enabled ? PasyarColors.ink : PasyarColors.muted,
+            color: enabled ? PasyarColors.ink : PasyarColors.muted,
           ),
           decoration: InputDecoration(
             constraints: BoxConstraints.tightFor(height: widget.height),
@@ -107,7 +113,7 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
             hintText: widget.hint,
             hintStyle: textStyle.copyWith(color: PasyarColors.muted),
             filled: true,
-            fillColor: widget.enabled ? PasyarColors.card : PasyarColors.ground,
+            fillColor: enabled ? PasyarColors.card : PasyarColors.ground,
             border: idle,
             enabledBorder: idle,
             disabledBorder: _border(PasyarColors.line, 1.5),

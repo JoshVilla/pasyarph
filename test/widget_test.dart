@@ -7,6 +7,7 @@ import 'package:pasyarph/app.dart';
 import 'package:pasyarph/core/settings/app_settings.dart';
 import 'package:pasyarph/core/share.dart';
 import 'package:pasyarph/data/repositories/me_repository.dart';
+import 'package:pasyarph/data/repositories/moderation_repository.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
@@ -50,6 +51,7 @@ import 'support/fake_clubs.dart';
 import 'support/fake_feed.dart';
 import 'support/fake_links.dart';
 import 'support/fake_me.dart';
+import 'support/fake_moderation.dart';
 import 'support/fake_post.dart';
 import 'support/fake_services.dart';
 import 'support/fake_social.dart';
@@ -71,6 +73,11 @@ Future<FakeAuthRepository> pumpApp(
   addTearDown(tester.view.reset);
   final history = FakeRideHistory();
   final routeRepo = routes ?? FakeRouteRepository();
+  // The first-ride safety screen has its own tests.
+  final settings = AppSettings(
+    MemorySettingsStore({'settings.first_ride_safety_seen': true}),
+  );
+  await settings.load();
   await tester.pumpWidget(
     MultiProvider(
       providers: [
@@ -88,10 +95,11 @@ Future<FakeAuthRepository> pumpApp(
         ),
         Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
         Provider<MeRepository>(create: (_) => FakeMeRepository()),
-        Provider<Sharer>(create: (_) => FakeSharer()),
-        ChangeNotifierProvider(
-          create: (_) => AppSettings(MemorySettingsStore()),
+        Provider<ModerationRepository>(
+          create: (_) => FakeModerationRepository(),
         ),
+        Provider<Sharer>(create: (_) => FakeSharer()),
+        ChangeNotifierProvider.value(value: settings),
         Provider<LocationPermissionService>(
           create: (_) => location ?? FakeLocationPermission(),
         ),
@@ -341,6 +349,11 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Settings'));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('LOG OUT'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.ensureVisible(find.text('LOG OUT'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('LOG OUT'));

@@ -17,6 +17,7 @@ import 'package:pasyarph/data/repositories/club_repository.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
 import 'package:pasyarph/data/repositories/loop_repository.dart';
 import 'package:pasyarph/data/repositories/me_repository.dart';
+import 'package:pasyarph/data/repositories/moderation_repository.dart';
 import 'package:pasyarph/data/repositories/ride_history_repository.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/data/repositories/social_repository.dart';
@@ -36,6 +37,7 @@ import '../../support/fake_clubs.dart';
 import '../../support/fake_feed.dart';
 import '../../support/fake_links.dart';
 import '../../support/fake_me.dart';
+import '../../support/fake_moderation.dart';
 import '../../support/fake_services.dart';
 import '../../support/fake_social.dart';
 
@@ -156,6 +158,9 @@ class _World {
     return MultiProvider(
       providers: [
         Provider<MeRepository>.value(value: me),
+        Provider<ModerationRepository>(
+          create: (_) => FakeModerationRepository(),
+        ),
         Provider<LoopRepository>.value(value: loops),
         Provider<RideHistoryRepository>.value(value: history),
         Provider<FeedRepository>.value(value: feed),
@@ -413,6 +418,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text('DELETE ACCOUNT'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('DELETE ACCOUNT'));
       await tester.pumpAndSettle();
 
@@ -435,6 +442,11 @@ void main() {
       final w = _World();
       w.me.deleteGate = Completer<void>();
       await _pump(tester, world: w, initial: Routes.settings);
+      await tester.scrollUntilVisible(
+        find.text('DELETE ACCOUNT'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.ensureVisible(find.text('DELETE ACCOUNT'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('DELETE ACCOUNT'));
@@ -469,6 +481,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text('DELETE ACCOUNT'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('DELETE ACCOUNT'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'DELETE');
@@ -490,6 +504,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text('DELETE ACCOUNT'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('DELETE ACCOUNT'));
       await tester.pumpAndSettle();
       expect(find.text('Stop riding first.'), findsOneWidget);

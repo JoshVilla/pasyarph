@@ -30,6 +30,7 @@ import '../features/create/screens/create_loop_screen.dart';
 import '../features/dev/screens/widget_gallery_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
 import '../data/repositories/me_repository.dart';
+import '../data/repositories/moderation_repository.dart';
 import '../data/repositories/ride_history_repository.dart';
 import '../features/me/providers/me_controller.dart';
 import '../features/me/screens/me_screen.dart';
@@ -39,6 +40,9 @@ import '../features/onboarding/screens/onboarding_location_screen.dart';
 import '../features/onboarding/screens/onboarding_profile_screen.dart';
 import '../features/post/screens/post_loop_screen.dart';
 import '../features/ride/screens/loop_preview_screen.dart';
+import '../features/moderation/screens/blocked_riders_screen.dart';
+import '../features/moderation/screens/moderation_screen.dart';
+import '../features/ride/screens/ride_safety_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
 import '../features/ride/screens/ride_session_screen.dart';
 import 'auth_redirect.dart';
@@ -90,6 +94,12 @@ abstract final class Routes {
   static const settings = '/settings';
   static const editProfile = '/profile/edit';
 
+  /// Safety (Prompt 20): blocked riders, the admin report queue, and the
+  /// reminders shown before the first ride.
+  static const blockedRiders = '/settings/blocked';
+  static const moderation = '/moderation';
+  static const rideSafety = '/ride-safety';
+
   /// Dev flavor only.
   static const devWidgets = '/dev/widgets';
 }
@@ -132,6 +142,18 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
       GoRoute(
         path: Routes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.blockedRiders,
+        builder: (context, state) => const BlockedRidersScreen(),
+      ),
+      GoRoute(
+        path: Routes.moderation,
+        builder: (context, state) => const ModerationScreen(),
+      ),
+      GoRoute(
+        path: Routes.rideSafety,
+        builder: (context, state) => const RideSafetyScreen(),
       ),
       GoRoute(
         path: Routes.editProfile,
@@ -257,6 +279,7 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
               ChangeNotifierProvider(
                 create: (context) => RiderProfileController(
                   social: context.read<SocialRepository>(),
+                  moderation: context.read<ModerationRepository>(),
                   userId: id,
                 ),
               ),

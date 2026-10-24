@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/map/pasyar_map.dart';
 import '../../../core/router.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/generated_loop.dart';
@@ -160,6 +161,11 @@ extension on String {
 }
 
 Future<void> _startRide(BuildContext context, StopInfo stop) async {
+  // The first ride on this phone starts with the safety reminders.
+  if (!context.read<AppSettings>().firstRideSafetySeen) {
+    final ready = await context.push<bool>(Routes.rideSafety);
+    if (ready != true || !context.mounted) return;
+  }
   final preview = context.read<LoopPreviewProvider>();
   await context.read<RideSessionProvider>().start(
     loop: preview.loop!,

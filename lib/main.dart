@@ -11,6 +11,7 @@ import 'core/notifications/ride_notifier.dart';
 import 'core/notifications/voice_ride_notifier.dart';
 import 'core/settings/app_settings.dart';
 import 'data/repositories/me_repository.dart';
+import 'data/repositories/moderation_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'data/repositories/club_repository.dart';
@@ -83,6 +84,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider.value(value: settings),
         Provider<MeRepository>(create: (_) => SupabaseMeRepository(client)),
+        Provider<ModerationRepository>(
+          create: (_) => SupabaseModerationRepository(client),
+        ),
         Provider<RideNotifier>(
           create: (_) => VoiceRideNotifier(
             LocalRideNotifier(),
@@ -114,11 +118,18 @@ Future<void> main() async {
           create: (_) => AuthProvider(SupabaseAuthRepository(client)),
         ),
         ChangeNotifierProvider(
-          create: (context) => FeedProvider(
-            feed: context.read<FeedRepository>(),
-            social: context.read<SocialRepository>(),
-            location: context.read<LocationProvider>(),
-          ),
+          create: (context) {
+            final feed = FeedProvider(
+              feed: context.read<FeedRepository>(),
+              social: context.read<SocialRepository>(),
+              location: context.read<LocationProvider>(),
+            );
+            // Blocking someone anywhere drops their posts from the Feed tab.
+            context.read<ModerationRepository>().blocksRevision.addListener(
+              feed.refresh,
+            );
+            return feed;
+          },
         ),
       ],
       child: const PasyarApp(),

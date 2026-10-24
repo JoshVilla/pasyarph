@@ -5,9 +5,11 @@ import 'package:provider/provider.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../data/models/enums.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../../data/repositories/social_repository.dart';
+import '../../moderation/widgets/report_sheet.dart';
 import '../feed_format.dart';
 import '../providers/comments_controller.dart';
 
@@ -108,6 +110,34 @@ class _CommentsSheetState extends State<CommentsSheet> {
       ),
     );
     if (delete == true) await _c.delete(c);
+  }
+
+  Future<void> _report(Comment c) async {
+    final name = c.author?.displayName;
+    final result = await showReportSheet(
+      context,
+      ReportSubject(
+        target: ReportTarget.comment,
+        id: c.id,
+        what: 'comment',
+        authorId: c.authorId,
+        authorName: name,
+      ),
+    );
+    if (result == null || !mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.blocked
+                ? 'Thanks for reporting. ${name ?? 'The rider'} is blocked.'
+                : 'Thanks for reporting. A moderator will take a look.',
+          ),
+        ),
+      );
+    // Their comments disappear once blocked.
+    if (result.blocked) await _c.load();
   }
 
   @override
@@ -237,25 +267,29 @@ class _CommentsSheetState extends State<CommentsSheet> {
               ? null
               : feed.avatar(c.author!.avatarUrl!),
           onDelete: _c.isMine(c) ? () => _confirmDelete(c) : null,
+          onReport: _c.isMine(c) ? null : () => _report(c),
         );
       },
     );
   }
 }
 
-/// Avatar, `ground` bubble with name and text, then time and Delete.
+/// Avatar, `ground` bubble with name and text, then time and Delete (own
+/// comments) or Report (others').
 class _CommentTile extends StatelessWidget {
   const _CommentTile({
     required this.comment,
     required this.when,
     this.avatar,
     this.onDelete,
+    this.onReport,
   });
 
   final Comment comment;
   final String when;
   final ImageProvider? avatar;
   final VoidCallback? onDelete;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -294,8 +328,8 @@ class _CommentTile extends StatelessWidget {
                   ),
                 ),
               ),
-              // Same height on every comment; Delete's 44 px touch area
-              // overflows it.
+              // Same height on every comment; the 44 px touch area of
+              // Delete and Report overflows it.
               SizedBox(
                 height: 24,
                 child: Row(
@@ -304,14 +338,17 @@ class _CommentTile extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 12, right: 4),
                       child: Text(when, style: PasyarTextStyles.label),
                     ),
-                    if (onDelete != null)
+                    for (final (label, onPressed) in [
+                      if (onDelete != null) ('Delete', onDelete!),
+                      if (onReport != null) ('Report', onReport!),
+                    ])
                       SizedBox(
                         width: 60,
                         child: OverflowBox(
                           maxHeight: PasyarSpacing.minTouch,
                           maxWidth: 80,
                           child: TextButton(
-                            onPressed: onDelete,
+                            onPressed: onPressed,
                             style: TextButton.styleFrom(
                               minimumSize: const Size(
                                 44,
@@ -325,7 +362,7 @@ class _CommentTile extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            child: const Text('Delete'),
+                            child: Text(label),
                           ),
                         ),
                       ),

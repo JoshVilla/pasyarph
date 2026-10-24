@@ -11,7 +11,10 @@ import '../../../data/models/profile.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../feed/providers/feed_provider.dart';
 import '../../feed/widgets/feed_items.dart';
+import '../../moderation/widgets/report_sheet.dart';
 import '../providers/rider_profile_controller.dart';
+
+enum _RiderAction { report, block }
 
 /// "Big bike", for the profile's detail line.
 String bikeLabel(BikeType bike) => switch (bike) {
@@ -57,12 +60,66 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     super.dispose();
   }
 
+  void _snack(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
   Future<void> _toggleFollow() async {
     final error = await _rider.toggleFollow();
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(error)));
+    if (error != null && mounted) _snack(error);
+  }
+
+  Future<void> _unblock() async {
+    final error = await _rider.unblock();
+    if (!mounted) return;
+    if (error != null) return _snack(error);
+    await _feed.refresh();
+  }
+
+  Future<void> _more(String name) async {
+    final action = await showActionSheet<_RiderAction>(
+      context,
+      title: name,
+      actions: [
+        const SheetAction(
+          value: _RiderAction.report,
+          label: 'Report rider',
+          icon: LucideIcons.flag,
+        ),
+        if (!_rider.blocked)
+          SheetAction(
+            value: _RiderAction.block,
+            label: 'Block $name',
+            icon: LucideIcons.ban,
+            destructive: true,
+          ),
+      ],
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _RiderAction.report:
+        final result = await showReportSheet(
+          context,
+          ReportSubject(
+            target: ReportTarget.user,
+            id: _rider.userId,
+            what: 'rider',
+            authorId: _rider.blocked ? null : _rider.userId,
+            authorName: name,
+          ),
+        );
+        if (result == null || !mounted) return;
+        _snack('Thanks for reporting. A moderator will take a look.');
+        if (result.blocked) await _rider.markBlocked();
+      case _RiderAction.block:
+        final blocked = await confirmBlock(
+          context,
+          userId: _rider.userId,
+          name: name,
+        );
+        if (blocked && mounted) await _rider.markBlocked();
     }
   }
 
@@ -78,11 +135,14 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
         loading: c.loading,
         message: c.notFound ? "This rider isn't on Pasyar anymore." : c.error,
         showFollow: !c.isMe,
+        blocked: c.blocked,
         onBack: () =>
             context.canPop() ? context.pop() : context.go(Routes.feed),
         onFollow: _toggleFollow,
+        onUnblock: _unblock,
+        onMore: c.isMe || c.rider == null ? null : () => _more(name),
       ),
-      if (!c.notFound)
+      if (!c.notFound && !c.blocked)
         ...feedPostItems(
           feed,
           now: widget.clock(),
@@ -120,6 +180,9 @@ class _Header extends StatelessWidget {
     required this.showFollow,
     required this.onBack,
     required this.onFollow,
+    required this.onUnblock,
+    this.blocked = false,
+    this.onMore,
     this.message,
   });
 
@@ -127,8 +190,13 @@ class _Header extends StatelessWidget {
   final bool loading;
   final String? message;
   final bool showFollow;
+  final bool blocked;
   final VoidCallback onBack;
   final VoidCallback onFollow;
+  final VoidCallback onUnblock;
+
+  /// Report or block (not on the rider's own profile).
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -154,13 +222,21 @@ class _Header extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: RoundIconButton.ground(
-                icon: LucideIcons.chevronLeft,
-                semanticLabel: 'Back',
-                onPressed: onBack,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                RoundIconButton.ground(
+                  icon: LucideIcons.chevronLeft,
+                  semanticLabel: 'Back',
+                  onPressed: onBack,
+                ),
+                if (onMore != null)
+                  RoundIconButton.ground(
+                    icon: LucideIcons.ellipsis,
+                    semanticLabel: 'More',
+                    onPressed: onMore!,
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             if (rider == null)
@@ -217,7 +293,18 @@ class _Header extends StatelessWidget {
                 ),
                 style: PasyarTextStyles.label.copyWith(fontSize: 14),
               ),
-              if (showFollow) ...[
+              if (showFollow && blocked) ...[
+                const SizedBox(height: PasyarSpacing.groupGap),
+                Text(
+                  "You blocked ${rider.displayName ?? 'this rider'}. You "
+                  "won't see their rides, loops or comments.",
+                  style: PasyarTextStyles.body.copyWith(
+                    color: PasyarColors.muted,
+                  ),
+                ),
+                const SizedBox(height: PasyarSpacing.buttonGap),
+                SecondaryButton(label: 'UNBLOCK', onPressed: onUnblock),
+              ] else if (showFollow) ...[
                 const SizedBox(height: PasyarSpacing.groupGap),
                 rider.followedByMe
                     ? SecondaryButton(label: 'FOLLOWING', onPressed: onFollow)

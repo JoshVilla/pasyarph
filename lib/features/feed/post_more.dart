@@ -5,21 +5,26 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/widgets/widgets.dart';
+import '../../data/models/enums.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/me_repository.dart';
 import '../../data/repositories/social_repository.dart';
+import '../moderation/widgets/report_sheet.dart';
 
-enum _PostAction { save, unsave, share, report }
+enum _PostAction { save, unsave, share, report, block }
 
 /// A post's ⋯ menu: save its loop to ride later (Me → Saved), share it,
-/// and report (Prompt 20).
+/// report it, or block its rider. [onBlocked] runs after blocking (the
+/// feed reloads without their posts).
 Future<void> showPostMore(
   BuildContext context,
   FeedPost post, {
   required VoidCallback onShare,
+  VoidCallback? onBlocked,
 }) async {
   final me = context.read<MeRepository>();
-  final mine = post.loop.ownerId == context.read<SocialRepository>().userId;
+  final mine = post.author.id == context.read<SocialRepository>().userId;
+  final name = post.author.displayName ?? 'this rider';
   void snack(String text) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
@@ -61,12 +66,19 @@ Future<void> showPostMore(
         label: 'Share',
         icon: LucideIcons.share2,
       ),
-      if (!mine)
-        const SheetAction(
+      if (!mine) ...[
+        SheetAction(
           value: _PostAction.report,
-          label: 'Report',
+          label: post.isLoopOnly ? 'Report loop' : 'Report post',
           icon: LucideIcons.flag,
         ),
+        SheetAction(
+          value: _PostAction.block,
+          label: 'Block $name',
+          icon: LucideIcons.ban,
+          destructive: true,
+        ),
+      ],
     ],
   );
   switch (action) {
@@ -89,6 +101,32 @@ Future<void> showPostMore(
     case _PostAction.share:
       onShare();
     case _PostAction.report:
-      snack('Reporting posts is coming soon.');
+      if (!context.mounted) return;
+      final result = await showReportSheet(
+        context,
+        ReportSubject(
+          // A loop shared without a post is reported as the loop.
+          target: post.isLoopOnly ? ReportTarget.loop : ReportTarget.post,
+          id: post.isLoopOnly ? post.loop.id : post.id,
+          what: post.isLoopOnly ? 'loop' : 'post',
+          authorId: post.author.id,
+          authorName: post.author.displayName,
+        ),
+      );
+      if (result == null) return;
+      snack(
+        result.blocked
+            ? 'Thanks for reporting. $name is blocked.'
+            : 'Thanks for reporting. A moderator will take a look.',
+      );
+      if (result.blocked) onBlocked?.call();
+    case _PostAction.block:
+      if (!context.mounted) return;
+      final blocked = await confirmBlock(
+        context,
+        userId: post.author.id,
+        name: name,
+      );
+      if (blocked) onBlocked?.call();
   }
 }

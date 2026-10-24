@@ -58,7 +58,12 @@ PostCardActions feedCardActions(
     onShare: share,
     onRide: (post) =>
         rideThisLoop(context, loopId: post.loop.id, name: post.loop.name),
-    onMore: (post) => showPostMore(context, post, onShare: () => share(post)),
+    onMore: (post) => showPostMore(
+      context,
+      post,
+      onShare: () => share(post),
+      onBlocked: feed.refresh,
+    ),
     onPhoto: (post, i) => PhotoGalleryScreen.open(context, [
       for (final p in post.photos) repo.photo(p.storagePath),
     ], at: i),

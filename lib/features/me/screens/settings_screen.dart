@@ -12,6 +12,7 @@ import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/repositories/me_repository.dart';
+import '../../../data/repositories/moderation_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// What to type to confirm deleting the account.
@@ -117,6 +118,13 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          SecondaryButton(
+            label: 'BLOCKED RIDERS',
+            icon: LucideIcons.ban,
+            onPressed: () => context.push(Routes.blockedRiders),
+          ),
+          const _AdminSection(),
           const _Section('ACCOUNT'),
           if (auth.user?.email case final email?) ...[
             Text(email, style: body),
@@ -146,6 +154,40 @@ class SettingsScreen extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// MODERATION → the report queue, shown only to admins.
+class _AdminSection extends StatefulWidget {
+  const _AdminSection();
+
+  @override
+  State<_AdminSection> createState() => _AdminSectionState();
+}
+
+class _AdminSectionState extends State<_AdminSection> {
+  late final Future<bool> _admin = context
+      .read<ModerationRepository>()
+      .isAdmin();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _admin,
+      builder: (context, snap) => snap.data != true
+          ? const SizedBox.shrink()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _Section('MODERATION'),
+                SecondaryButton(
+                  label: 'REVIEW REPORTS',
+                  icon: LucideIcons.flag,
+                  onPressed: () => context.push(Routes.moderation),
+                ),
+              ],
+            ),
     );
   }
 }
