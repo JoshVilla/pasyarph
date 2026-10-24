@@ -23,4 +23,9 @@ class PasyarColors {
   static const taglineOnInk = Color(0xFF93B4FB);
   static const inkRoad = Color(0xFF262930);
   static const inkRoadMajor = Color(0xFF30343C);
+
+  // Profile cover: the default banner (accentDark ground, roads, and a
+  // taglineOnInk loop) and the "Edit cover" chip over a photo.
+  static const coverRoad = Color(0xFF2B4BA6);
+  static const coverChip = Color(0x8C0F172A); // rider at 55%
 }

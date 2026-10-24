@@ -4,19 +4,23 @@ import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../../data/repositories/me_repository.dart';
 import '../../../data/repositories/ride_history_repository.dart';
+import '../../../data/repositories/social_repository.dart';
 import '../me_rules.dart';
 
-/// The Me tab's header totals and Posts grid. Reloads when a ride is saved,
-/// synced or posted, so the totals change right after a ride.
+/// The Me tab's totals, follower counts and Rides grid. Reloads when a
+/// ride is saved, synced or posted, so the totals change right after a
+/// ride.
 class MeController extends ChangeNotifier {
   MeController({
     required MeRepository me,
     required FeedRepository feed,
     required RideHistoryRepository rides,
     required String? userId,
+    SocialRepository? social,
   }) : _me = me,
        _feed = feed,
        _rides = rides,
+       _social = social,
        _userId = userId {
     _rides.revision.addListener(load);
   }
@@ -24,7 +28,14 @@ class MeController extends ChangeNotifier {
   final MeRepository _me;
   final FeedRepository _feed;
   final RideHistoryRepository _rides;
+  final SocialRepository? _social;
   final String? _userId;
+
+  int _followers = 0;
+  int _following = 0;
+
+  int get followers => _followers;
+  int get following => _following;
 
   RiderTotals _serverTotals = RiderTotals.zero;
   RiderTotals _totals = RiderTotals.zero;
@@ -46,6 +57,16 @@ class MeController extends ChangeNotifier {
       _serverTotals = await _me.totals();
     } on MeException catch (e) {
       error = e.message;
+    }
+    final social = _social;
+    if (uid != null && social != null) {
+      try {
+        final me = await social.rider(uid);
+        _followers = me?.followerCount ?? _followers;
+        _following = me?.followingCount ?? _following;
+      } on SocialException {
+        // Counts stay as they were; the rest still loads.
+      }
     }
     final local = await _rides.all();
     List<FeedPost>? posts = _posts;

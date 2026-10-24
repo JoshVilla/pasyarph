@@ -59,13 +59,26 @@ class FakeAuthRepository implements AuthRepository {
     return profile;
   }
 
+  /// Next profile update throws this (e.g. a taken username).
+  Object? updateError;
+
+  /// Applies [fields] to [profile], like the real update does.
   @override
   Future<void> updateProfile(String userId, Json fields) async {
+    final error = updateError;
+    if (error != null) {
+      updateError = null;
+      throw error;
+    }
     profileUpdates.add(fields);
     final p = profile;
-    if (p != null && fields['onboarding_completed'] == true) {
-      profile = fakeProfile(id: p.id, fullName: p.fullName);
-    }
+    if (p == null) return;
+    profile = Profile.fromJson({
+      ...p.toUpdateJson(),
+      'id': p.id,
+      'created_at': p.createdAt.toIso8601String(),
+      ...fields,
+    });
   }
 
   @override

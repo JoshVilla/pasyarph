@@ -15,6 +15,7 @@ import 'data/repositories/moderation_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'data/repositories/club_repository.dart';
+import 'data/repositories/cover_repository.dart';
 import 'data/repositories/feed_repository.dart';
 import 'data/repositories/loop_repository.dart';
 import 'data/repositories/post_repository.dart';
@@ -25,6 +26,7 @@ import 'data/repositories/link_repository.dart';
 import 'core/share.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/feed/providers/feed_provider.dart';
+import 'features/profile/providers/cover_controller.dart';
 import 'features/post/post_draft.dart';
 import 'features/ride/providers/loop_preview_provider.dart';
 import 'features/ride/providers/ride_session_provider.dart';
@@ -116,6 +118,12 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(SupabaseAuthRepository(client)),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => CoverController(
+            auth: context.read<AuthProvider>(),
+            covers: SupabaseCoverRepository(client),
+          ),
         ),
         ChangeNotifierProvider(
           create: (context) {

@@ -59,6 +59,20 @@ export function invitePage(ctx: Context): Response {
   );
 }
 
+/** /r/<rider id>: a rider's profile. No lookup: profiles are for
+ * signed-in riders only. */
+export function riderPage(ctx: Context): Response {
+  const url = new URL(ctx.request.url);
+  return respond(
+    messagePage(
+      "A rider on Pasyar",
+      "Get Pasyar to see their rides and loops, and ride with them.",
+      url,
+      isAndroid(ctx.request),
+    ),
+  );
+}
+
 /** /map/l/<id>.png and /map/p/<id>.png: the loop's static map. */
 export async function mapImage(ctx: Context, kind: LinkKind): Promise<Response> {
   const id = param(ctx, "id").replace(/\.png$/, "");

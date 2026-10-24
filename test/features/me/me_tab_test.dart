@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:alchemist/alchemist.dart';
 import 'package:flutter/material.dart';
@@ -27,13 +28,20 @@ import 'package:pasyarph/features/feed/post_more.dart';
 import 'package:pasyarph/features/me/providers/me_controller.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
 import 'package:pasyarph/features/me/screens/settings_screen.dart';
-import 'package:pasyarph/features/onboarding/providers/onboarding_provider.dart';
-import 'package:pasyarph/features/onboarding/screens/onboarding_profile_screen.dart';
+import 'package:pasyarph/features/profile/providers/cover_controller.dart';
+import 'package:pasyarph/features/profile/providers/edit_profile_controller.dart';
+import 'package:pasyarph/features/profile/screens/cover_crop_screen.dart';
+import 'package:pasyarph/features/profile/screens/edit_profile_screen.dart';
+import 'package:pasyarph/features/profile/screens/follow_list_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart' show ImageSource;
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../support/fake_auth_repository.dart';
 import '../../support/fake_clubs.dart';
+import '../../support/fake_covers.dart';
 import '../../support/fake_feed.dart';
 import '../../support/fake_links.dart';
 import '../../support/fake_me.dart';
@@ -50,6 +58,8 @@ final _profile = Profile(
   createdAt: DateTime.utc(2026, 10, 18),
   fullName: 'Ana Rider',
   displayName: 'Ana Rider',
+  username: 'ana.rides',
+  bio: 'Weekend loops in the Sierra Madre.',
   homeArea: 'Cordon, Isabela',
   bikeType: BikeType.underbone,
   onboardingCompleted: true,
@@ -73,17 +83,44 @@ Loop _loop(
   createdAt: _now,
 );
 
+/// A picked photo: a plain 800 × 600 JPEG.
+Future<Uint8List?> _fakePick(ImageSource _) async =>
+    img.encodeJpg(img.Image(width: 800, height: 600));
+
 /// Everything the Me tab, Settings and Edit profile read.
 class _World {
-  _World({bool moving = false})
-    : location = LocationProvider(
+  _World({bool moving = false, Profile? profile})
+    : auth = FakeAuthRepository(
+        session: fakeSession(),
+        profile: profile ?? _profile,
+      ),
+      location = LocationProvider(
         permissions: FakeLocationPermission(),
         positions: FakePositionSource(
           last: RiderFix(point: DemoRoutes.start, speedMps: moving ? 8 : 0),
         ),
       );
 
-  final auth = FakeAuthRepository(session: fakeSession(), profile: _profile);
+  final FakeAuthRepository auth;
+  final covers = FakeCoverRepository();
+  final social =
+      FakeSocialRepository(
+          userId: _uid,
+          riders: {
+            _uid: const RiderProfile(
+              id: _uid,
+              followerCount: 12,
+              followingCount: 8,
+            ),
+          },
+        )
+        ..followerLists[_uid] = const [
+          ProfileSummary(
+            id: 'rico',
+            displayName: 'Rico Navarro',
+            username: 'rico',
+          ),
+        ];
   final me = FakeMeRepository(
     serverTotals: const RiderTotals(
       riddenM: 1284300,
@@ -125,9 +162,14 @@ class _World {
         GoRoute(
           path: Routes.me,
           builder: (context, state) => ChangeNotifierProvider(
-            create: (context) =>
-                MeController(me: me, feed: feed, rides: history, userId: _uid),
-            child: const MeScreen(),
+            create: (context) => MeController(
+              me: me,
+              feed: feed,
+              rides: history,
+              userId: _uid,
+              social: social,
+            ),
+            child: const MeScreen(pick: _fakePick),
           ),
         ),
         GoRoute(
@@ -137,13 +179,24 @@ class _World {
         GoRoute(
           path: Routes.editProfile,
           builder: (context, state) => ChangeNotifierProvider(
-            create: (context) => OnboardingProvider(
+            create: (context) => EditProfileController(
               auth: context.read<AuthProvider>(),
               avatars: FakeAvatarRepository(),
-              location: FakeLocationPermission(),
             ),
-            child: const OnboardingProfileScreen(editing: true),
+            child: const EditProfileScreen(pick: _fakePick),
           ),
+        ),
+        GoRoute(
+          path: Routes.followersPath,
+          builder: (context, state) => FollowListScreen(
+            userId: state.pathParameters['userId']!,
+            list: FollowList.followers,
+          ),
+        ),
+        GoRoute(
+          path: Routes.riderPath,
+          builder: (context, state) =>
+              Scaffold(body: Text('RIDER ${state.pathParameters['userId']}')),
         ),
         GoRoute(
           path: Routes.postLinkPath,
@@ -164,14 +217,18 @@ class _World {
         Provider<RideHistoryRepository>.value(value: history),
         Provider<FeedRepository>.value(value: feed),
         Provider<ClubRepository>(create: (_) => FakeClubRepository()),
-        Provider<SocialRepository>(
-          create: (_) => FakeSocialRepository(userId: _uid),
-        ),
+        Provider<SocialRepository>.value(value: social),
         Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
         Provider<Sharer>.value(value: sharer),
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: location),
         ChangeNotifierProvider(create: (_) => AuthProvider(auth)),
+        ChangeNotifierProvider(
+          create: (context) => CoverController(
+            auth: context.read<AuthProvider>(),
+            covers: covers,
+          ),
+        ),
         ChangeNotifierProvider(
           create: (_) => LoopPreviewProvider(FakeRouteRepository()),
         ),
@@ -213,12 +270,29 @@ void main() {
     // No mockups: the header borrows from a rider's profile (Prompt 17),
     // the tabs from the Create sheet's segmented control.
     goldenTest(
-      'Me tab, posts',
+      'Me tab, rides (default cover)',
       fileName: 'me_posts',
       constraints: _screen,
       pumpBeforeTest: (tester) async {
         await tester.pumpAndSettle();
         await _settle(tester);
+      },
+      builder: () {
+        final w = _World();
+        w.location.start();
+        return w.app();
+      },
+    );
+    goldenTest(
+      'Edit profile',
+      fileName: 'edit_profile',
+      constraints: _screen,
+      // Opened from Me, as in the app (the profile is loaded by then).
+      pumpBeforeTest: (tester) async {
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit profile'));
+        await tester.pumpAndSettle();
+        await precacheImages(tester);
       },
       builder: () {
         final w = _World();
@@ -239,13 +313,163 @@ void main() {
     );
   });
 
-  testWidgets('header: name, home, bike and totals', (tester) async {
+  testWidgets('header: name, handle, bio, follows and totals', (tester) async {
     await _pump(tester);
     expect(find.text('Ana Rider'), findsOneWidget);
-    expect(find.text('Cordon, Isabela · Underbone'), findsOneWidget);
+    expect(
+      find.text('@ana.rides · Underbone · Cordon, Isabela'),
+      findsOneWidget,
+    );
+    expect(find.text('Weekend loops in the Sierra Madre.'), findsOneWidget);
+    expect(find.bySemanticsLabel('12 followers'), findsOneWidget);
+    expect(find.bySemanticsLabel('8 following'), findsOneWidget);
     expect(find.text('1,284'), findsOneWidget);
     expect(find.text('23'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
+    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.bySemanticsLabel('Edit cover'), findsOneWidget);
+  });
+
+  testWidgets('no username yet: Add a username opens Edit profile', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      world: _World(
+        profile: Profile(
+          id: _uid,
+          createdAt: DateTime.utc(2026, 10, 18),
+          displayName: 'Ana Rider',
+          onboardingCompleted: true,
+        ),
+      ),
+    );
+    await tester.tap(find.textContaining('+ Add a username'));
+    await tester.pumpAndSettle();
+    expect(find.byType(EditProfileScreen), findsOneWidget);
+    await tester.ensureVisible(find.text('SAVE'));
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Pick a username so riders can find you.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Share sends the profile link', (tester) async {
+    final w = await _pump(tester);
+    await tester.tap(find.bySemanticsLabel('Share profile'));
+    await tester.pumpAndSettle();
+    expect(
+      w.sharer.shared.single,
+      'Ride with Ana Rider (@ana.rides) on Pasyar\n'
+      'https://pasyar.pages.dev/r/$_uid',
+    );
+  });
+
+  testWidgets('followers opens the list; a rider opens their profile', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await tester.tap(find.bySemanticsLabel('12 followers'));
+    await tester.pumpAndSettle();
+    expect(find.text('FOLLOWERS'), findsOneWidget);
+    expect(find.text('@rico'), findsOneWidget);
+    await tester.tap(find.text('Rico Navarro'));
+    await tester.pumpAndSettle();
+    expect(find.text('RIDER rico'), findsOneWidget);
+  });
+
+  group('cover', () {
+    Future<void> openCoverSheet(WidgetTester tester) async {
+      await tester.tap(find.bySemanticsLabel('Edit cover'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('no cover yet: no Remove in the sheet', (tester) async {
+      await _pump(tester);
+      await openCoverSheet(tester);
+      expect(find.text('Take photo'), findsOneWidget);
+      expect(find.text('Choose from gallery'), findsOneWidget);
+      expect(find.text('Remove cover'), findsNothing);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Take photo'), findsNothing);
+    });
+
+    testWidgets('pick, crop to the banner, upload; remove deletes the file', (
+      tester,
+    ) async {
+      final w = await _pump(tester);
+      await openCoverSheet(tester);
+      await tester.tap(find.text('Choose from gallery'));
+      // Decoding and cropping run in isolates, on the real clock.
+      await tester.runAsync(() async {
+        for (var i = 0; i < 100; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+          if (find.byType(CoverCropScreen).evaluate().isNotEmpty) break;
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('MOVE AND ZOOM'), findsOneWidget);
+      await tester.tap(find.text('USE PHOTO'));
+      await tester.runAsync(() async {
+        for (var i = 0; i < 100 && w.covers.uploads.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle();
+      expect(w.covers.uploads, hasLength(1));
+      expect(w.auth.profile!.coverUrl, w.covers.uploads.single);
+      expect(w.covers.deleted, isEmpty, reason: 'there was no old cover');
+
+      await openCoverSheet(tester);
+      await tester.tap(find.text('Remove cover'));
+      await tester.pumpAndSettle();
+      expect(w.auth.profile!.coverUrl, isNull);
+      expect(w.covers.deleted, [w.covers.uploads.single]);
+    });
+
+    test('replacing a cover deletes the old file', () async {
+      const old =
+          'https://x.supabase.co/storage/v1/object/public/covers/user-1/cover_0.jpg';
+      final w = _World(
+        profile: Profile(
+          id: _uid,
+          createdAt: DateTime.utc(2026, 10, 18),
+          coverUrl: old,
+          onboardingCompleted: true,
+        ),
+      );
+      final auth = AuthProvider(w.auth);
+      await pumpEventQueue();
+      final c = CoverController(auth: auth, covers: w.covers);
+      expect(await c.save(Uint8List(4)), isNull);
+      expect(w.auth.profile!.coverUrl, w.covers.uploads.single);
+      expect(w.covers.deleted, [old]);
+    });
+
+    test('upload fails: an error, and the old cover stays', () async {
+      const old =
+          'https://x.supabase.co/storage/v1/object/public/covers/user-1/cover_0.jpg';
+      final w = _World(
+        profile: Profile(
+          id: _uid,
+          createdAt: DateTime.utc(2026, 10, 18),
+          coverUrl: old,
+          onboardingCompleted: true,
+        ),
+      );
+      w.covers.fail = true;
+      final auth = AuthProvider(w.auth);
+      await pumpEventQueue();
+      final c = CoverController(auth: auth, covers: w.covers);
+      expect(await c.save(Uint8List(4)), CoverController.failed);
+      expect(w.auth.profile!.coverUrl, old);
+      expect(w.covers.deleted, isEmpty);
+    });
   });
 
   testWidgets('totals update right after a ride', (tester) async {
@@ -265,24 +489,32 @@ void main() {
     expect(find.text('24'), findsOneWidget);
   });
 
-  testWidgets('Posts: a grid of posts; tapping one opens it', (tester) async {
+  testWidgets('Rides: a 2-column grid of posts; tapping one opens it', (
+    tester,
+  ) async {
     await _pump(tester);
     await _settle(tester);
-    expect(find.text('YOUR POSTS'), findsOneWidget);
     // Four posts; the loop shared without a post isn't in the grid.
+    final cards = find.bySemanticsLabel('Sunday Falls Loop, 118 km');
+    expect(cards, findsNWidgets(4));
+    expect(tester.getSize(cards.first).height, 132);
     expect(
-      find.bySemanticsLabel(RegExp(r'^Sunday Falls Loop, ')),
-      findsNWidgets(4),
+      tester.getTopLeft(cards.at(0)).dy,
+      tester.getTopLeft(cards.at(1)).dy,
+      reason: 'two per row',
     );
-    expect(
-      find.bySemanticsLabel('Sunday Falls Loop, 2 photos'),
-      findsOneWidget,
+    // Rides to post stay under the grid.
+    await tester.scrollUntilVisible(
+      find.text('YOUR RIDES'),
+      200,
+      scrollable: find.byType(Scrollable).first,
     );
-    expect(
-      find.bySemanticsLabel('Sunday Falls Loop, no photos'),
-      findsOneWidget,
+    await tester.scrollUntilVisible(
+      cards.first,
+      -200,
+      scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.bySemanticsLabel('Sunday Falls Loop, 2 photos'));
+    await tester.tap(cards.first);
     await tester.pumpAndSettle();
     expect(find.text('POST p0'), findsOneWidget);
   });
@@ -549,19 +781,63 @@ void main() {
   });
 
   group('Edit profile', () {
-    testWidgets('saves the changes and goes back', (tester) async {
-      final w = await _pump(tester);
-      await tester.tap(find.text('EDIT PROFILE'));
+    Future<_World> openEdit(WidgetTester tester, {_World? world}) async {
+      final w = await _pump(tester, world: world);
+      await tester.tap(find.text('Edit profile'));
       await tester.pumpAndSettle();
-      expect(find.text('EDIT PROFILE'), findsOneWidget);
-      expect(find.text('SAVE'), findsOneWidget);
+      return w;
+    }
 
-      await tester.enterText(find.byType(TextField).first, 'Ana R.');
+    testWidgets('cover and picture on top; saves the changes', (tester) async {
+      final w = await openEdit(tester);
+      expect(find.text('EDIT PROFILE'), findsOneWidget);
+      expect(find.bySemanticsLabel('Edit cover'), findsOneWidget);
+      expect(find.bySemanticsLabel('Change profile picture'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Ana Rider'),
+        'Ana R.',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'ana.rides'),
+        '@Ana.Loops',
+      );
+      await tester.ensureVisible(find.text('SAVE'));
       await tester.tap(find.text('SAVE'));
       await tester.pumpAndSettle();
-      expect(w.auth.profileUpdates.last['display_name'], 'Ana R.');
+      final saved = w.auth.profileUpdates.last;
+      expect(saved['display_name'], 'Ana R.');
+      expect(saved['username'], 'ana.loops');
+      expect(saved['bio'], 'Weekend loops in the Sierra Madre.');
       expect(find.byType(MeScreen), findsOneWidget);
       expect(find.text('Profile saved.'), findsOneWidget);
+      expect(find.textContaining('@ana.loops'), findsOneWidget);
+    });
+
+    testWidgets('a taken username says so under the field', (tester) async {
+      final w = await openEdit(tester);
+      w.auth.updateError = const PostgrestException(
+        message: 'duplicate key value violates unique constraint',
+        code: '23505',
+      );
+      await tester.ensureVisible(find.text('SAVE'));
+      await tester.tap(find.text('SAVE'));
+      await tester.pumpAndSettle();
+      expect(find.text(EditProfileController.usernameTaken), findsOneWidget);
+      expect(find.byType(EditProfileScreen), findsOneWidget);
+    });
+
+    testWidgets('a username with spaces is refused', (tester) async {
+      await openEdit(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'ana.rides'),
+        'ana rides',
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Use letters, numbers, dots and underscores only.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('locked while moving', (tester) async {
@@ -570,7 +846,7 @@ void main() {
         world: _World(moving: true),
         initial: Routes.editProfile,
       );
-      expect(find.text('Stop riding to edit your profile.'), findsOneWidget);
+      expect(find.text('Stop riding to type.'), findsWidgets);
       expect(
         tester.widget<TextField>(find.byType(TextField).first).enabled,
         isFalse,

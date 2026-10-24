@@ -51,6 +51,10 @@ abstract interface class LoopRepository {
   /// The signed-in rider's loops, newest first. Throws [LoopException].
   Future<List<Loop>> mine();
 
+  /// Another rider's loops the signed-in rider can see (public, or a club
+  /// they share), newest first. Throws [LoopException].
+  Future<List<Loop>> ofRider(String userId);
+
   /// Clubs the signed-in rider belongs to, by name. Throws [LoopException].
   Future<List<Club>> myClubs();
 }
@@ -131,6 +135,23 @@ class SupabaseLoopRepository implements LoopRepository {
       return [for (final r in rows) Loop.fromJson(r)];
     } on LoopException {
       rethrow;
+    } on Exception {
+      throw LoopException.loadFailed;
+    }
+  }
+
+  @override
+  Future<List<Loop>> ofRider(String userId) async {
+    try {
+      final rows = await _client
+          .from('loops')
+          .select(Loop.columns)
+          .eq('owner_id', userId)
+          // Private loops never show on a profile, not even your own.
+          .neq('visibility', 'private')
+          .order('created_at', ascending: false)
+          .limit(50);
+      return [for (final r in rows) Loop.fromJson(r)];
     } on Exception {
       throw LoopException.loadFailed;
     }

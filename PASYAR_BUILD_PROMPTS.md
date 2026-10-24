@@ -464,12 +464,14 @@ Add shareable loop and post links:
 ```
 Build the Me tab:
 There is no mockup for this screen: build it only from the components and tokens in design/DESIGN.md so it matches the rest of the app.
-- Header: avatar, name, totals (km ridden, loops ridden, posts).
-- Tabs: Posts (grid), My loops (list with visibility badges, edit/delete), Saved loops.
-- Edit profile, settings (voice prompts on/off, units fixed to km, privacy trim distance info), sign out, delete account (deletes data and storage files via an Edge Function).
+- Profile fields: username (unique, lowercase, 3–20 letters, numbers, dot, underscore; asked for in Edit profile when missing), bio (max 150), cover_url.
+- Cover photo: a 150 px banner at the top (the rider's photo, or a default blue banner with a faint loop). On your own profile an "Edit cover" chip opens Take photo / Choose from gallery / Remove cover / Cancel; a new photo is cropped to the banner (390:150), compressed (max 1500 px, ~80% JPEG), uploaded to a public "covers" bucket at covers/<user_id>/cover_<timestamp>.jpg, and the old file is deleted. Errors keep the old cover. The same options are in Edit profile.
+- Header: rounded-square avatar overlapping the cover, Edit profile (or Follow / Following on another rider), name, @username · bike · town, bio, followers · following (tap for lists), and stat tiles (km ridden, loops ridden, posts). Share and Settings buttons on the cover.
+- Tabs: Rides (2-column grid of posts, then the rides still to post), My loops (mini route, visibility badge, edit/delete; clubs below), Saved loops. Another rider's profile has the same layout with Rides and Loops, no Saved, no Edit cover or Settings.
+- Edit profile, settings (voice prompts on/off, units fixed to km, privacy trim distance info), sign out, delete account (deletes data and storage files, covers included, via an Edge Function).
 ```
 
-**Done when:** totals update after a ride and account deletion removes all user data.
+**Done when:** totals update after a ride, a rider can set and remove a cover photo, and account deletion removes all user data.
 
 ---
 

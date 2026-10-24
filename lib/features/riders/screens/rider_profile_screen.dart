@@ -3,30 +3,32 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/links.dart';
 import '../../../core/router.dart';
+import '../../../core/share.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/enums.dart';
-import '../../../data/models/profile.dart';
+import '../../../data/models/loop.dart';
 import '../../../data/repositories/feed_repository.dart';
+import '../../../data/repositories/loop_repository.dart';
 import '../../feed/providers/feed_provider.dart';
-import '../../feed/widgets/feed_items.dart';
+import '../../me/widgets/loop_row.dart';
 import '../../moderation/widgets/report_sheet.dart';
+import '../../profile/widgets/profile_cover.dart';
+import '../../profile/widgets/profile_header.dart';
+import '../../profile/widgets/rides_grid.dart';
+import '../../ride/ride_this_loop.dart';
 import '../providers/rider_profile_controller.dart';
 
 enum _RiderAction { report, block }
 
-/// "Big bike", for the profile's detail line.
-String bikeLabel(BikeType bike) => switch (bike) {
-  BikeType.scooter => 'Scooter',
-  BikeType.underbone => 'Underbone',
-  BikeType.bigBike => 'Big bike',
-  BikeType.dualSport => 'Dual-sport',
-};
+enum RiderTab { rides, loops }
 
-/// Another rider: picture, name, town and bike, follow counts, FOLLOW, and
-/// their rides and loops. Expects a [RiderProfileController] and a
-/// [FeedProvider] for the rider above it.
+/// Another rider's profile: their cover, picture, name, @username, bio,
+/// follower counts and stats, FOLLOW / FOLLOWING, then their Rides and
+/// Loops. Share and ⋯ (report, block) on the banner. Expects a
+/// [RiderProfileController] and a [FeedProvider] for the rider above it.
 class RiderProfileScreen extends StatefulWidget {
   const RiderProfileScreen({super.key, this.clock = DateTime.now});
 
@@ -41,12 +43,17 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   late final RiderProfileController _rider = context
       .read<RiderProfileController>();
   late final FeedProvider _feed = context.read<FeedProvider>();
+  RiderTab _tab = RiderTab.rides;
+  List<Loop>? _loops;
+  String? _loopsError;
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(() {
-      if (_scroll.position.extentAfter < 1200) _feed.loadMore();
+      if (_tab == RiderTab.rides && _scroll.position.extentAfter < 1200) {
+        _feed.loadMore();
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _rider.load();
@@ -58,6 +65,19 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   void dispose() {
     _scroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadLoops() async {
+    try {
+      final loops = await context.read<LoopRepository>().ofRider(_rider.userId);
+      if (!mounted) return;
+      setState(() {
+        _loops = loops;
+        _loopsError = null;
+      });
+    } on LoopException catch (e) {
+      if (mounted) setState(() => _loopsError = e.message);
+    }
   }
 
   void _snack(String text) {
@@ -77,6 +97,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     if (error != null) return _snack(error);
     await _feed.refresh();
   }
+
+  void _back() => context.canPop() ? context.pop() : context.go(Routes.feed);
 
   Future<void> _more(String name) async {
     final action = await showActionSheet<_RiderAction>(
@@ -127,197 +149,230 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   Widget build(BuildContext context) {
     final c = context.watch<RiderProfileController>();
     final feed = context.watch<FeedProvider>();
-    final name = c.rider?.displayName ?? 'A rider';
+    final repo = context.read<FeedRepository>();
+    final rider = c.rider;
+    final name = rider?.displayName ?? 'A rider';
+    final back = CoverIconButton(
+      icon: LucideIcons.chevronLeft,
+      label: 'Back',
+      onPressed: _back,
+    );
+    final muted = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
 
-    final items = <Widget>[
-      _Header(
-        rider: c.rider,
-        loading: c.loading,
-        message: c.notFound ? "This rider isn't on Pasyar anymore." : c.error,
-        showFollow: !c.isMe,
-        blocked: c.blocked,
-        onBack: () =>
-            context.canPop() ? context.pop() : context.go(Routes.feed),
-        onFollow: _toggleFollow,
-        onUnblock: _unblock,
-        onMore: c.isMe || c.rider == null ? null : () => _more(name),
-      ),
-      if (!c.notFound && !c.blocked)
-        ...feedPostItems(
-          feed,
-          now: widget.clock(),
-          actions: feedCardActions(context, feed, clock: widget.clock),
-          repo: context.read<FeedRepository>(),
-          emptyText: c.isMe
-              ? 'Rides you post and loops you share show up here.'
-              : "$name hasn't shared any rides you can see yet.",
+    if (rider == null) {
+      return Scaffold(
+        backgroundColor: PasyarColors.card,
+        body: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            ProfileCover(leading: back),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: c.loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: PasyarColors.accent,
+                      ),
+                    )
+                  : Text(
+                      c.notFound
+                          ? "This rider isn't on Pasyar anymore."
+                          : c.error ?? '',
+                      textAlign: TextAlign.center,
+                      style: muted,
+                    ),
+            ),
+          ],
         ),
-    ];
+      );
+    }
+
+    final header = ProfileHeader(
+      data: ProfileHeaderData(
+        name: name,
+        username: rider.username,
+        bio: rider.bio,
+        bike: rider.bikeType,
+        homeArea: rider.homeArea,
+        avatar: rider.avatarUrl == null ? null : repo.avatar(rider.avatarUrl!),
+        cover: rider.coverUrl == null ? null : repo.avatar(rider.coverUrl!),
+        followers: rider.followerCount,
+        following: rider.followingCount,
+        riddenM: rider.riddenM,
+        loopsRidden: rider.loopsRidden,
+        posts: rider.posts,
+      ),
+      action: c.isMe
+          ? ProfilePillButton(
+              label: 'Edit profile',
+              onPressed: () => context.push(Routes.editProfile),
+            )
+          : c.blocked
+          ? ProfilePillButton(
+              label: 'Unblock',
+              outlined: true,
+              onPressed: _unblock,
+            )
+          : rider.followedByMe
+          ? ProfilePillButton(
+              label: 'Following',
+              outlined: true,
+              onPressed: _toggleFollow,
+            )
+          : ProfilePillButton(label: 'Follow', onPressed: _toggleFollow),
+      coverLeading: back,
+      coverActions: [
+        CoverIconButton(
+          icon: LucideIcons.share2,
+          label: 'Share profile',
+          onPressed: () => context.read<Sharer>().share(
+            riderShareMessage(
+              name: name,
+              username: rider.username,
+              link: AppLinks.rider(rider.id),
+            ),
+            subject: name,
+          ),
+        ),
+        if (!c.isMe)
+          CoverIconButton(
+            icon: LucideIcons.ellipsis,
+            label: 'More',
+            onPressed: () => _more(name),
+          ),
+      ],
+      onFollowers: () => context.push(Routes.followers(rider.id)),
+      onFollowing: () => context.push(Routes.following(rider.id)),
+    );
+
+    final List<Widget> content;
+    if (c.blocked) {
+      content = [
+        Text(
+          "You blocked $name. You won't see their rides, loops or comments.",
+          style: muted,
+        ),
+      ];
+    } else {
+      content = [
+        ProfileTabs<RiderTab>(
+          tabs: const {RiderTab.rides: 'Rides', RiderTab.loops: 'Loops'},
+          selected: _tab,
+          onChanged: (t) {
+            setState(() => _tab = t);
+            if (t == RiderTab.loops && _loops == null) _loadLoops();
+          },
+        ),
+        ...switch (_tab) {
+          RiderTab.rides => _rides(feed, repo, name, muted),
+          RiderTab.loops => _loopList(name, muted),
+        },
+      ];
+    }
 
     return Scaffold(
-      backgroundColor: PasyarColors.line,
+      backgroundColor: PasyarColors.card,
       body: RefreshIndicator(
         color: PasyarColors.accent,
         edgeOffset: MediaQuery.paddingOf(context).top,
-        onRefresh: () => Future.wait([c.load(), feed.refresh()]),
-        child: ListView.separated(
+        onRefresh: () => Future.wait([
+          c.load(),
+          feed.refresh(),
+          if (_loops != null) _loadLoops(),
+        ]),
+        child: ListView(
           controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, i) => items[i],
-        ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.rider,
-    required this.loading,
-    required this.showFollow,
-    required this.onBack,
-    required this.onFollow,
-    required this.onUnblock,
-    this.blocked = false,
-    this.onMore,
-    this.message,
-  });
-
-  final RiderProfile? rider;
-  final bool loading;
-  final String? message;
-  final bool showFollow;
-  final bool blocked;
-  final VoidCallback onBack;
-  final VoidCallback onFollow;
-  final VoidCallback onUnblock;
-
-  /// Report or block (not on the rider's own profile).
-  final VoidCallback? onMore;
-
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top;
-    final rider = this.rider;
-    final details = [
-      ?rider?.homeArea,
-      if (rider?.bikeType case final b?) bikeLabel(b),
-    ];
-    final bold = const TextStyle(
-      fontWeight: FontWeight.w600,
-      color: PasyarColors.ink,
-    );
-    return ColoredBox(
-      color: PasyarColors.card,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          PasyarSpacing.screen,
-          top + 8,
-          PasyarSpacing.screen,
-          PasyarSpacing.sheet,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RoundIconButton.ground(
-                  icon: LucideIcons.chevronLeft,
-                  semanticLabel: 'Back',
-                  onPressed: onBack,
-                ),
-                if (onMore != null)
-                  RoundIconButton.ground(
-                    icon: LucideIcons.ellipsis,
-                    semanticLabel: 'More',
-                    onPressed: onMore!,
-                  ),
-              ],
+            header,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: PasyarSpacing.screen,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 12,
+                children: content,
+              ),
             ),
-            const SizedBox(height: 12),
-            if (rider == null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: PasyarColors.accent,
-                        ),
-                      )
-                    : Text(
-                        message ?? '',
-                        textAlign: TextAlign.center,
-                        style: PasyarTextStyles.body.copyWith(
-                          color: PasyarColors.muted,
-                        ),
-                      ),
-              )
-            else ...[
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Avatar(
-                  name: rider.displayName ?? 'A rider',
-                  image: rider.avatarUrl == null
-                      ? null
-                      : context.read<FeedRepository>().avatar(rider.avatarUrl!),
-                  size: 88,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Semantics(
-                header: true,
-                child: Text(
-                  rider.displayName ?? 'A rider',
-                  style: PasyarTextStyles.screenTitle(32),
-                ),
-              ),
-              if (details.isNotEmpty)
-                Text(details.join(' · '), style: PasyarTextStyles.label),
-              const SizedBox(height: 8),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: '${rider.followerCount}', style: bold),
-                    TextSpan(
-                      text: rider.followerCount == 1
-                          ? ' follower · '
-                          : ' followers · ',
-                    ),
-                    TextSpan(text: '${rider.followingCount}', style: bold),
-                    const TextSpan(text: ' following'),
-                  ],
-                ),
-                style: PasyarTextStyles.label.copyWith(fontSize: 14),
-              ),
-              if (showFollow && blocked) ...[
-                const SizedBox(height: PasyarSpacing.groupGap),
-                Text(
-                  "You blocked ${rider.displayName ?? 'this rider'}. You "
-                  "won't see their rides, loops or comments.",
-                  style: PasyarTextStyles.body.copyWith(
-                    color: PasyarColors.muted,
-                  ),
-                ),
-                const SizedBox(height: PasyarSpacing.buttonGap),
-                SecondaryButton(label: 'UNBLOCK', onPressed: onUnblock),
-              ] else if (showFollow) ...[
-                const SizedBox(height: PasyarSpacing.groupGap),
-                rider.followedByMe
-                    ? SecondaryButton(label: 'FOLLOWING', onPressed: onFollow)
-                    : PrimaryButton(
-                        label: 'FOLLOW',
-                        icon: LucideIcons.userPlus,
-                        onPressed: onFollow,
-                      ),
-              ],
-            ],
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _rides(
+    FeedProvider feed,
+    FeedRepository repo,
+    String name,
+    TextStyle muted,
+  ) {
+    if (feed.loading) {
+      return const [
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: CircularProgressIndicator(color: PasyarColors.accent),
+          ),
+        ),
+      ];
+    }
+    final posts = [
+      for (final p in feed.posts)
+        if (!p.isLoopOnly) p,
+    ];
+    if (posts.isEmpty) {
+      return [
+        Text(
+          feed.error ?? "$name hasn't posted any rides you can see yet.",
+          style: muted,
+        ),
+      ];
+    }
+    return [
+      RidesGrid(
+        posts: posts,
+        photo: repo.photo,
+        onTap: (p) => context.push(Routes.postLink(p.id)),
+      ),
+      if (feed.loadingMore)
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: CircularProgressIndicator(color: PasyarColors.accent),
+          ),
+        ),
+    ];
+  }
+
+  List<Widget> _loopList(String name, TextStyle muted) {
+    final loops = _loops;
+    if (loops == null) {
+      return [
+        if (_loopsError != null)
+          Text(_loopsError!, style: muted)
+        else
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(
+              child: CircularProgressIndicator(color: PasyarColors.accent),
+            ),
+          ),
+      ];
+    }
+    if (loops.isEmpty) {
+      return [
+        Text("$name hasn't shared any loops you can see yet.", style: muted),
+      ];
+    }
+    return [
+      for (final loop in loops)
+        LoopRow(
+          loop: loop,
+          detail: loop.province,
+          onTap: () => rideThisLoop(context, loopId: loop.id, name: loop.name),
+        ),
+    ];
   }
 }

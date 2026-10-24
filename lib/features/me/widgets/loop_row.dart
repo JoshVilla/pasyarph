@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/pasyar_theme.dart';
+import '../../../core/widgets/widgets.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/models/loop.dart';
 import '../../ride/loop_stats.dart';
@@ -55,20 +56,21 @@ class VisibilityBadge extends StatelessWidget {
   }
 }
 
-/// A loop on the Me tab: badge, name, km and time on `ground`. Tapping it
-/// rides it from where the rider is; the ⋯ button opens [onMore].
+/// A loop on a profile: mini route map, badge, name, km and time on
+/// `ground`. Tapping it rides it from where the rider is; the ⋯ button
+/// (when [onMore] is set) opens edit, share and delete.
 class LoopRow extends StatelessWidget {
   const LoopRow({
     super.key,
     required this.loop,
     required this.onTap,
-    required this.onMore,
+    this.onMore,
     this.detail,
   });
 
   final Loop loop;
   final VoidCallback onTap;
-  final VoidCallback onMore;
+  final VoidCallback? onMore;
 
   /// Next to the badge, e.g. "Made by you".
   final String? detail;
@@ -84,10 +86,15 @@ class LoopRow extends StatelessWidget {
       child: InkWell(
         onTap: rideable ? onTap : null,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
+          padding: EdgeInsets.fromLTRB(10, 10, onMore == null ? 14 : 4, 10),
           child: Row(
-            spacing: 8,
+            spacing: 10,
             children: [
+              RouteThumbnail(
+                route: loop.sharedRoute ?? const [],
+                width: 64,
+                height: 64,
+              ),
               Expanded(
                 child: Semantics(
                   button: rideable,
@@ -125,19 +132,20 @@ class LoopRow extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: onMore,
-                tooltip: 'More',
-                constraints: const BoxConstraints.tightFor(
-                  width: 48,
-                  height: 48,
+              if (onMore != null)
+                IconButton(
+                  onPressed: onMore,
+                  tooltip: 'More',
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  icon: const Icon(
+                    LucideIcons.ellipsis,
+                    size: 22,
+                    color: PasyarColors.muted,
+                  ),
                 ),
-                icon: const Icon(
-                  LucideIcons.ellipsis,
-                  size: 22,
-                  color: PasyarColors.muted,
-                ),
-              ),
             ],
           ),
         ),

@@ -38,6 +38,9 @@ import '../features/me/screens/settings_screen.dart';
 import '../features/onboarding/providers/onboarding_provider.dart';
 import '../features/onboarding/screens/onboarding_location_screen.dart';
 import '../features/onboarding/screens/onboarding_profile_screen.dart';
+import '../features/profile/providers/edit_profile_controller.dart';
+import '../features/profile/screens/edit_profile_screen.dart';
+import '../features/profile/screens/follow_list_screen.dart';
 import '../features/post/screens/post_loop_screen.dart';
 import '../features/ride/screens/loop_preview_screen.dart';
 import '../features/moderation/screens/blocked_riders_screen.dart';
@@ -80,6 +83,12 @@ abstract final class Routes {
   static const riderPath = '/riders/:userId';
   static String rider(String id) => '/riders/$id';
 
+  /// Who follows a rider, and who they follow.
+  static const followersPath = '/riders/:userId/followers';
+  static String followers(String id) => '/riders/$id/followers';
+  static const followingPath = '/riders/:userId/following';
+  static String following(String id) => '/riders/$id/following';
+
   /// Posting a finished ride (from the ride summary or the Me tab).
   static const postRide = '/post/:rideId';
   static String post(String rideId) => '/post/$rideId';
@@ -89,6 +98,7 @@ abstract final class Routes {
   static const loopLinkPath = '/l/:loopId';
   static const postLinkPath = '/p/:postId';
   static const inviteLinkPath = '/join/:code';
+  static const riderLinkPath = '/r/:userId';
 
   /// A post by id (the post screen share links open).
   static String postLink(String id) => '/p/$id';
@@ -161,18 +171,36 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
       GoRoute(
         path: Routes.editProfile,
         builder: (context, state) => ChangeNotifierProvider(
-          create: (context) => OnboardingProvider(
+          create: (context) => EditProfileController(
             auth: context.read<AuthProvider>(),
             avatars: context.read<AvatarRepository>(),
-            location: context.read<LocationPermissionService>(),
           ),
-          child: const OnboardingProfileScreen(editing: true),
+          child: const EditProfileScreen(),
         ),
       ),
       GoRoute(
         path: Routes.inviteLinkPath,
         redirect: (context, state) =>
             Routes.joinClub(state.pathParameters['code']!.toLowerCase()),
+      ),
+      GoRoute(
+        path: Routes.riderLinkPath,
+        redirect: (context, state) =>
+            Routes.rider(state.pathParameters['userId']!),
+      ),
+      GoRoute(
+        path: Routes.followersPath,
+        builder: (context, state) => FollowListScreen(
+          userId: state.pathParameters['userId']!,
+          list: FollowList.followers,
+        ),
+      ),
+      GoRoute(
+        path: Routes.followingPath,
+        builder: (context, state) => FollowListScreen(
+          userId: state.pathParameters['userId']!,
+          list: FollowList.following,
+        ),
       ),
       GoRoute(
         path: AuthRoutes.welcome,
@@ -328,6 +356,7 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
                     feed: context.read<FeedRepository>(),
                     rides: context.read<RideHistoryRepository>(),
                     userId: context.read<AuthProvider>().user?.id,
+                    social: context.read<SocialRepository>(),
                   ),
                   child: const MeScreen(),
                 ),

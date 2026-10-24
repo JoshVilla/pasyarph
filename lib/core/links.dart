@@ -18,10 +18,22 @@ abstract final class AppLinks {
   /// Opens the post in the app.
   static Uri post(String id) => Uri.https(domain, '/p/$id');
 
+  /// Opens a rider's profile in the app.
+  static Uri rider(String id) => Uri.https(domain, '/r/$id');
+
   /// Club invite link. Opens JOIN CLUB in the app, or can be pasted in
   /// Me → JOIN WITH A LINK.
   static Uri clubInvite(String code) => Uri.https(domain, '/join/$code');
 }
+
+/// What the share sheet sends with a rider's profile link.
+String riderShareMessage({
+  required String name,
+  String? username,
+  required Uri link,
+}) =>
+    'Ride with $name${username == null ? '' : ' (@$username)'} on Pasyar\n'
+    '$link';
 
 /// What the share sheet sends with a loop or post link:
 /// "Pasyar tayo! Tanay Sunrise Loop · 82 km" and the link on its own line,

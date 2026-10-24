@@ -40,6 +40,7 @@ import 'package:pasyarph/features/clubs/screens/join_club_screen.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
 import 'package:pasyarph/features/me/screens/settings_screen.dart';
+import 'package:pasyarph/features/profile/providers/cover_controller.dart';
 import 'package:pasyarph/features/riders/screens/rider_profile_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_location_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_profile_screen.dart';
@@ -48,6 +49,7 @@ import 'package:provider/provider.dart';
 
 import 'support/fake_auth_repository.dart';
 import 'support/fake_clubs.dart';
+import 'support/fake_covers.dart';
 import 'support/fake_feed.dart';
 import 'support/fake_links.dart';
 import 'support/fake_me.dart';
@@ -125,6 +127,12 @@ Future<FakeAuthRepository> pumpApp(
           ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider(repo)),
+        ChangeNotifierProvider(
+          create: (context) => CoverController(
+            auth: context.read<AuthProvider>(),
+            covers: FakeCoverRepository(),
+          ),
+        ),
         ChangeNotifierProvider(
           create: (context) => FeedProvider(
             feed: context.read<FeedRepository>(),
@@ -517,9 +525,9 @@ void main() {
       expect(find.byType(RiderProfileScreen), findsOneWidget);
       expect(find.text('Cordon, Isabela'), findsOneWidget);
 
-      await tester.tap(find.text('FOLLOW'));
+      await tester.tap(find.text('Follow'));
       await tester.pumpAndSettle();
-      expect(find.text('FOLLOWING'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
       expect(social.follows, {'author-p1'});
       expect(
         find.textContaining('3 followers', findRichText: true),

@@ -1,8 +1,9 @@
 /// Share link paths the app opens: `/l/<loop>`, `/p/<post>`,
-/// `/join/<code>`.
+/// `/r/<rider>`, `/join/<code>`.
 bool isShareLinkPath(String path) {
   final segments = path.split('/').where((s) => s.isNotEmpty).toList();
-  return segments.length == 2 && const {'l', 'p', 'join'}.contains(segments[0]);
+  return segments.length == 2 &&
+      const {'l', 'p', 'r', 'join'}.contains(segments[0]);
 }
 
 /// Remembers a share link opened before the rider could see it (signed

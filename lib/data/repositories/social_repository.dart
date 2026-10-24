@@ -55,6 +55,12 @@ abstract interface class SocialRepository {
   /// Following someone twice (or unfollowing twice) is fine.
   Future<void> follow(String userId);
   Future<void> unfollow(String userId);
+
+  /// Riders following [userId], newest first.
+  Future<List<ProfileSummary>> followers(String userId);
+
+  /// Riders [userId] follows, newest first.
+  Future<List<ProfileSummary>> following(String userId);
 }
 
 class SupabaseSocialRepository implements SocialRepository {
@@ -157,6 +163,40 @@ class SupabaseSocialRepository implements SocialRepository {
       if (e.code != '23505') rethrow;
     }
   });
+
+  static const _person = 'id,display_name,avatar_url,username';
+
+  @override
+  Future<List<ProfileSummary>> followers(String userId) =>
+      _guard('followers', () async {
+        final rows = await _client
+            .from('follows')
+            .select('created_at, profiles!follows_follower_id_fkey($_person)')
+            .eq('followee_id', userId)
+            .order('created_at', ascending: false)
+            .limit(200);
+        return [
+          for (final r in rows)
+            if (r['profiles'] case final Map<String, dynamic> p)
+              ProfileSummary.fromJson(p),
+        ];
+      });
+
+  @override
+  Future<List<ProfileSummary>> following(String userId) =>
+      _guard('following', () async {
+        final rows = await _client
+            .from('follows')
+            .select('created_at, profiles!follows_followee_id_fkey($_person)')
+            .eq('follower_id', userId)
+            .order('created_at', ascending: false)
+            .limit(200);
+        return [
+          for (final r in rows)
+            if (r['profiles'] case final Map<String, dynamic> p)
+              ProfileSummary.fromJson(p),
+        ];
+      });
 
   @override
   Future<void> unfollow(String userId) => _guard(

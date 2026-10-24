@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/pasyar_theme.dart';
 
 /// Round profile picture with an initials fallback. Feed sizes: 44 (post
-/// author), 40 (composer), 32 (comment).
+/// author), 40 (composer), 32 (comment). With [radius] it's a rounded
+/// square instead (the 84 px profile picture).
 class Avatar extends StatelessWidget {
   const Avatar({
     super.key,
@@ -11,11 +12,15 @@ class Avatar extends StatelessWidget {
     this.image,
     this.size = 44,
     this.color,
+    this.radius,
   });
 
   final String name;
   final ImageProvider? image;
   final double size;
+
+  /// Corner radius for a rounded square; null for a circle.
+  final double? radius;
 
   /// Background behind the initials. Defaults to a color picked from [name].
   final Color? color;
@@ -64,7 +69,8 @@ class Avatar extends StatelessWidget {
         alignment: Alignment.center,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: radius == null ? null : BorderRadius.circular(radius!),
           color: color ?? colorFor(name),
         ),
         child: image == null

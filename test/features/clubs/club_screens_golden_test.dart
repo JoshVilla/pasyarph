@@ -8,6 +8,9 @@ import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/profile.dart';
 import 'package:pasyarph/data/repositories/club_repository.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
+import 'package:pasyarph/features/dev/demo_routes.dart';
+import 'package:pasyarph/data/repositories/loop_repository.dart';
+import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/repositories/social_repository.dart';
 import 'package:pasyarph/features/clubs/providers/club_controller.dart';
 import 'package:pasyarph/features/clubs/screens/club_screen.dart';
@@ -87,10 +90,15 @@ void main() {
         'ana': const RiderProfile(
           id: 'ana',
           displayName: 'Ana Lopez',
+          username: 'ana.lopez',
+          bio: 'Sunrise loops before work. Cordon to Diffun and back.',
           homeArea: 'Cordon, Isabela',
           bikeType: BikeType.underbone,
           followerCount: 48,
           followingCount: 12,
+          riddenM: 3412000,
+          loopsRidden: 41,
+          posts: 2,
         ),
       },
     );
@@ -192,5 +200,76 @@ void main() {
         ],
       ),
     );
+  });
+
+  group('another rider', () {
+    final loops = FakeLoopRepository()
+      ..riderLoops['ana'] = [
+        Loop(
+          id: 'ana-loop',
+          ownerId: 'ana',
+          name: 'Diffun Sunrise',
+          source: LoopSource.custom,
+          sharedRoute: DemoRoutes.loop,
+          distanceM: 64000,
+          durationS: 7200,
+          visibility: LoopVisibility.public,
+          createdAt: _now,
+        ),
+      ];
+
+    Future<void> pumpRider(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app(
+            RiderProfileScreen(clock: () => _now),
+            more: [
+              Provider<LoopRepository>.value(value: loops),
+              ChangeNotifierProvider(
+                create: (_) =>
+                    RiderProfileController(social: social, userId: 'ana'),
+              ),
+              ChangeNotifierProvider(
+                create: (_) => scoped(const FeedScope.rider('ana')),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('their cover, Follow, no Edit cover, Settings or Saved', (
+      tester,
+    ) async {
+      await pumpRider(tester);
+      expect(find.text('Follow'), findsOneWidget);
+      expect(find.text('Edit profile'), findsNothing);
+      expect(find.bySemanticsLabel('Edit cover'), findsNothing);
+      expect(find.bySemanticsLabel('Settings'), findsNothing);
+      expect(find.bySemanticsLabel('Share profile'), findsOneWidget);
+      expect(find.text('Saved'), findsNothing);
+      expect(find.text('3,412'), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pumpAndSettle();
+      expect(find.text('Following'), findsOneWidget);
+      expect(find.bySemanticsLabel('49 followers'), findsOneWidget);
+    });
+
+    testWidgets('Loops lists the loops they shared', (tester) async {
+      await pumpRider(tester);
+      await tester.tap(find.text('Loops'));
+      await tester.pumpAndSettle();
+      expect(find.text('Diffun Sunrise'), findsOneWidget);
+      expect(
+        find.byTooltip('More'),
+        findsNothing,
+        reason: 'not theirs to edit',
+      );
+    });
   });
 }

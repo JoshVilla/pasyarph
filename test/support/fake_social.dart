@@ -18,6 +18,10 @@ class FakeSocialRepository implements SocialRepository {
   final Map<String, RiderProfile> riders;
   final likes = <String>{};
   final follows = <String>{};
+
+  /// Followers and following lists, by rider id.
+  final followerLists = <String, List<ProfileSummary>>{};
+  final followingLists = <String, List<ProfileSummary>>{};
   final calls = <String>[];
 
   /// Next call of this kind throws this.
@@ -29,6 +33,18 @@ class FakeSocialRepository implements SocialRepository {
       failNext = null;
       throw f;
     }
+  }
+
+  @override
+  Future<List<ProfileSummary>> followers(String userId) async {
+    _maybeFail();
+    return followerLists[userId] ?? const [];
+  }
+
+  @override
+  Future<List<ProfileSummary>> following(String userId) async {
+    _maybeFail();
+    return followingLists[userId] ?? const [];
   }
 
   @override

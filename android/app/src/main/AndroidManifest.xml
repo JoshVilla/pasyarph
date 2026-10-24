@@ -52,7 +52,7 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="${applicationId}" android:host="auth-callback"/>
             </intent-filter>
-            <!-- Share links (App Links): loops /l/<id>, posts /p/<id>, club
+            <!-- Share links (App Links): loops /l/<id>, posts /p/<id>, riders /r/<id>, club
                  invites /join/<code>. Android checks the site's
                  /.well-known/assetlinks.json (site/ in this repo) lists this
                  app before opening them here instead of the browser. -->
@@ -63,6 +63,7 @@
                 <data android:scheme="https" android:host="pasyar.pages.dev"/>
                 <data android:pathPrefix="/l/"/>
                 <data android:pathPrefix="/p/"/>
+                <data android:pathPrefix="/r/"/>
                 <data android:pathPrefix="/join/"/>
             </intent-filter>
         </activity>

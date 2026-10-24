@@ -243,6 +243,13 @@ class FakeLoopRepository implements LoopRepository {
       ),
   ];
 
+  /// Other riders' loops, by rider id.
+  final riderLoops = <String, List<Loop>>{};
+
+  @override
+  Future<List<Loop>> ofRider(String userId) async =>
+      riderLoops[userId] ?? const [];
+
   @override
   Future<List<Club>> myClubs() async => clubs;
 }

@@ -44,6 +44,8 @@ The theme moved from orange to deep blue (October 2026). The screenshots and HTM
 | `verifiedTint` / `verifiedText` | `#E6EEFB` / `#1E3A8A` | "GPS confirmed at stop" badge |
 | `mapGround` | `#F7F7F7` | Map placeholder / loading background; matches the land of the MapTiler `streets-v2-pastel` style |
 | `riddenRoute` | `#9CA0A8` | Part of the loop already ridden |
+| `coverRoad` | `#2B4BA6` | Roads on the default profile cover (on `accentDark`, with a `taglineOnInk` loop at 80%) |
+| `coverChip` | `#0F172A` at 55% | "Edit cover" chip over a cover photo |
 
 ```dart
 // lib/core/theme/pasyar_colors.dart
@@ -64,6 +66,8 @@ class PasyarColors {
   static const verifiedText = Color(0xFF1E3A8A);
   static const mapGround = Color(0xFFF7F7F7);
   static const riddenRoute = Color(0xFF9CA0A8);
+  static const coverRoad = Color(0xFF2B4BA6);
+  static const coverChip = Color(0x8C0F172A);
 }
 ```
 
@@ -126,6 +130,11 @@ Two families from Google Fonts: **Barlow Condensed** (display) and **Barlow** (b
 | **StepProgress** | Overline "STEP X OF N" in `accentDark`, then N equal segments, 6 px tall, radius 3, 6 px gap; done = `accent`, todo = `line` |
 | **SafetyRow** | `ground` panel, radius 16, padding 12 × 14, 24 px `accentDark` stroke icon, 15 px text with a bold lead phrase |
 | **Welcome (dark)** | Full `ink` background; roads in `#262930` / `#30343C`; loop in `accent`; secondary button = 2 px white outline with white label |
+| **Profile cover** | Full width, 150 tall below the status bar. Photo (BoxFit.cover) with a soft dark gradient at the top, or the default: `accentDark` ground, `coverRoad` roads, a `taglineOnInk` loop at 80%. White 44 px round icon buttons at the top (back / share / settings / ⋯). Own profile: "Edit cover" chip bottom-right, 32 tall, fully rounded, `coverChip`, white camera icon + 13 / 600 text. A 3 px white progress bar while uploading |
+| **Profile header** | 84 px rounded-square avatar (radius 24, 4 px white border, floating shadow) overlapping the cover by 40 px on the left; on the right a 38 px pill: Edit profile / Follow (`accent`, white 14 / 700) or Following (white, 1.5 px `line` border). Then name 20 / 700, "@username · bike · town" 14 `muted`, bio 14, "n followers · n following" with bold numbers (tappable) |
+| **Stat tiles** | Three in a row, 8 px gap, radius 14, padding 10 × 12; value 18 / 700, label 12. km ridden: `accentTint` with `accentDark` text; the others `ground` |
+| **Profile tabs** | Pills 36 tall (44 tap area), fully rounded. Active: `ink` fill, white text. Inactive: white with 1.5 px `line` border |
+| **Ride card** | 2-column grid, 132 tall, radius 16, 8 px gap: the post's first photo (or route), dark bottom gradient, loop name 13 / 700 and km 12 in white |
 | **Icons** | Simple 2–2.2 px stroke icons (Lucide-style). Use `lucide_icons` or similar. No emoji |
 
 ---

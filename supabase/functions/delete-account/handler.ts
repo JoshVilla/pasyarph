@@ -4,9 +4,10 @@
 // Every table cascades from auth.users → profiles (loops, posts, photos,
 // rides, likes, comments, clubs, follows, saved loops), so deleting the user
 // deletes their data. Storage files don't cascade, so they go first:
-// avatars/<uid>/… (profile and club photos) and post-photos/<uid>/….
+// avatars/<uid>/… (profile and club photos), post-photos/<uid>/… and
+// covers/<uid>/… (profile covers).
 
-export const BUCKETS = ['avatars', 'post-photos'] as const;
+export const BUCKETS = ['avatars', 'post-photos', 'covers'] as const;
 
 /** Storage's remove() takes at most this many paths per call. */
 export const REMOVE_BATCH = 1000;

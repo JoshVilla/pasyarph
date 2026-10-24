@@ -27,6 +27,8 @@ class PasyarTextField extends StatefulWidget {
     this.height = 52,
     this.textStyle,
     this.maxLength,
+    this.maxLines = 1,
+    this.prefixText,
   });
 
   /// 52 by default; the Create sheet's loop name field is 48.
@@ -37,6 +39,12 @@ class PasyarTextField extends StatefulWidget {
 
   /// Limits input without showing a counter.
   final int? maxLength;
+
+  /// More than 1 for a multi-line field (a bio); it grows to fit.
+  final int maxLines;
+
+  /// Shown before the text, e.g. "@" for a username.
+  final String? prefixText;
 
   final String label;
   final TextEditingController? controller;
@@ -103,12 +111,32 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
           onSubmitted: widget.onSubmitted,
           textAlignVertical: TextAlignVertical.center,
           maxLength: widget.maxLength,
+          minLines: widget.maxLines > 1 ? 3 : 1,
+          maxLines: widget.maxLines,
           style: textStyle.copyWith(
             color: enabled ? PasyarColors.ink : PasyarColors.muted,
           ),
           decoration: InputDecoration(
-            constraints: BoxConstraints.tightFor(height: widget.height),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            constraints: widget.maxLines == 1
+                ? BoxConstraints.tightFor(height: widget.height)
+                : null,
+            contentPadding: widget.maxLines == 1
+                ? const EdgeInsets.symmetric(horizontal: 14)
+                : const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            // Always shown (prefixText only shows once focused or filled).
+            prefixIcon: widget.prefixText == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      start: 14,
+                      end: 2,
+                    ),
+                    child: Text(
+                      widget.prefixText!,
+                      style: textStyle.copyWith(color: PasyarColors.muted),
+                    ),
+                  ),
+            prefixIconConstraints: const BoxConstraints(),
             counterText: '',
             hintText: widget.hint,
             hintStyle: textStyle.copyWith(color: PasyarColors.muted),
