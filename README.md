@@ -116,6 +116,13 @@ npx supabase functions deploy route-through-points --use-api
 cd supabase/functions/route-through-points && npx deno test
 ```
 
+`supabase/functions/delete-account` (Me → Settings → DELETE ACCOUNT) deletes the caller's files in `avatars/<uid>/` and `post-photos/<uid>/`, then their auth user. Every table cascades from it, so that removes all their data. It needs no secrets of its own (the service role key is provided by Supabase).
+
+```sh
+npx supabase functions deploy delete-account --use-api
+cd supabase/functions/delete-account && npx deno test
+```
+
 Notes for app code:
 
 - `loops.route` (the full loop, which starts at the rider's home) is not readable through the API. Select `Loop.columns` instead of `*`; owners get their full route from `rpc('loop_route', {'p_loop_id': id})`.

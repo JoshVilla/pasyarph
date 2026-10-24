@@ -29,7 +29,11 @@ import '../features/create/providers/create_loop_controller.dart';
 import '../features/create/screens/create_loop_screen.dart';
 import '../features/dev/screens/widget_gallery_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
+import '../data/repositories/me_repository.dart';
+import '../data/repositories/ride_history_repository.dart';
+import '../features/me/providers/me_controller.dart';
 import '../features/me/screens/me_screen.dart';
+import '../features/me/screens/settings_screen.dart';
 import '../features/onboarding/providers/onboarding_provider.dart';
 import '../features/onboarding/screens/onboarding_location_screen.dart';
 import '../features/onboarding/screens/onboarding_profile_screen.dart';
@@ -79,6 +83,13 @@ abstract final class Routes {
   static const postLinkPath = '/p/:postId';
   static const inviteLinkPath = '/join/:code';
 
+  /// A post by id (the post screen share links open).
+  static String postLink(String id) => '/p/$id';
+
+  /// Me tab (Prompt 19), full screen over the tabs.
+  static const settings = '/settings';
+  static const editProfile = '/profile/edit';
+
   /// Dev flavor only.
   static const devWidgets = '/dev/widgets';
 }
@@ -117,6 +128,21 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
             child: PostLinkScreen(postId: id),
           );
         },
+      ),
+      GoRoute(
+        path: Routes.settings,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.editProfile,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) => OnboardingProvider(
+            auth: context.read<AuthProvider>(),
+            avatars: context.read<AvatarRepository>(),
+            location: context.read<LocationPermissionService>(),
+          ),
+          child: const OnboardingProfileScreen(editing: true),
+        ),
       ),
       GoRoute(
         path: Routes.inviteLinkPath,
@@ -270,7 +296,15 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
             routes: [
               GoRoute(
                 path: Routes.me,
-                builder: (context, state) => const MeScreen(),
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (context) => MeController(
+                    me: context.read<MeRepository>(),
+                    feed: context.read<FeedRepository>(),
+                    rides: context.read<RideHistoryRepository>(),
+                    userId: context.read<AuthProvider>().user?.id,
+                  ),
+                  child: const MeScreen(),
+                ),
               ),
             ],
           ),

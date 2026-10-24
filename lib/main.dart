@@ -8,6 +8,9 @@ import 'core/location/location_permission.dart';
 import 'core/location/location_provider.dart';
 import 'core/location/position_source.dart';
 import 'core/notifications/ride_notifier.dart';
+import 'core/notifications/voice_ride_notifier.dart';
+import 'core/settings/app_settings.dart';
+import 'data/repositories/me_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/avatar_repository.dart';
 import 'data/repositories/club_repository.dart';
@@ -51,6 +54,8 @@ Future<void> main() async {
     publishableKey: Env.supabaseAnonKey,
   );
   final client = Supabase.instance.client;
+  final settings = AppSettings();
+  await settings.load();
 
   runApp(
     MultiProvider(
@@ -76,7 +81,15 @@ Future<void> main() async {
             positions: const GeolocatorPositionSource(),
           ),
         ),
-        Provider<RideNotifier>(create: (_) => LocalRideNotifier()),
+        ChangeNotifierProvider.value(value: settings),
+        Provider<MeRepository>(create: (_) => SupabaseMeRepository(client)),
+        Provider<RideNotifier>(
+          create: (_) => VoiceRideNotifier(
+            LocalRideNotifier(),
+            settings: settings,
+            speaker: TtsSpeaker(),
+          ),
+        ),
         Provider<RideHistoryRepository>(
           create: (_) => LocalRideHistoryRepository(
             uploader: SupabaseRideUploader(client),

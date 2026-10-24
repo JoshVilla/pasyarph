@@ -7,6 +7,7 @@ import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/notifications/ride_notifier.dart';
 import 'package:pasyarph/data/models/generated_loop.dart';
 import 'package:pasyarph/data/models/club.dart';
+import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/models/routed_leg.dart';
 import 'package:pasyarph/data/repositories/avatar_repository.dart';
@@ -186,6 +187,43 @@ class FakeLoopRepository implements LoopRepository {
   @override
   Future<void> update(String id, NewLoop loop) async =>
       _write('update', id, loop);
+
+  @override
+  Future<void> editSharing(
+    String id, {
+    required String name,
+    required LoopVisibility visibility,
+    String? clubId,
+  }) async {
+    final l = saved[id]!;
+    _write(
+      'edit',
+      id,
+      NewLoop(
+        name: name,
+        source: l.source,
+        route: l.route,
+        distanceM: l.distanceM,
+        durationS: l.durationS,
+        curvinessScore: l.curvinessScore,
+        mainStop: l.mainStop,
+        visibility: visibility,
+        clubId: visibility == LoopVisibility.club ? clubId : null,
+      ),
+    );
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    calls.add('delete:$id');
+    final f = failNext;
+    if (f != null) {
+      failNext = null;
+      throw f;
+    }
+    saved.remove(id);
+    _revision.value++;
+  }
 
   @override
   Future<List<Loop>> mine() async => [

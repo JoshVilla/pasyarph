@@ -9,6 +9,7 @@ import '../../../core/theme/pasyar_theme.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../ride/ride_this_loop.dart';
+import '../post_more.dart';
 import '../providers/feed_provider.dart';
 import '../screens/photo_gallery_screen.dart';
 import 'comments_sheet.dart';
@@ -16,7 +17,7 @@ import 'feed_skeleton.dart';
 import 'post_card.dart';
 
 /// What post cards do, for posts loaded by [feed]: like, comments, share,
-/// RIDE IT, photos, and the author's profile. Used by the Feed tab, club
+/// save (⋯), RIDE IT, photos, and the author's profile. Used by the Feed tab, club
 /// pages, rider profiles and posts opened from a link.
 PostCardActions feedCardActions(
   BuildContext context,
@@ -30,6 +31,16 @@ PostCardActions feedCardActions(
   }
 
   final repo = context.read<FeedRepository>();
+  void share(FeedPost post) => context.read<Sharer>().share(
+    shareMessage(
+      loopName: post.loop.name,
+      distanceM: post.loop.distanceM,
+      link: post.isLoopOnly
+          ? AppLinks.loop(post.loop.id)
+          : AppLinks.post(post.id),
+    ),
+    subject: post.loop.name,
+  );
   return PostCardActions(
     onLike: (post) async {
       final error = await feed.toggleLike(post.id);
@@ -44,19 +55,10 @@ PostCardActions feedCardActions(
       feed.updateComments(post.id, c.count, first);
       c.dispose();
     },
-    onShare: (post) => context.read<Sharer>().share(
-      shareMessage(
-        loopName: post.loop.name,
-        distanceM: post.loop.distanceM,
-        link: post.isLoopOnly
-            ? AppLinks.loop(post.loop.id)
-            : AppLinks.post(post.id),
-      ),
-      subject: post.loop.name,
-    ),
+    onShare: share,
     onRide: (post) =>
         rideThisLoop(context, loopId: post.loop.id, name: post.loop.name),
-    onMore: (_) => snack('Reporting and hiding posts is coming soon.'),
+    onMore: (post) => showPostMore(context, post, onShare: () => share(post)),
     onPhoto: (post, i) => PhotoGalleryScreen.open(context, [
       for (final p in post.photos) repo.photo(p.storagePath),
     ], at: i),

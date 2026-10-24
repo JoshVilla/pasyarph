@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth_redirect.dart';
+import '../../../core/location/location_provider.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/enums.dart';
@@ -17,9 +18,13 @@ import '../widgets/avatar_picker.dart';
 import '../widgets/photo_source_sheet.dart';
 
 /// Step 1 — rider profile. Matches
-/// design/screenshots/10-onboarding-profile.png.
+/// design/screenshots/10-onboarding-profile.png. With [editing], the same
+/// form is Me → EDIT PROFILE: back button instead of the steps, SAVE, and
+/// no typing while moving.
 class OnboardingProfileScreen extends StatefulWidget {
-  const OnboardingProfileScreen({super.key});
+  const OnboardingProfileScreen({super.key, this.editing = false});
+
+  final bool editing;
 
   @override
   State<OnboardingProfileScreen> createState() =>
@@ -72,7 +77,15 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
     setState(() => _error = null);
     try {
       await _draft.saveProfile();
-      if (mounted) context.push(AuthRoutes.onboardingLocation);
+      if (!mounted) return;
+      if (!widget.editing) {
+        context.push(AuthRoutes.onboardingLocation);
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Profile saved.')));
+      context.pop();
     } catch (e) {
       if (mounted) setState(() => _error = friendlyAuthError(e));
     }
@@ -88,6 +101,9 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final draft = context.watch<OnboardingProvider>();
+    final editing = widget.editing;
+    // Editing happens any time, so the moving lock applies.
+    final moving = editing && context.watch<LocationProvider>().isMoving;
     final nameError = _nameTouched
         ? OnboardingRules.riderName(draft.riderName)
         : null;
@@ -96,14 +112,17 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
       top: 60,
       titleSize: 34,
       titleHeight: 1.05,
-      leading: const StepProgress(step: 1, total: 2),
-      title: 'SET UP YOUR\nRIDER PROFILE',
+      leading: editing ? null : const StepProgress(step: 1, total: 2),
+      onBack: editing ? () => context.pop() : null,
+      title: editing ? 'EDIT PROFILE' : 'SET UP YOUR\nRIDER PROFILE',
       bottom: [
-        AuthErrorText(_error),
+        AuthErrorText(
+          _error ?? (moving ? 'Stop riding to edit your profile.' : null),
+        ),
         PrimaryButton(
-          label: 'NEXT',
+          label: editing ? 'SAVE' : 'NEXT',
           loading: draft.saving,
-          onPressed: draft.canContinue ? _next : null,
+          onPressed: draft.canContinue && !moving ? _next : null,
         ),
       ],
       children: [
@@ -111,7 +130,7 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
           spacing: 16,
           children: [
             AvatarPicker(
-              onTap: draft.uploadingAvatar ? null : _pickPhoto,
+              onTap: draft.uploadingAvatar || moving ? null : _pickPhoto,
               preview: draft.avatarPreview,
               url: draft.avatarUrl,
               uploading: draft.uploadingAvatar,
@@ -137,6 +156,7 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
         PasyarTextField(
           label: 'Rider name',
           controller: _name,
+          enabled: !moving,
           error: nameError,
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.next,
@@ -176,12 +196,13 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
           label: 'Home area',
           hint: 'e.g. Cordon, Isabela',
           controller: _area,
+          enabled: !moving,
           error: OnboardingRules.homeArea(draft.homeArea),
           helper: 'Town only. Helps show loops near you.',
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.done,
           onChanged: draft.setHomeArea,
-          onSubmitted: (_) => draft.canContinue ? _next() : null,
+          onSubmitted: (_) => draft.canContinue && !moving ? _next() : null,
         ),
       ],
     );

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pasyarph/app.dart';
+import 'package:pasyarph/core/settings/app_settings.dart';
+import 'package:pasyarph/core/share.dart';
+import 'package:pasyarph/data/repositories/me_repository.dart';
 import 'package:pasyarph/core/location/location_permission.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
@@ -35,6 +38,7 @@ import 'package:pasyarph/features/clubs/screens/create_club_screen.dart';
 import 'package:pasyarph/features/clubs/screens/join_club_screen.dart';
 import 'package:pasyarph/features/feed/screens/feed_screen.dart';
 import 'package:pasyarph/features/me/screens/me_screen.dart';
+import 'package:pasyarph/features/me/screens/settings_screen.dart';
 import 'package:pasyarph/features/riders/screens/rider_profile_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_location_screen.dart';
 import 'package:pasyarph/features/onboarding/screens/onboarding_profile_screen.dart';
@@ -44,6 +48,8 @@ import 'package:provider/provider.dart';
 import 'support/fake_auth_repository.dart';
 import 'support/fake_clubs.dart';
 import 'support/fake_feed.dart';
+import 'support/fake_links.dart';
+import 'support/fake_me.dart';
 import 'support/fake_post.dart';
 import 'support/fake_services.dart';
 import 'support/fake_social.dart';
@@ -81,6 +87,11 @@ Future<FakeAuthRepository> pumpApp(
           create: (_) => MemoryDrafts(Directory.systemTemp),
         ),
         Provider<AvatarRepository>(create: (_) => FakeAvatarRepository()),
+        Provider<MeRepository>(create: (_) => FakeMeRepository()),
+        Provider<Sharer>(create: (_) => FakeSharer()),
+        ChangeNotifierProvider(
+          create: (_) => AppSettings(MemorySettingsStore()),
+        ),
         Provider<LocationPermissionService>(
           create: (_) => location ?? FakeLocationPermission(),
         ),
@@ -324,7 +335,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(RideScreen), findsOneWidget);
 
+    // Me → Settings → LOG OUT.
     await tester.tap(find.text('Me').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    await tester.ensureVisible(find.text('LOG OUT'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('LOG OUT'));
     await tester.pumpAndSettle();
@@ -348,6 +365,7 @@ void main() {
           .setMockMethodCallHandler(SystemChannels.platform, null);
     });
 
+    /// Me → My loops, where the clubs are.
     Future<void> openMe(WidgetTester tester) async {
       await tester.tap(
         find.descendant(
@@ -355,6 +373,8 @@ void main() {
           matching: find.text('Me'),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My loops'));
       await tester.pumpAndSettle();
     }
 

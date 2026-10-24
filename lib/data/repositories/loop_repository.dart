@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/club.dart';
+import '../models/enums.dart';
 import '../models/json.dart';
 import '../models/loop.dart';
 
@@ -34,6 +35,19 @@ abstract interface class LoopRepository {
   /// Replaces an existing loop of the rider's. Throws [LoopException].
   Future<void> update(String id, NewLoop loop);
 
+  /// Renames a loop of the rider's and changes who sees it ([clubId] only
+  /// for [LoopVisibility.club]). Throws [LoopException].
+  Future<void> editSharing(
+    String id, {
+    required String name,
+    required LoopVisibility visibility,
+    String? clubId,
+  });
+
+  /// Deletes a loop of the rider's, and the posts made with it. Throws
+  /// [LoopException].
+  Future<void> delete(String id);
+
   /// The signed-in rider's loops, newest first. Throws [LoopException].
   Future<List<Loop>> mine();
 
@@ -57,18 +71,44 @@ class SupabaseLoopRepository implements LoopRepository {
   }
 
   @override
-  Future<void> create(String id, NewLoop loop) => _write(
-    () => _client.from('loops').insert({'id': id, ...loop.toJson()}),
-  );
+  Future<void> create(String id, NewLoop loop) =>
+      _write(() => _client.from('loops').insert({'id': id, ...loop.toJson()}));
 
   @override
   Future<void> update(String id, NewLoop loop) {
     // source can't change after insert (no update grant).
     final values = loop.toJson()..remove('source');
     return _write(
-      () => _client.from('loops').update(values).eq('id', id).eq('owner_id', _uid),
+      () => _client
+          .from('loops')
+          .update(values)
+          .eq('id', id)
+          .eq('owner_id', _uid),
     );
   }
+
+  @override
+  Future<void> editSharing(
+    String id, {
+    required String name,
+    required LoopVisibility visibility,
+    String? clubId,
+  }) => _write(
+    () => _client
+        .from('loops')
+        .update({
+          'name': name,
+          'visibility': visibility.value,
+          'club_id': visibility == LoopVisibility.club ? clubId : null,
+        })
+        .eq('id', id)
+        .eq('owner_id', _uid),
+  );
+
+  @override
+  Future<void> delete(String id) => _write(
+    () => _client.from('loops').delete().eq('id', id).eq('owner_id', _uid),
+  );
 
   Future<void> _write(Future<void> Function() write) async {
     try {
