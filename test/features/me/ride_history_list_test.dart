@@ -69,4 +69,58 @@ void main() {
     final posted = tester.getTopLeft(find.textContaining('· POSTED')).dy;
     expect(first, lessThan(posted));
   });
+
+  group('delete', () {
+    Future<void> openDelete(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('More'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete ride'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('⋯ → Delete ride asks, then removes it', (tester) async {
+      final history = FakeRideHistory();
+      await history.save(_ride());
+      await tester.pumpWidget(_list(history));
+      await tester.pumpAndSettle();
+
+      await openDelete(tester);
+      expect(find.text('Delete this ride?'), findsOneWidget);
+      await tester.tap(find.text('CANCEL'));
+      await tester.pumpAndSettle();
+      expect(history.saved, hasLength(1));
+
+      await openDelete(tester);
+      await tester.tap(find.text('DELETE'));
+      await tester.pumpAndSettle();
+      expect(history.saved, isEmpty);
+      expect(find.text('Talon'), findsNothing);
+      expect(find.text('Ride deleted.'), findsOneWidget);
+    });
+
+    testWidgets('a posted ride: the post stays', (tester) async {
+      final history = FakeRideHistory();
+      await history.save(_ride(posted: true));
+      await tester.pumpWidget(_list(history));
+      await tester.pumpAndSettle();
+      await openDelete(tester);
+      expect(find.textContaining('Your post stays.'), findsOneWidget);
+    });
+
+    testWidgets('offline: says so and keeps the ride', (tester) async {
+      final history = FakeRideHistory()
+        ..failDelete = RideHistoryException.deleteFailed;
+      await history.save(_ride());
+      await tester.pumpWidget(_list(history));
+      await tester.pumpAndSettle();
+      await openDelete(tester);
+      await tester.tap(find.text('DELETE'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(RideHistoryException.deleteFailed.message),
+        findsOneWidget,
+      );
+      expect(find.text('Talon'), findsOneWidget);
+    });
+  });
 }

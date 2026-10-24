@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/router.dart';
@@ -71,6 +72,55 @@ class _RideHistoryListState extends State<RideHistoryList> {
 
   Future<void> _post(RideSummary ride) => context.push(Routes.post(ride.id));
 
+  Future<void> _more(RideSummary ride) async {
+    final delete = await showActionSheet<bool>(
+      context,
+      title: _rideName(ride),
+      actions: const [
+        SheetAction(
+          value: true,
+          label: 'Delete ride',
+          icon: LucideIcons.trash2,
+          destructive: true,
+        ),
+      ],
+    );
+    if (delete != true || !mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this ride?'),
+        content: Text(
+          ride.posted
+              ? "It's removed from your rides and totals. Your post stays."
+              : "It's removed from your rides and totals, and can't be "
+                    'posted anymore.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: PasyarColors.accentDark,
+            ),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    try {
+      await _history.delete(ride);
+      messenger.showSnackBar(const SnackBar(content: Text('Ride deleted.')));
+    } on RideHistoryException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final rides = _rides;
@@ -92,18 +142,31 @@ class _RideHistoryListState extends State<RideHistoryList> {
             ride: r,
             now: now,
             onPost: r.canPost(now) ? () => _post(r) : null,
+            onMore: () => _more(r),
           ),
       ],
     );
   }
 }
 
+/// "Talon" (the main stop), or "82 km loop".
+String _rideName(RideSummary ride) =>
+    ride.stop?.name ?? '${formatDistance(ride.loopM)} loop';
+
 class _RideRow extends StatelessWidget {
-  const _RideRow({required this.ride, required this.now, this.onPost});
+  const _RideRow({
+    required this.ride,
+    required this.now,
+    required this.onMore,
+    this.onPost,
+  });
 
   final RideSummary ride;
   final DateTime now;
   final VoidCallback? onPost;
+
+  /// Delete ride.
+  final VoidCallback onMore;
 
   String get _status {
     if (ride.posted) return 'Posted';
@@ -114,9 +177,9 @@ class _RideRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = ride.stop?.name ?? '${formatDistance(ride.loopM)} loop';
+    final name = _rideName(ride);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
       decoration: BoxDecoration(
         color: PasyarColors.ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
@@ -157,6 +220,16 @@ class _RideRow extends StatelessWidget {
               width: 96,
               child: PrimaryButton(label: 'POST', onPressed: onPost),
             ),
+          IconButton(
+            onPressed: onMore,
+            tooltip: 'More',
+            constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+            icon: const Icon(
+              LucideIcons.ellipsis,
+              size: 22,
+              color: PasyarColors.muted,
+            ),
+          ),
         ],
       ),
     );

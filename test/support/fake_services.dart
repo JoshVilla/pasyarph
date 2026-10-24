@@ -338,4 +338,15 @@ class FakeRideHistory implements RideHistoryRepository {
 
   @override
   Future<List<RideSummary>> all() async => saved;
+
+  /// Next delete throws this.
+  RideHistoryException? failDelete;
+
+  @override
+  Future<void> delete(RideSummary ride) async {
+    final f = failDelete;
+    if (f != null) throw f;
+    saved.removeWhere((r) => r.id == ride.id && r.startedAt == ride.startedAt);
+    _revision.value++;
+  }
 }

@@ -191,6 +191,20 @@ class RideSummary {
   };
 }
 
+/// Why a ride couldn't be deleted, safe to show riders.
+class RideHistoryException implements Exception {
+  const RideHistoryException(this.message);
+
+  final String message;
+
+  static const deleteFailed = RideHistoryException(
+    "Couldn't delete the ride. Check your connection and try again.",
+  );
+
+  @override
+  String toString() => 'RideHistoryException: $message';
+}
+
 abstract interface class RideHistoryRepository {
   /// Bumps whenever rides change (saved, synced, posted), so lists that stay
   /// alive (the Me tab) can reload.
@@ -207,11 +221,17 @@ abstract interface class RideHistoryRepository {
   Future<bool> sync();
 
   Future<void> markPosted(String id);
+
+  /// Deletes [ride] from the phone and, once uploaded, from the account
+  /// (its post, if any, stays). Throws [RideHistoryException] when the
+  /// account copy can't be deleted; the ride then stays on the phone too.
+  Future<void> delete(RideSummary ride);
 }
 
-/// Uploads one ride to Supabase. Throws on failure.
+/// Uploads (and deletes) rides in Supabase. Throws on failure.
 abstract interface class RideUploader {
   Future<void> upload(RideSummary ride);
+  Future<void> delete(String id);
 }
 
 class SupabaseRideUploader implements RideUploader {
@@ -228,6 +248,9 @@ class SupabaseRideUploader implements RideUploader {
       if (e.code != '23505') rethrow;
     }
   }
+
+  @override
+  Future<void> delete(String id) => _client.from('rides').delete().eq('id', id);
 }
 
 /// Rides kept in shared preferences, synced through [uploader] (none in
@@ -305,6 +328,29 @@ class LocalRideHistoryRepository implements RideHistoryRepository {
       for (final r in rides) r.id == id ? r.copyWith(posted: true) : r,
     ]);
   }
+
+  @override
+  Future<void> delete(RideSummary ride) async {
+    final up = uploader;
+    if (ride.synced && up != null) {
+      try {
+        await up.delete(ride.id);
+      } on Exception catch (e) {
+        debugPrint('rides: delete of ${ride.id} failed: $e');
+        throw RideHistoryException.deleteFailed;
+      }
+    }
+    final rides = await all();
+    await _write([
+      for (final r in rides)
+        if (!_same(r, ride)) r,
+    ]);
+  }
+
+  /// Rides saved before ids existed all have an empty id.
+  static bool _same(RideSummary a, RideSummary b) => a.id.isNotEmpty
+      ? a.id == b.id
+      : b.id.isEmpty && a.startedAt == b.startedAt;
 
   Future<void> _write(List<RideSummary> rides) async {
     await SharedPreferencesAsync().setString(

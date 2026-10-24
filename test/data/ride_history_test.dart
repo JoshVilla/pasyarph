@@ -10,12 +10,19 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 class _Uploader implements RideUploader {
   final uploaded = <String>[];
+  final deleted = <String>[];
   bool fail = false;
 
   @override
   Future<void> upload(RideSummary ride) async {
     if (fail) throw Exception('offline');
     uploaded.add(ride.id);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    if (fail) throw Exception('offline');
+    deleted.add(id);
   }
 }
 
@@ -110,6 +117,65 @@ void main() {
     expect(await repo.sync(), isTrue);
     expect(up.uploaded, [ride.id]);
     expect((await repo.byId(ride.id))!.synced, isTrue);
+  });
+
+  group('delete', () {
+    test('an uploaded ride goes from the account and the phone', () async {
+      final up = _Uploader();
+      final repo = LocalRideHistoryRepository(uploader: up);
+      final keep = _ride(ended: DateTime(2026, 10, 17, 11));
+      final gone = _ride();
+      await repo.save(keep);
+      await repo.save(gone);
+      final revision = repo.revision.value;
+
+      await repo.delete((await repo.byId(gone.id))!);
+      expect(up.deleted, [gone.id]);
+      expect((await repo.all()).map((r) => r.id), [keep.id]);
+      expect(repo.revision.value, greaterThan(revision));
+    });
+
+    test('offline: refused, and the ride stays', () async {
+      final up = _Uploader();
+      final repo = LocalRideHistoryRepository(uploader: up);
+      final ride = _ride();
+      await repo.save(ride);
+      up.fail = true;
+      await expectLater(
+        repo.delete((await repo.byId(ride.id))!),
+        throwsA(RideHistoryException.deleteFailed),
+      );
+      expect(await repo.byId(ride.id), isNotNull);
+    });
+
+    test('a ride never uploaded is just removed (and never uploads)', () async {
+      final up = _Uploader()..fail = true;
+      final repo = LocalRideHistoryRepository(uploader: up);
+      final ride = _ride();
+      await repo.save(ride);
+      up.fail = false;
+      await repo.delete((await repo.byId(ride.id))!);
+      expect(await repo.all(), isEmpty);
+      expect(await repo.sync(), isTrue);
+      expect(up.uploaded, isEmpty);
+      expect(up.deleted, isEmpty);
+    });
+
+    test('old rides without an id are matched by start time', () async {
+      final repo = LocalRideHistoryRepository();
+      final a = _ride(id: '');
+      final b = RideSummary(
+        startedAt: DateTime(2026, 10, 10, 8),
+        endedAt: DateTime(2026, 10, 10, 9),
+        riddenM: 1000,
+        loopM: 2000,
+        reachedStop: false,
+      );
+      await repo.save(a);
+      await repo.save(b);
+      await repo.delete(b);
+      expect((await repo.all()).single.startedAt, a.startedAt);
+    });
   });
 
   test('newest first; markPosted sticks', () async {
