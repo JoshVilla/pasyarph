@@ -4,7 +4,7 @@ import '../theme/pasyar_theme.dart';
 
 /// Selectable card. With a [subtitle] it is the 72 px duration card
 /// (QUICK / about 1 hr); without one it is the 52 px card (report reasons).
-/// With an [image] it is the 120 px bike-type card: the picture above the
+/// With an [image] it is the 104 px bike-type card: the picture above the
 /// title (SCOOTER, UNDERBONE, ...).
 class ChoiceCard extends StatelessWidget {
   const ChoiceCard({
@@ -24,7 +24,7 @@ class ChoiceCard extends StatelessWidget {
   /// A picture above the title, on a transparent background.
   final ImageProvider? image;
 
-  static const imageCardHeight = 120.0;
+  static const imageCardHeight = 104.0;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class ChoiceCard extends StatelessWidget {
                 if (image != null)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+                      padding: const EdgeInsets.fromLTRB(32, 14, 32, 4),
                       child: Image(
                         image: image,
                         fit: BoxFit.contain,
