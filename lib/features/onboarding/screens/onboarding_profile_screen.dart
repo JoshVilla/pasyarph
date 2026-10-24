@@ -39,10 +39,10 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
   String? _error;
 
   static const _bikes = [
-    (BikeType.scooter, 'SCOOTER'),
-    (BikeType.underbone, 'UNDERBONE'),
-    (BikeType.bigBike, 'BIG BIKE'),
-    (BikeType.dualSport, 'DUAL-SPORT'),
+    (BikeType.scooter, 'SCOOTER', 'scooter'),
+    (BikeType.underbone, 'UNDERBONE', 'underbone'),
+    (BikeType.bigBike, 'BIG BIKE', 'big-bike'),
+    (BikeType.dualSport, 'DUAL-SPORT', 'dual-sport'),
   ];
 
   Future<void> _pickPhoto() async {
@@ -178,10 +178,15 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
                   Row(
                     spacing: 10,
                     children: [
-                      for (final (type, label) in _bikes.skip(row).take(2))
+                      for (final (type, label, picture)
+                          in _bikes.skip(row).take(2))
                         Expanded(
                           child: ChoiceCard(
                             title: label,
+                            // Made by tools/motorcycles/prepare_bike_images.dart.
+                            image: AssetImage(
+                              'assets/motorcycles/cards/$picture.png',
+                            ),
                             selected: draft.bikeType == type,
                             onTap: () => draft.toggleBikeType(type),
                           ),

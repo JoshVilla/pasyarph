@@ -40,6 +40,8 @@ void main() {
       'Onboarding step 1 (10)',
       fileName: 'onboarding_profile',
       constraints: _screen,
+      // The bike pictures are assets: load them before the snapshot.
+      pumpBeforeTest: precacheImages,
       builder: () => _withDraft(const OnboardingProfileScreen()),
     );
 

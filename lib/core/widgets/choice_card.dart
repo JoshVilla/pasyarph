@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/pasyar_theme.dart';
 
 /// Selectable card. With a [subtitle] it is the 72 px duration card
-/// (QUICK / about 1 hr); without one it is the 52 px bike-type card
-/// (SCOOTER, UNDERBONE, ...).
+/// (QUICK / about 1 hr); without one it is the 52 px card (report reasons).
+/// With an [image] it is the 120 px bike-type card: the picture above the
+/// title (SCOOTER, UNDERBONE, ...).
 class ChoiceCard extends StatelessWidget {
   const ChoiceCard({
     super.key,
@@ -12,6 +13,7 @@ class ChoiceCard extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.subtitle,
+    this.image,
   });
 
   final String title;
@@ -19,9 +21,15 @@ class ChoiceCard extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// A picture above the title, on a transparent background.
+  final ImageProvider? image;
+
+  static const imageCardHeight = 120.0;
+
   @override
   Widget build(BuildContext context) {
     final hasSubtitle = subtitle != null;
+    final image = this.image;
     final textColor = selected ? PasyarColors.accentDark : PasyarColors.ink;
 
     return Semantics(
@@ -29,7 +37,11 @@ class ChoiceCard extends StatelessWidget {
       selected: selected,
       inMutuallyExclusiveGroup: true,
       child: SizedBox(
-        height: hasSubtitle ? 72 : 52,
+        height: image != null
+            ? imageCardHeight
+            : hasSubtitle
+            ? 72
+            : 52,
         child: Material(
           color: selected ? PasyarColors.accentTint : PasyarColors.card,
           shape: RoundedRectangleBorder(
@@ -45,6 +57,18 @@ class ChoiceCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 2,
               children: [
+                if (image != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+                      child: Image(
+                        image: image,
+                        fit: BoxFit.contain,
+                        // Decorative: the title says what it is.
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                  ),
                 Text(
                   title,
                   maxLines: 1,
@@ -53,6 +77,7 @@ class ChoiceCard extends StatelessWidget {
                     color: textColor,
                   ),
                 ),
+                if (image != null) const SizedBox(height: 8),
                 if (hasSubtitle)
                   Text(
                     subtitle!,

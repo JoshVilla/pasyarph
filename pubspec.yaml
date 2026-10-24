@@ -80,6 +80,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Bike-type card pictures (made from assets/motorcycles/*.png by
+  # tools/motorcycles/prepare_bike_images.dart). The source art isn't bundled.
+  assets:
+    - assets/motorcycles/cards/
+
   # Barlow + Barlow Condensed from Google Fonts (OFL, see assets/fonts/OFL.txt).
   # Bundled instead of fetched at runtime so text works offline and in goldens.
   fonts:
