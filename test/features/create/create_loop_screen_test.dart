@@ -185,7 +185,15 @@ void main() {
       ..addPoint(DemoRoutes.point2);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'Sunday Falls Loop');
+    await tester.enterText(
+      find.descendant(
+        of: find.byWidgetPredicate(
+          (w) => w is PasyarTextField && w.label == 'Loop name',
+        ),
+        matching: find.byType(TextField),
+      ),
+      'Sunday Falls Loop',
+    );
     await tester.tap(find.text('SAVE'));
     await tester.pumpAndSettle();
     expect(loops.saved['loop-1']!.name, 'Sunday Falls Loop');
@@ -240,7 +248,19 @@ void main() {
       loop: _mockupLoop(FakeRouteRepository()),
       location: _location(speedMps: 8),
     );
-    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byWidgetPredicate(
+                (w) => w is PasyarTextField && w.label == 'Loop name',
+              ),
+              matching: find.byType(TextField),
+            ),
+          )
+          .enabled,
+      isFalse,
+    );
     expect(
       tester.widget<SecondaryButton>(find.byType(SecondaryButton)).onPressed,
       isNull,

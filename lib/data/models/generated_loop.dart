@@ -1,4 +1,7 @@
 import 'package:latlong2/latlong.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/material.dart';
+
 
 import '../geo/geo_codec.dart';
 import 'json.dart';
@@ -6,18 +9,24 @@ import 'loop.dart';
 
 /// How long the rider wants to ride. [value] is what generate-loop expects.
 enum LoopDuration {
-  quick('quick', 'QUICK', 'about 1 hr'),
-  halfDay('half', 'HALF-DAY', 'about 4 hr'),
-  fullDay('full', 'FULL DAY', '6 hr +'),
+  quick('quick', 'Quick loop', '1 hr · ~50 km', 'Back 10:40 AM', LucideIcons.clock),
+  halfDay('half', 'Half-day loop', '4 hrs · ~120 km', 'Back 1:40 PM', LucideIcons.sun),
+  fullDay('full', 'Full-day loop', '6 hrs · ~220 km', 'Back 3:40 PM', LucideIcons.mountain),
 
   /// One long loop over two days or more (about 500 km).
-  multiDay('multi', 'MULTI-DAY', '2+ days');
+  multiDay('multi', 'Multi-day loop', '2+ days · overnight stops', 'Plan trip', LucideIcons.calendar);
 
-  const LoopDuration(this.value, this.title, this.subtitle);
+  const LoopDuration(this.value, this.title, this.subtitle, this.rightLabel, this.icon);
 
   final String value;
   final String title;
   final String subtitle;
+
+  /// Right-side label on the choice card (e.g. "Back 1:40 PM" or "Plan trip").
+  final String rightLabel;
+
+  /// Icon shown on the left of the choice card.
+  final IconData icon;
 }
 
 /// One turn instruction from GraphHopper.

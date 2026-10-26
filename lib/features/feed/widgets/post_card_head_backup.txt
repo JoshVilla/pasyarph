@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../core/map/pasyar_map.dart';
+import '../../../core/map/route_style.dart';
+import '../../../core/theme/pasyar_theme.dart';
+import '../../../core/widgets/widgets.dart';
+import '../../../data/models/post.dart';
+import '../../ride/loop_stats.dart';
+import '../feed_format.dart';
+import 'photo_collage.dart';
+
+/// What a card's buttons do; the feed screen supplies these.
+class PostCardActions {
+  const PostCardActions({
+    required this.onLike,
+    required this.onComment,
+    required this.onShare,
+    required this.onRide,
+    required this.onMore,
+    required this.onPhoto,
+    this.onAuthor,
+  });
+
+  final ValueChanged<FeedPost> onLike;
+  final ValueChanged<FeedPost> onComment;
+  final ValueChanged<FeedPost> onShare;
+  final ValueChanged<FeedPost> onRide;
+  final ValueChanged<FeedPost> onMore;
+
+  /// Photo [int] of the post was tapped.
+  final void Function(FeedPost post, int index) onPhoto;
+
+  /// The author's picture or name was tapped (opens their profile).
+  final ValueChanged<FeedPost>? onAuthor;
+}
+
+/// One post in the feed (mockup 5). With photos it's a ride post: caption,
+/// collage, loop card with RIDE IT. Without, it's a shared loop: a big map
+/// with stat chips and RIDE THIS LOOP. A loop shared without a post
+/// ([FeedPost.isLoopOnly]) has no likes or comments.
+class PostCard extends StatelessWidget {
+  const PostCard({
+    super.key,
+    required this.post,
+    required this.now,
+    required this.actions,
+    required this.photo,
+    required this.avatar,
+  });
+
+  final FeedPost post;
+  final DateTime now;
+  final PostCardActions actions;
+
+  /// Image for a photo's storage path / an avatar URL.
+  final ImageProvider Function(String storagePath) photo;
+  final ImageProvider Function(String url) avatar;
+
+  bool get _isRide => post.photos.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final caption = post.caption ?? post.loop.caption;
+    final comment = post.firstComment;
+    return ColoredBox(
+      color: PasyarColors.card,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Header(
+            post: post,
+            now: now,
+            avatar: avatar,
+            onMore: actions.onMore,
+            onAuthor: actions.onAuthor,
+          ),
+          if (caption != null && caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(caption, style: PasyarTextStyles.body),
+            ),
+          if (_isRide) ...[
+            PhotoCollage(
+              photos: [for (final p in post.photos) photo(p.storagePath)],
+              onTap: (i) => actions.onPhoto(post, i),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _LoopCard(post: post, onRide: () => actions.onRide(post)),
+            ),
+          ] else ...[
+            _LoopMap(post: post),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _RideThisLoopButton(onPressed: () => actions.onRide(post)),
+            ),
+          ],
+          if (post.isLoopOnly)
+            const SizedBox(height: 16)

@@ -63,7 +63,7 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final caption = post.caption;
+    final caption = post.caption ?? post.loop.caption;
     final comment = post.firstComment;
     return ColoredBox(
       color: PasyarColors.card,
@@ -100,6 +100,8 @@ class PostCard extends StatelessWidget {
           ],
           if (post.isLoopOnly)
             const SizedBox(height: 16)
+
+
           else ...[
             _Counts(post: post),
             _ActionRow(
@@ -149,6 +151,7 @@ class _Header extends StatelessWidget {
       timeAgo(post.createdAt, now),
       ?stopLabel(post.loop.mainStop),
       visibilityLabel(post.loop.visibility),
+      if (post.loop.clubName case final club?) club,
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 4, 10),

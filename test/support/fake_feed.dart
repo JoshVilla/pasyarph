@@ -89,6 +89,7 @@ FeedPost feedPost({
   FeedComment? firstComment,
   bool loopOnly = false,
   String? clubId,
+  String? clubName,
 }) => FeedPost(
   id: id,
   createdAt: createdAt,
@@ -110,6 +111,7 @@ FeedPost feedPost({
     curvinessScore: curviness,
     visibility: visibility,
     clubId: clubId,
+    clubName: clubName,
     createdAt: createdAt,
     sharedRoute: DemoRoutes.loop,
     province: province,

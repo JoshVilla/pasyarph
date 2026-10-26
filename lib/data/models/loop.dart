@@ -76,20 +76,26 @@ class Loop {
     required this.durationS,
     required this.visibility,
     required this.createdAt,
+    this.caption,
     this.sharedRoute,
     this.curvinessScore,
     this.mainStop,
     this.clubId,
+    this.clubName,
     this.province,
   });
 
   static const columns =
+      'id,owner_id,name,caption,source,shared_route,distance_m,duration_s,'
+      'curviness_score,main_stop,province,visibility,club_id,created_at';
+  static const columnsWithoutCaption =
       'id,owner_id,name,source,shared_route,distance_m,duration_s,'
       'curviness_score,main_stop,province,visibility,club_id,created_at';
 
   final String id;
   final String ownerId;
   final String name;
+  final String? caption;
   final LoopSource source;
 
   /// Route with the first and last 800 m trimmed. Null until trimmed.
@@ -104,12 +110,14 @@ class Loop {
   final String? province;
   final LoopVisibility visibility;
   final String? clubId;
+  final String? clubName;
   final DateTime createdAt;
 
   factory Loop.fromJson(Json json) => Loop(
     id: json['id'] as String,
     ownerId: json['owner_id'] as String,
     name: json['name'] as String,
+    caption: json['caption'] as String?,
     source: LoopSource.fromValue(json['source'] as String),
     sharedRoute: GeoCodec.parseLineStringOrNull(json['shared_route']),
     distanceM: (json['distance_m'] as num).toInt(),
@@ -121,6 +129,7 @@ class Loop {
     },
     visibility: LoopVisibility.fromValue(json['visibility'] as String),
     clubId: json['club_id'] as String?,
+    clubName: json['club_name'] as String? ?? json['clubName'] as String?,
     province: json['province'] as String?,
     createdAt: parseTimestamp(json['created_at']),
   );
@@ -147,6 +156,7 @@ class NewLoop {
     required this.route,
     required this.distanceM,
     required this.durationS,
+    this.caption,
     this.curvinessScore,
     this.mainStop,
     this.visibility = LoopVisibility.public,
@@ -157,6 +167,7 @@ class NewLoop {
        );
 
   final String name;
+  final String? caption;
   final LoopSource source;
   final List<LatLng> route;
   final int distanceM;
@@ -166,8 +177,9 @@ class NewLoop {
   final LoopVisibility visibility;
   final String? clubId;
 
-  Json toJson() => {
+  Json toJson({bool includeCaption = true}) => {
     'name': name,
+    if (includeCaption && caption != null) 'caption': caption,
     'source': source.value,
     'route': GeoCodec.lineStringToEwkt(route),
     'distance_m': distanceM,

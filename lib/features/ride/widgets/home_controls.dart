@@ -7,44 +7,34 @@ import '../../../core/widgets/widgets.dart';
 import '../../../data/models/generated_loop.dart';
 import '../providers/ride_options_provider.dart';
 
-/// "Starting from / Current location" pill.
+/// "Starting from your location" pill with a green dot.
 class StartingFromPill extends StatelessWidget {
   const StartingFromPill({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Starting from current location',
+      label: 'Starting from your location',
       excludeSemantics: true,
       child: FloatingPill(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 10,
           children: [
-            const CustomPaint(
-              size: Size.square(18),
-              painter: _CrosshairPainter(),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: PasyarColors.accent,
+                shape: BoxShape.circle,
+              ),
             ),
             Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Starting from',
-                    maxLines: 1,
-                    style: PasyarTextStyles.label.copyWith(
-                      fontSize: 12,
-                      height: 1.15,
-                    ),
-                  ),
-                  Text(
-                    'Current location',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.bodyStrong.copyWith(height: 1.15),
-                  ),
-                ],
+              child: Text(
+                'Starting from your location',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: PasyarTextStyles.bodyStrong.copyWith(height: 1.15),
               ),
             ),
           ],
@@ -55,7 +45,7 @@ class StartingFromPill extends StatelessWidget {
 }
 
 /// The mockup's location icon: a small ring with four ticks (no outer ring,
-/// unlike Lucide's "locate").
+/// unlike Lucide's "locate"). Kept for reuse elsewhere.
 class _CrosshairPainter extends CustomPainter {
   const _CrosshairPainter();
 
@@ -107,97 +97,51 @@ class LocationOffBanner extends StatelessWidget {
         spacing: 12,
         children: [
           Row(
-            spacing: 14,
+            spacing: 10,
             children: [
-              const Icon(
-                LucideIcons.mapPinOff,
+              Icon(
+                canAsk ? LucideIcons.alertCircle : LucideIcons.wifiOff,
                 size: 24,
                 color: PasyarColors.accentDark,
               ),
               Expanded(
-                child: Text.rich(
-                  const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Location is off',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      canAsk ? 'Location access is off' : 'No location fix',
+                      style: PasyarTextStyles.body.copyWith(
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
                       ),
-                      TextSpan(text: ' — Pasyar needs it to build loops'),
-                    ],
-                  ),
-                  style: PasyarTextStyles.body.copyWith(height: 1.35),
+                    ),
+                    Text(
+                      canAsk
+                          ? 'Tap to allow Pasyar to use your location.'
+                          : 'Waiting for GPS…',
+                      style: PasyarTextStyles.body.copyWith(
+                        height: 1.35,
+                        color: PasyarColors.muted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          PrimaryButton(
-            label: canAsk ? 'ALLOW LOCATION' : 'OPEN SETTINGS',
-            icon: canAsk ? LucideIcons.mapPin : LucideIcons.settings,
-            onPressed: onPressed,
-          ),
+          if (canAsk)
+            SecondaryButton(
+              label: 'Allow location',
+              icon: LucideIcons.mapPin,
+              onPressed: onPressed,
+            ),
         ],
       ),
     );
   }
 }
 
-/// White card floating over the map: a spinner while something loads, or an
-/// icon with a message (errors, warnings).
-class MapNotice extends StatelessWidget {
-  const MapNotice({super.key, required this.text, this.icon}) : loading = false;
-
-  const MapNotice.loading({super.key, required this.text})
-    : loading = true,
-      icon = null;
-
-  final String text;
-  final IconData? icon;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: PasyarColors.card,
-          borderRadius: BorderRadius.circular(PasyarRadius.panel),
-          boxShadow: PasyarShadows.floating,
-        ),
-        child: Row(
-          spacing: 14,
-          children: [
-            SizedBox.square(
-              dimension: 24,
-              child: loading
-                  ? const Padding(
-                      padding: EdgeInsets.all(2),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: PasyarColors.accent,
-                      ),
-                    )
-                  : Icon(
-                      icon ?? LucideIcons.info,
-                      size: 24,
-                      color: PasyarColors.accentDark,
-                    ),
-            ),
-            Expanded(
-              child: Text(
-                text,
-                style: PasyarTextStyles.body.copyWith(height: 1.35),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "WHERE TO TODAY?" sheet: duration, avoid toggles, GENERATE LOOP.
+/// "WHERE TO TODAY?" sheet: duration cards, avoid toggle, generate button.
 class WhereToSheet extends StatelessWidget {
   const WhereToSheet({
     super.key,
@@ -214,6 +158,20 @@ class WhereToSheet extends StatelessWidget {
   /// Shows a spinner in the button while a loop is being built.
   final bool generating;
 
+  /// Button label based on the selected duration.
+  String _buttonLabel(BuildContext context) {
+    switch (options.duration) {
+      case LoopDuration.quick:
+        return 'Generate Quick loop';
+      case LoopDuration.halfDay:
+        return 'Generate Half-day loop';
+      case LoopDuration.fullDay:
+        return 'Generate Full-day loop';
+      case LoopDuration.multiDay:
+        return 'Plan Multi-day trip';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BottomSheetPanel(
@@ -222,35 +180,18 @@ class WhereToSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 4,
           children: [
-            Text('WHERE TO TODAY?', style: PasyarTextStyles.screenTitle(30)),
-            Text(
-              "Pick how long. We'll make the loop.",
-              style: PasyarTextStyles.body.copyWith(
-                height: 1.2,
-                color: PasyarColors.muted,
-              ),
-            ),
+            Text('Where to today?', style: PasyarTextStyles.screenTitle(25)),
           ],
         ),
-        // Two rows of two: four 72 px cards in one row would be too narrow
-        // for MULTI-DAY and for gloves.
+        // Single column of duration cards.
         Column(
           spacing: PasyarSpacing.buttonGap,
           children: [
-            for (var i = 0; i < LoopDuration.values.length; i += 2)
-              Row(
-                spacing: PasyarSpacing.buttonGap,
-                children: [
-                  for (final d in LoopDuration.values.skip(i).take(2))
-                    Expanded(
-                      child: ChoiceCard(
-                        title: d.title,
-                        subtitle: d.subtitle,
-                        selected: options.duration == d,
-                        onTap: () => options.duration = d,
-                      ),
-                    ),
-                ],
+            for (final d in LoopDuration.values)
+              LoopDurationCard(
+                duration: d,
+                selected: options.duration == d,
+                onTap: () => options.duration = d,
               ),
           ],
         ),
@@ -279,17 +220,10 @@ class WhereToSheet extends StatelessWidget {
                 onChanged: (v) => options.avoidHighways = v,
               ),
             ),
-            Expanded(
-              child: PillToggle(
-                label: 'Avoid unpaved',
-                value: options.avoidUnpaved,
-                onChanged: (v) => options.avoidUnpaved = v,
-              ),
-            ),
           ],
         ),
         PrimaryButton(
-          label: 'GENERATE LOOP',
+          label: _buttonLabel(context),
           icon: LucideIcons.rotateCw,
           loading: generating,
           onPressed: onGenerate,

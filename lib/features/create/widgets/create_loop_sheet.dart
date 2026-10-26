@@ -26,6 +26,7 @@ class CreateLoopSheet extends StatelessWidget {
   const CreateLoopSheet({
     super.key,
     required this.name,
+    required this.caption,
     required this.pointCount,
     required this.totals,
     required this.routing,
@@ -43,6 +44,7 @@ class CreateLoopSheet extends StatelessWidget {
   });
 
   final TextEditingController name;
+  final TextEditingController caption;
   final int pointCount;
   final LoopTotals totals;
   final bool routing;
@@ -95,6 +97,7 @@ class CreateLoopSheet extends StatelessWidget {
     final canPickClub =
         visibility == LoopVisibility.club && (clubs?.length ?? 0) > 1;
 
+
     return Container(
       decoration: const BoxDecoration(
         color: PasyarColors.card,
@@ -133,6 +136,15 @@ class CreateLoopSheet extends StatelessWidget {
                     enabled: !moving,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.done,
+                  ),
+                  PasyarTextField(
+                    label: 'Caption',
+                    controller: caption,
+                    hint: 'Describe your loop',
+                    maxLines: 3,
+                    maxLength: 500,
+                    enabled: !moving,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
                   Row(
                     spacing: 8,

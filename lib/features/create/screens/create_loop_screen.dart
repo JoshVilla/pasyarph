@@ -31,11 +31,13 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
   late final CreateLoopController _loop = context.read<CreateLoopController>();
   late final LocationProvider _location = context.read<LocationProvider>();
   late final _name = TextEditingController(text: _loop.name);
+  late final _caption = TextEditingController(text: _loop.caption);
 
   @override
   void initState() {
     super.initState();
     _name.addListener(() => _loop.setName(_name.text));
+    _caption.addListener(() => _loop.setCaption(_caption.text));
     _location.addListener(_onLocation);
     // Not during the first build: both can notify listeners right away.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -54,6 +56,7 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
   void dispose() {
     _location.removeListener(_onLocation);
     _name.dispose();
+    _caption.dispose();
     super.dispose();
   }
 
@@ -245,6 +248,7 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                   child: wrapSheet(
                     CreateLoopSheet(
                       name: _name,
+                      caption: _caption,
                       pointCount: loop.points.length,
                       totals: loop.totals,
                       routing: loop.routing,

@@ -165,6 +165,7 @@ export function previewPage(
   const mapUrl = `${url.origin}/map/${kind === "post" ? "p" : "l"}/${id}.png`;
   const photo = p.photo ? photoUrl(env, p.photo) : null;
   const by = p.author ? ` · by ${p.author}` : "";
+  const club = p.club_name ? ` · ${p.club_name}` : "";
   const description = [
     stats.join(" · "),
     p.main_stop ? `Main stop: ${p.main_stop}` : null,
@@ -185,7 +186,7 @@ export function previewPage(
   const body = `<article class="card">
 ${p.route ? `<img class="map" src="${escape(mapUrl)}" width="${mapWidth}" height="${mapHeight}" alt="Map of ${escape(name)}">` : ""}
 <div class="card-body">
-<p class="overline">${kind === "post" ? "Ride" : "Loop"}${escape(by)}</p>
+<p class="overline">${kind === "post" ? "Ride" : "Loop"}${escape(by)}${escape(club)}</p>
 <h1>${escape(name)}</h1>
 <div class="stats">${statsHtml}</div>
 ${p.main_stop ? `<p class="stop">Main stop: ${escape(p.main_stop)}</p>` : ""}

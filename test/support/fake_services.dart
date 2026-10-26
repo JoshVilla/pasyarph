@@ -201,6 +201,7 @@ class FakeLoopRepository implements LoopRepository {
       id,
       NewLoop(
         name: name,
+        caption: l.caption,
         source: l.source,
         route: l.route,
         distanceM: l.distanceM,
@@ -232,6 +233,7 @@ class FakeLoopRepository implements LoopRepository {
         id: id,
         ownerId: 'me',
         name: l.name,
+        caption: l.caption,
         source: l.source,
         sharedRoute: l.distanceM > 1800 ? l.route : null,
         distanceM: l.distanceM,

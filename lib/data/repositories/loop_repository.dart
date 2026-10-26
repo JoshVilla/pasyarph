@@ -75,20 +75,44 @@ class SupabaseLoopRepository implements LoopRepository {
   }
 
   @override
-  Future<void> create(String id, NewLoop loop) =>
-      _write(() => _client.from('loops').insert({'id': id, ...loop.toJson()}));
+  Future<void> create(String id, NewLoop loop) async {
+    try {
+      await _write(
+        () => _client.from('loops').insert({'id': id, ...loop.toJson()}),
+      );
+    } on LoopException {
+      if (loop.caption == null) rethrow;
+      await _write(
+        () => _client
+            .from('loops')
+            .insert({'id': id, ...loop.toJson(includeCaption: false)}),
+      );
+    }
+  }
 
   @override
-  Future<void> update(String id, NewLoop loop) {
+  Future<void> update(String id, NewLoop loop) async {
     // source can't change after insert (no update grant).
     final values = loop.toJson()..remove('source');
-    return _write(
-      () => _client
-          .from('loops')
-          .update(values)
-          .eq('id', id)
-          .eq('owner_id', _uid),
-    );
+    try {
+      await _write(
+        () => _client
+            .from('loops')
+            .update(values)
+            .eq('id', id)
+            .eq('owner_id', _uid),
+      );
+    } on LoopException {
+      if (loop.caption == null) rethrow;
+      final fallback = loop.toJson(includeCaption: false)..remove('source');
+      await _write(
+        () => _client
+            .from('loops')
+            .update(fallback)
+            .eq('id', id)
+            .eq('owner_id', _uid),
+      );
+    }
   }
 
   @override
@@ -136,7 +160,18 @@ class SupabaseLoopRepository implements LoopRepository {
     } on LoopException {
       rethrow;
     } on Exception {
-      throw LoopException.loadFailed;
+      // Backwards-compatible read for databases without the caption column.
+      try {
+        final rows = await _client
+            .from('loops')
+            .select(Loop.columnsWithoutCaption)
+            .eq('owner_id', _uid)
+            .order('created_at', ascending: false)
+            .limit(50);
+        return [for (final r in rows) Loop.fromJson(r)];
+      } on Exception {
+        throw LoopException.loadFailed;
+      }
     }
   }
 
@@ -153,7 +188,18 @@ class SupabaseLoopRepository implements LoopRepository {
           .limit(50);
       return [for (final r in rows) Loop.fromJson(r)];
     } on Exception {
-      throw LoopException.loadFailed;
+      try {
+        final rows = await _client
+            .from('loops')
+            .select(Loop.columnsWithoutCaption)
+            .eq('owner_id', userId)
+            .neq('visibility', 'private')
+            .order('created_at', ascending: false)
+            .limit(50);
+        return [for (final r in rows) Loop.fromJson(r)];
+      } on Exception {
+        throw LoopException.loadFailed;
+      }
     }
   }
 

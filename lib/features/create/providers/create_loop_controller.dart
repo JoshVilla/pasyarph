@@ -45,6 +45,7 @@ class CreateLoopController extends ChangeNotifier {
   RouteException? _routeError;
 
   String _name = '';
+  String _caption = '';
   LoopVisibility _visibility = LoopVisibility.public;
   List<Club>? _clubs;
   String? _clubId;
@@ -62,6 +63,8 @@ class CreateLoopController extends ChangeNotifier {
   RouteException? get routeError => _routeError;
 
   String get name => _name;
+
+  String get caption => _caption;
 
   /// The name the loop is saved with: what was typed, or "82 km loop".
   String get savedName =>
@@ -149,6 +152,13 @@ class CreateLoopController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCaption(String caption) {
+    if (_caption == caption) return;
+    _caption = caption;
+    _dirty = true;
+    notifyListeners();
+  }
+
   void setVisibility(LoopVisibility visibility) {
     if (_visibility == visibility) return;
     _visibility = visibility;
@@ -229,6 +239,7 @@ class CreateLoopController extends ChangeNotifier {
     final metersIn = metersToPoint(_start!, _points, stop, _legs);
     final loop = NewLoop(
       name: savedName,
+      caption: _caption.trim().isEmpty ? null : _caption.trim(),
       source: LoopSource.custom,
       route: route,
       distanceM: totals.distanceM,
