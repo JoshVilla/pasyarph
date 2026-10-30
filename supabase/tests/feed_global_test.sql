@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(3);
+select plan(4);
 
 create function pg_temp.act_as(uid uuid) returns void language plpgsql as $$
 begin
@@ -47,7 +47,7 @@ select set_eq(
       '22000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000002',
       '22000000-0000-0000-0000-000000000003', '22000000-0000-0000-0000-000000000004')$$,
   $$values ('22000000-0000-0000-0000-000000000001'::uuid), ('22000000-0000-0000-0000-000000000002'::uuid)$$,
-  'Global: public loops from anywhere, never club or private ones'
+  'Global: public loops from anywhere; not other clubs'' or private ones'
 );
 select ok(
   (select distance_away_m > 900000 from feed_page('global', null, 16.67, 121.45)
@@ -56,9 +56,13 @@ select ok(
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
-select is_empty(
+select isnt_empty(
   $$select id from feed_page('global') where id = '22000000-0000-0000-0000-000000000003'$$,
-  'club loops stay out of Global, even for club members'
+  'Global includes loops from my own clubs'
+);
+select is_empty(
+  $$select id from feed_page('global') where id = '22000000-0000-0000-0000-000000000004'$$,
+  'private loops stay out of Global, even for their owner'
 );
 
 select * from finish();
