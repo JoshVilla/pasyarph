@@ -58,3 +58,6 @@ app.*.map.json
 
 # Golden test mismatch images
 test/**/failures/
+
+# Impeccable skill: per-OS engine binary (the launcher downloads it)
+.claude/skills/impeccable/scripts/bin/
