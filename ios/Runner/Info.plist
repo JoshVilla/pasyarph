@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Pasyar uses your location to make loops that start and end where you are, to guide your ride, and to show rides near you.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Pasyar uses the camera for your profile photo and the photos you post from your rides.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pasyar opens your photos so you can add them to your profile and your ride posts.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
