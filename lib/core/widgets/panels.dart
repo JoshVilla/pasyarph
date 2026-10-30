@@ -9,7 +9,9 @@ import '../theme/pasyar_theme.dart';
 const _mockupLineHeight = 1.2;
 
 /// White sheet with 24 px top corners, the sheet shadow and a drag handle.
-/// Children are laid out in a column with [gap] between them.
+/// Children are laid out in a column with [gap] between them. With
+/// [maxHeight] the content scrolls inside the sheet when it would be taller
+/// (small phones, large text).
 class BottomSheetPanel extends StatelessWidget {
   const BottomSheetPanel({
     super.key,
@@ -17,15 +19,23 @@ class BottomSheetPanel extends StatelessWidget {
     this.gap = PasyarSpacing.groupGap,
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 20),
     this.showHandle = true,
+    this.maxHeight,
   });
 
   final List<Widget> children;
   final double gap;
   final EdgeInsets padding;
   final bool showHandle;
+  final double? maxHeight;
 
   @override
   Widget build(BuildContext context) {
+    final column = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: gap,
+      children: [if (showHandle) const DragHandle(), ...children],
+    );
     return Container(
       padding: padding,
       decoration: const BoxDecoration(
@@ -35,12 +45,17 @@ class BottomSheetPanel extends StatelessWidget {
         ),
         boxShadow: PasyarShadows.sheet,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: gap,
-        children: [if (showHandle) const DragHandle(), ...children],
-      ),
+      child: maxHeight == null
+          ? column
+          : ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: (maxHeight! - padding.vertical).clamp(
+                  0,
+                  double.infinity,
+                ),
+              ),
+              child: SingleChildScrollView(child: column),
+            ),
     );
   }
 }

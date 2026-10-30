@@ -14,10 +14,11 @@ import '../providers/ride_session_provider.dart';
 import '../widgets/home_controls.dart';
 import '../widgets/ride_map.dart';
 
-/// Ride tab (Home). Matches design/screenshots/01-home.png: full-screen map,
-/// "Starting from" pill and profile button on top, "WHERE TO TODAY?" sheet
-/// at the bottom. Expects [LocationProvider] and [LoopPreviewProvider]
-/// above it.
+/// Ride tab (Home): full-screen map with a ring showing roughly how far the
+/// chosen loop reaches, the "Starting from" pill on top, and the sheet that
+/// reads as one sentence ("I'VE GOT ABOUT 4 HRS") above GENERATE LOOP.
+/// Location trouble and Generate errors show in the sheet, by the button.
+/// Expects [LocationProvider] and [LoopPreviewProvider] above it.
 class RideScreen extends StatelessWidget {
   const RideScreen({super.key});
 
@@ -80,40 +81,48 @@ class _RideHomeState extends State<_RideHome> {
     final generating = preview.loading && preview.loop == null;
     final error = _showError ? preview.error : null;
 
+    final reachKm = options.duration.targetKm;
+    final top = MediaQuery.paddingOf(context).top + PasyarSpacing.floatingTop;
+    final Widget? notice = showBanner
+        ? LocationOffBanner(status: status, onPressed: location.fix)
+        : error != null
+        ? SheetError(error.message)
+        : status == LocationStatus.on && !location.hasFix
+        ? const SheetWaiting()
+        : null;
+
     return Scaffold(
       backgroundColor: PasyarColors.mapGround,
       body: Stack(
         children: [
-          MapUnderSheet(
-            map: RideMap(
-              rider: location.position,
-              attributionBottom: PasyarRadius.sheet,
-            ),
-            sheet: WhereToSheet(
-              options: options,
-              generating: generating,
-              onGenerate: location.hasFix ? _generate : null,
+          LayoutBuilder(
+            builder: (context, box) => MapUnderSheet(
+              map: RideMap(
+                rider: location.position,
+                attributionBottom: PasyarRadius.sheet,
+                reachM: reachKm == null ? null : RideMap.reachFor(reachKm),
+                // The pill and any notice under it.
+                topInset: top + 48 + (ride.active || generating ? 60 : 0),
+              ),
+              sheet: WhereToSheet(
+                options: options,
+                generating: generating,
+                notice: notice,
+                onGenerate: location.hasFix ? _generate : null,
+                // Never up under the pill: some map always shows.
+                maxHeight: box.maxHeight - (top + 48 + 48),
+              ),
             ),
           ),
           Positioned(
-            top: MediaQuery.paddingOf(context).top + PasyarSpacing.floatingTop,
+            top: top,
             left: PasyarSpacing.screen,
             right: PasyarSpacing.screen,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 12,
               children: [
-                Row(
-                  spacing: 12,
-                  children: [
-                    const Expanded(child: StartingFromPill()),
-                    RoundIconButton.floating(
-                      icon: LucideIcons.user,
-                      semanticLabel: 'Profile',
-                      onPressed: () => context.go(Routes.me),
-                    ),
-                  ],
-                ),
+                StartingFromPill(on: !showBanner),
                 if (ride.active)
                   Semantics(
                     button: true,
@@ -125,12 +134,8 @@ class _RideHomeState extends State<_RideHome> {
                       ),
                     ),
                   )
-                else if (showBanner)
-                  LocationOffBanner(status: status, onPressed: location.fix)
                 else if (generating)
-                  const MapNotice.loading(text: 'Building your loop…')
-                else if (error != null)
-                  MapNotice(icon: LucideIcons.circleAlert, text: error.message),
+                  const MapNotice.loading(text: 'Building your loop…'),
               ],
             ),
           ),

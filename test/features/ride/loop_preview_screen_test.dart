@@ -10,7 +10,6 @@ import 'package:pasyarph/features/dev/demo_routes.dart';
 import 'package:pasyarph/features/ride/loop_stats.dart';
 import 'package:pasyarph/features/ride/providers/loop_preview_provider.dart';
 import 'package:pasyarph/features/ride/screens/loop_preview_screen.dart';
-import 'package:pasyarph/features/ride/widgets/home_controls.dart';
 import 'package:pasyarph/features/ride/widgets/loop_map.dart';
 import 'package:provider/provider.dart';
 
@@ -160,7 +159,13 @@ void main() {
     expect(find.text('OVERNIGHT STOPS'), findsOneWidget);
     expect(find.text('Night 1 · Baguio'), findsOneWidget);
     expect(find.text('520 km in'), findsOneWidget);
-    expect(find.byType(LoopPointMarker), findsNWidgets(2));
+    expect(
+      find.descendant(
+        of: find.byType(LoopMap),
+        matching: find.byType(LoopPointMarker),
+      ),
+      findsNWidgets(3), // S and two overnight towns
+    );
     expect(repo.seeds, hasLength(1));
     expect(repo.sentDays, [5]);
   });
@@ -177,7 +182,13 @@ void main() {
     expect(find.text('High'), findsOneWidget);
     final kmIn = farthestPoint(DemoRoutes.loop).kmInLabel;
     expect(find.text('MAIN STOP · $kmIn'), findsOneWidget);
-    expect(find.byType(MainStopMarker), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(LoopMap),
+        matching: find.byType(MainStopMarker),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('real stop: name, km, detail and fuel on the map', (
@@ -192,7 +203,13 @@ void main() {
     expect(find.text('MAIN STOP · 52 KM IN'), findsOneWidget);
     expect(find.text('Mt. Palali Viewpoint'), findsOneWidget);
     expect(find.text('Viewpoint · gas station nearby'), findsOneWidget);
-    expect(find.byType(FuelMarker), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(LoopMap),
+        matching: find.byType(FuelMarker),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shuffle shows progress, then the new loop', (tester) async {

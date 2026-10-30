@@ -1,32 +1,27 @@
 import 'package:latlong2/latlong.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
-
 
 import '../geo/geo_codec.dart';
 import 'json.dart';
 import 'loop.dart';
 
-/// How long the rider wants to ride. [value] is what generate-loop expects.
+/// How long the rider wants to ride. [value] is what generate-loop expects;
+/// [targetKm] matches its targets (supabase/functions/generate-loop/plan.ts).
 enum LoopDuration {
-  quick('quick', 'Quick loop', '1 hr · ~50 km', 'Back 10:40 AM', LucideIcons.clock),
-  halfDay('half', 'Half-day loop', '4 hrs · ~120 km', 'Back 1:40 PM', LucideIcons.sun),
-  fullDay('full', 'Full-day loop', '6 hrs · ~220 km', 'Back 3:40 PM', LucideIcons.mountain),
+  quick('quick', 'QUICK', '1 hr · ~50 km', 50),
+  halfDay('half', 'HALF-DAY', '4 hrs · ~120 km', 120),
+  fullDay('full', 'FULL DAY', '6 hrs · ~220 km', 220),
 
   /// One long loop over two days or more (about 500 km).
-  multiDay('multi', 'Multi-day loop', '2+ days · overnight stops', 'Plan trip', LucideIcons.calendar);
+  multiDay('multi', 'MULTI-DAY', '2+ days · overnight', null);
 
-  const LoopDuration(this.value, this.title, this.subtitle, this.rightLabel, this.icon);
+  const LoopDuration(this.value, this.title, this.subtitle, this.targetKm);
 
   final String value;
   final String title;
   final String subtitle;
 
-  /// Right-side label on the choice card (e.g. "Back 1:40 PM" or "Plan trip").
-  final String rightLabel;
-
-  /// Icon shown on the left of the choice card.
-  final IconData icon;
+  /// Length of a one-day loop; null for multi-day trips.
+  final int? targetKm;
 }
 
 /// One turn instruction from GraphHopper.

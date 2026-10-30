@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/location/location_provider.dart';
@@ -7,14 +8,18 @@ import '../../../core/widgets/widgets.dart';
 import '../../../data/models/generated_loop.dart';
 import '../providers/ride_options_provider.dart';
 
-/// "Starting from your location" pill with a green dot.
+/// "Starting from your location" pill with a blue dot; "Location is off"
+/// with a grey one when location can't be used ([on] false).
 class StartingFromPill extends StatelessWidget {
-  const StartingFromPill({super.key});
+  const StartingFromPill({super.key, this.on = true});
+
+  final bool on;
 
   @override
   Widget build(BuildContext context) {
+    final text = on ? 'Starting from your location' : 'Location is off';
     return Semantics(
-      label: 'Starting from your location',
+      label: text,
       excludeSemantics: true,
       child: FloatingPill(
         child: Row(
@@ -24,17 +29,20 @@ class StartingFromPill extends StatelessWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: const BoxDecoration(
-                color: PasyarColors.accent,
+              decoration: BoxDecoration(
+                color: on ? PasyarColors.accent : PasyarColors.riddenRoute,
                 shape: BoxShape.circle,
               ),
             ),
             Flexible(
               child: Text(
-                'Starting from your location',
+                text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: PasyarTextStyles.bodyStrong.copyWith(height: 1.15),
+                style: PasyarTextStyles.bodyStrong.copyWith(
+                  height: 1.15,
+                  color: on ? PasyarColors.ink : PasyarColors.muted,
+                ),
               ),
             ),
           ],
@@ -44,34 +52,8 @@ class StartingFromPill extends StatelessWidget {
   }
 }
 
-/// The mockup's location icon: a small ring with four ticks (no outer ring,
-/// unlike Lucide's "locate"). Kept for reuse elsewhere.
-class _CrosshairPainter extends CustomPainter {
-  const _CrosshairPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.width / 24;
-    final paint = Paint()
-      ..color = PasyarColors.rider
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * s
-      ..strokeCap = StrokeCap.round;
-    Offset p(double x, double y) => Offset(x * s, y * s);
-    canvas
-      ..drawCircle(p(12, 12), 3 * s, paint)
-      ..drawLine(p(12, 2), p(12, 5), paint)
-      ..drawLine(p(12, 19), p(12, 22), paint)
-      ..drawLine(p(2, 12), p(5, 12), paint)
-      ..drawLine(p(19, 12), p(22, 12), paint);
-  }
-
-  @override
-  bool shouldRepaint(_CrosshairPainter oldDelegate) => false;
-}
-
-/// Shown over the map when location can't be used. [status] must not be
-/// [LocationStatus.on] or [LocationStatus.checking].
+/// Inside the sheet, above GENERATE LOOP, when location can't be used.
+/// [status] must not be [LocationStatus.on] or [LocationStatus.checking].
 class LocationOffBanner extends StatelessWidget {
   const LocationOffBanner({
     super.key,
@@ -85,72 +67,149 @@ class LocationOffBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canAsk = status == LocationStatus.denied;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: PasyarColors.card,
-        borderRadius: BorderRadius.circular(PasyarRadius.panel),
-        boxShadow: PasyarShadows.floating,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 12,
-        children: [
-          Row(
-            spacing: 10,
-            children: [
-              Icon(
-                canAsk ? LucideIcons.alertCircle : LucideIcons.wifiOff,
-                size: 24,
-                color: PasyarColors.accentDark,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      canAsk ? 'Location access is off' : 'No location fix',
-                      style: PasyarTextStyles.body.copyWith(
-                        height: 1.35,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      canAsk
-                          ? 'Tap to allow Pasyar to use your location.'
-                          : 'Waiting for GPS…',
-                      style: PasyarTextStyles.body.copyWith(
-                        height: 1.35,
-                        color: PasyarColors.muted,
-                      ),
-                    ),
-                  ],
+    final message = switch (status) {
+      LocationStatus.serviceOff => "Your phone's location is off.",
+      _ => 'Pasyar needs your location to build a loop from where you are.',
+    };
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: PasyarColors.ground,
+          borderRadius: BorderRadius.circular(PasyarRadius.panel),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                const Icon(
+                  LucideIcons.mapPinOff,
+                  size: 22,
+                  color: PasyarColors.accentDark,
                 ),
-              ),
-            ],
-          ),
-          if (canAsk)
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Location is off. ',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        TextSpan(text: message),
+                      ],
+                    ),
+                    style: PasyarTextStyles.body.copyWith(height: 1.35),
+                  ),
+                ),
+              ],
+            ),
             SecondaryButton(
-              label: 'Allow location',
-              icon: LucideIcons.mapPin,
+              label: canAsk ? 'ALLOW LOCATION' : 'OPEN SETTINGS',
+              icon: canAsk ? LucideIcons.mapPin : LucideIcons.settings,
               onPressed: onPressed,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Why the last Generate failed, shown right above the button.
+class SheetError extends StatelessWidget {
+  const SheetError(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 10,
+        children: [
+          const Icon(
+            LucideIcons.circleAlert,
+            size: 20,
+            color: PasyarColors.accentDark,
+          ),
+          Expanded(
+            child: Text(
+              message,
+              style: PasyarTextStyles.body.copyWith(
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: PasyarColors.accentDark,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// "WHERE TO TODAY?" sheet: duration cards, avoid toggle, generate button.
+/// Location is on but there's no GPS fix yet; GENERATE LOOP waits for it.
+class SheetWaiting extends StatelessWidget {
+  const SheetWaiting({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        spacing: 10,
+        children: [
+          const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: PasyarColors.accent,
+            ),
+          ),
+          Text(
+            'Finding your location…',
+            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The sheet's sentence for a choice: "I'VE GOT ABOUT " + "4 HRS".
+(String, String) headlineFor(LoopDuration d, int days) => switch (d) {
+  LoopDuration.quick => ("I'VE GOT ABOUT ", '1 HR'),
+  LoopDuration.halfDay => ("I'VE GOT ABOUT ", '4 HRS'),
+  LoopDuration.fullDay => ("I'VE GOT ", 'ALL DAY'),
+  LoopDuration.multiDay => ("I'VE GOT ", '$days DAYS'),
+};
+
+/// "WHERE TO TODAY?" answered as one line the rider finishes: the
+/// sentence, four duration cards, the avoid toggles, and GENERATE LOOP.
+/// [notice] (location trouble, or why Generate failed) sits above the
+/// button.
 class WhereToSheet extends StatelessWidget {
   const WhereToSheet({
     super.key,
     required this.options,
     required this.onGenerate,
     this.generating = false,
+    this.notice,
+    this.maxHeight,
   });
 
   final RideOptionsProvider options;
+
+  /// Tallest the sheet may grow before its content scrolls (it must stop
+  /// below the controls floating over the map).
+  final double? maxHeight;
 
   /// Null disables the button (no location yet).
   final VoidCallback? onGenerate;
@@ -158,40 +217,79 @@ class WhereToSheet extends StatelessWidget {
   /// Shows a spinner in the button while a loop is being built.
   final bool generating;
 
-  /// Button label based on the selected duration.
-  String _buttonLabel(BuildContext context) {
-    switch (options.duration) {
-      case LoopDuration.quick:
-        return 'Generate Quick loop';
-      case LoopDuration.halfDay:
-        return 'Generate Half-day loop';
-      case LoopDuration.fullDay:
-        return 'Generate Full-day loop';
-      case LoopDuration.multiDay:
-        return 'Plan Multi-day trip';
-    }
-  }
+  final Widget? notice;
 
   @override
   Widget build(BuildContext context) {
+    final (lead, choice) = headlineFor(options.duration, options.days);
+    final instant = MediaQuery.disableAnimationsOf(context);
     return BottomSheetPanel(
+      gap: 14,
+      maxHeight: maxHeight,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 4,
           children: [
-            Text('Where to today?', style: PasyarTextStyles.screenTitle(25)),
+            Semantics(
+              header: true,
+              liveRegion: true,
+              child: AnimatedSwitcher(
+                duration: instant
+                    ? Duration.zero
+                    : const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOutCubic,
+                layoutBuilder: (current, previous) => Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [...previous, ?current],
+                ),
+                child: Text.rich(
+                  key: ValueKey(lead + choice),
+                  TextSpan(
+                    children: [
+                      TextSpan(text: lead),
+                      TextSpan(
+                        text: choice,
+                        style: const TextStyle(color: PasyarColors.accent),
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  style: PasyarTextStyles.screenTitle(30),
+                ),
+              ),
+            ),
+            Text(
+              "Pick how long. We'll make the loop.",
+              style: PasyarTextStyles.body.copyWith(
+                height: 1.2,
+                color: PasyarColors.muted,
+              ),
+            ),
           ],
         ),
-        // Single column of duration cards.
+        // Two rows of two: four cards in one row would be too narrow for
+        // MULTI-DAY and for gloves.
         Column(
           spacing: PasyarSpacing.buttonGap,
           children: [
-            for (final d in LoopDuration.values)
-              LoopDurationCard(
-                duration: d,
-                selected: options.duration == d,
-                onTap: () => options.duration = d,
+            for (var i = 0; i < LoopDuration.values.length; i += 2)
+              Row(
+                spacing: PasyarSpacing.buttonGap,
+                children: [
+                  for (final d in LoopDuration.values.skip(i).take(2))
+                    Expanded(
+                      child: ChoiceCard(
+                        title: d.title,
+                        subtitle: d.subtitle,
+                        selected: options.duration == d,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          options.duration = d;
+                        },
+                      ),
+                    ),
+                ],
               ),
           ],
         ),
@@ -220,11 +318,20 @@ class WhereToSheet extends StatelessWidget {
                 onChanged: (v) => options.avoidHighways = v,
               ),
             ),
+            Expanded(
+              child: PillToggle(
+                label: 'Avoid unpaved',
+                value: options.avoidUnpaved,
+                onChanged: (v) => options.avoidUnpaved = v,
+              ),
+            ),
           ],
         ),
+        ?notice,
         PrimaryButton(
-          label: _buttonLabel(context),
-          icon: LucideIcons.rotateCw,
+          label: 'GENERATE LOOP',
+          // Not the Create tab's route icon: this makes the loop for you.
+          icon: LucideIcons.sparkles,
           loading: generating,
           onPressed: onGenerate,
         ),

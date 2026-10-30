@@ -12,7 +12,6 @@ import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../loop_stats.dart';
 import '../providers/ride_session_provider.dart';
-import '../widgets/home_controls.dart';
 import '../widgets/loop_map.dart';
 
 /// A ride in progress. Google Maps does the turn-by-turn; this screen is

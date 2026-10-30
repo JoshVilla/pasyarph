@@ -100,7 +100,8 @@ class _LoopMapState extends State<LoopMap> {
             for (final (i, n) in widget.overnights.indexed)
               PasyarMarkers.loopPoint(n, i + 1),
             if (mainStop != null) PasyarMarkers.mainStop(mainStop),
-            PasyarMarkers.rider(widget.route.first, halo: false),
+            // Where the loop starts and ends: S, as on the Create map.
+            PasyarMarkers.loopStart(widget.route.first),
             if (widget.rider != null) PasyarMarkers.rider(widget.rider!),
           ],
         ),

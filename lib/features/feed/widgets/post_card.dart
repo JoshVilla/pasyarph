@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/map/map_markers.dart';
+import '../../../core/map/route_arrows.dart';
 import '../../../core/map/pasyar_map.dart';
 import '../../../core/map/route_style.dart';
 import '../../../core/theme/pasyar_theme.dart';
@@ -100,8 +102,6 @@ class PostCard extends StatelessWidget {
           ],
           if (post.isLoopOnly)
             const SizedBox(height: 16)
-
-
           else ...[
             _Counts(post: post),
             _ActionRow(
@@ -371,24 +371,14 @@ class _LoopMap extends StatelessWidget {
                 children: [
                   ?pasyarTileLayer(),
                   PolylineLayer(polylines: routePolylines(route: route)),
-                  CircleLayer(
-                    circles: [
+                  RouteArrowsLayer(routes: [route]),
+                  // The same S and flag as every other loop map. The S is
+                  // where the shared (home-trimmed) route begins.
+                  MarkerLayer(
+                    markers: [
+                      if (stop != null) PasyarMarkers.mainStop(stop),
                       if (route.isNotEmpty)
-                        CircleMarker(
-                          point: route.first,
-                          radius: 10,
-                          color: PasyarColors.ink,
-                          borderColor: PasyarColors.card,
-                          borderStrokeWidth: 3,
-                        ),
-                      if (stop != null)
-                        CircleMarker(
-                          point: stop,
-                          radius: 12,
-                          color: PasyarColors.accent,
-                          borderColor: PasyarColors.card,
-                          borderStrokeWidth: 3,
-                        ),
+                        PasyarMarkers.loopStart(route.first),
                     ],
                   ),
                 ],

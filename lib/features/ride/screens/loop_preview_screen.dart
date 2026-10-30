@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/map/map_legend.dart';
 import '../../../core/map/pasyar_map.dart';
 import '../../../core/router.dart';
 import '../../../core/settings/app_settings.dart';
@@ -14,7 +15,6 @@ import '../../../data/models/generated_loop.dart';
 import '../loop_stats.dart';
 import '../providers/loop_preview_provider.dart';
 import '../providers/ride_session_provider.dart';
-import '../widgets/home_controls.dart';
 import '../widgets/loop_map.dart';
 
 /// Loop preview with Shuffle. Matches design/screenshots/02-loop-preview.png:
@@ -58,19 +58,43 @@ class LoopPreviewScreen extends StatelessWidget {
           CollapsibleSheet(
             builder: (context, collapsed, wrapSheet) => MapUnderSheet(
               collapsed: collapsed,
-              map: LoopMap(
-                route: loop.route,
-                mainStop: preview.mainStop?.location,
-                fuel: [for (final f in loop.fuelStops) f.location],
-                overnights: [for (final n in loop.overnights) n.location],
-                // Keep the loop clear of the top controls and the sheet edge.
-                fitPadding: EdgeInsets.fromLTRB(
-                  40,
-                  top + 48 + 32,
-                  40,
-                  PasyarRadius.sheet + 40,
-                ),
-                attributionBottom: PasyarRadius.sheet,
+              map: Stack(
+                children: [
+                  Positioned.fill(
+                    child: LoopMap(
+                      route: loop.route,
+                      mainStop: preview.mainStop?.location,
+                      fuel: [for (final f in loop.fuelStops) f.location],
+                      overnights: [for (final n in loop.overnights) n.location],
+                      // Keep the loop clear of the top controls and the key
+                      // above the sheet edge.
+                      fitPadding: EdgeInsets.fromLTRB(
+                        40,
+                        top + 48 + 32,
+                        40,
+                        PasyarRadius.sheet + 40 + _keyHeight,
+                      ),
+                      attributionBottom: PasyarRadius.sheet,
+                    ),
+                  ),
+                  Positioned(
+                    left: PasyarSpacing.screen,
+                    right: PasyarSpacing.screen,
+                    bottom: PasyarRadius.sheet + 32,
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: _PreviewKey(
+                        items: [
+                          MapKeyItem.startS,
+                          if (preview.mainStop != null) MapKeyItem.mainStop,
+                          if (loop.fuelStops.isNotEmpty) MapKeyItem.fuel,
+                          if (loop.overnights.isNotEmpty) MapKeyItem.overnights,
+                          MapKeyItem.direction,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
               sheet: wrapSheet(_PreviewSheet(preview: preview, loop: loop)),
             ),
@@ -111,6 +135,32 @@ class LoopPreviewScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Room kept under the loop for the map key strip.
+const _keyHeight = 64.0;
+
+/// The preview map's key: a strip that starts open; a tap folds it to a
+/// chip.
+class _PreviewKey extends StatefulWidget {
+  const _PreviewKey({required this.items});
+
+  final List<MapKeyItem> items;
+
+  @override
+  State<_PreviewKey> createState() => _PreviewKeyState();
+}
+
+class _PreviewKeyState extends State<_PreviewKey> {
+  bool _open = true;
+
+  @override
+  Widget build(BuildContext context) => MapLegend(
+    items: widget.items,
+    row: true,
+    open: _open,
+    onToggle: () => setState(() => _open = !_open),
+  );
 }
 
 /// Opened from a share link, the preview is the only screen: back goes Home.

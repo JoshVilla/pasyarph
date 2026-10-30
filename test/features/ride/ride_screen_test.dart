@@ -64,6 +64,14 @@ LocationProvider _location({
   positions: FakePositionSource(last: last),
 );
 
+/// A 390 x 844 phone, as the screen ships (the default test window is
+/// shorter than any phone, so the sheet would scroll).
+void _phone(WidgetTester tester) {
+  tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+}
+
 PrimaryButton _generate(WidgetTester tester) => tester.widget<PrimaryButton>(
   find.byWidgetPredicate(
     (w) => w is PrimaryButton && w.label == 'GENERATE LOOP',
@@ -87,13 +95,25 @@ void main() {
       pumpBeforeTest: (tester) async => tester.pumpAndSettle(),
       builder: () => _home(_location(access: LocationAccess.denied)),
     );
+
+    goldenTest(
+      'Home, multi-day',
+      fileName: 'home_multi_day',
+      constraints: _screen,
+      pumpBeforeTest: (tester) async {
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('MULTI-DAY'));
+        await tester.pumpAndSettle();
+      },
+      builder: () => _home(_location()),
+    );
   });
 
   testWidgets('shows the rider and enables GENERATE LOOP', (tester) async {
     await tester.pumpWidget(MaterialApp(home: _home(_location())));
     await tester.pumpAndSettle();
 
-    expect(find.byType(RiderDot), findsOneWidget);
+    expect(find.byType(LoopPointMarker), findsOneWidget); // S, at the rider
     expect(find.byType(LocationOffBanner), findsNothing);
     expect(_generate(tester).onPressed, isNotNull);
   });
@@ -119,6 +139,7 @@ void main() {
   });
 
   testWidgets('GENERATE LOOP shows progress on the map', (tester) async {
+    _phone(tester);
     final routes = FakeRouteRepository()..gate = Completer();
     await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
     await tester.pumpAndSettle();
@@ -133,6 +154,7 @@ void main() {
   });
 
   testWidgets('a failed Generate explains why on the map', (tester) async {
+    _phone(tester);
     final routes = FakeRouteRepository([
       const RouteException('no_route', "Couldn't find a loop from here."),
     ]);
@@ -185,6 +207,7 @@ void main() {
   });
 
   testWidgets('other durations send no days', (tester) async {
+    _phone(tester);
     final routes = FakeRouteRepository()..gate = Completer();
     await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
     await tester.pumpAndSettle();
