@@ -24,6 +24,9 @@ class FeedScope {
   /// Posts near the rider (`feed_near`).
   static const near = FeedScope._('near');
 
+  /// Public posts and loops from everywhere.
+  static const global = FeedScope._('global');
+
   /// Riders the rider follows.
   static const following = FeedScope._('following');
 

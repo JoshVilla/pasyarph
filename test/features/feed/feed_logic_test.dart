@@ -173,6 +173,23 @@ void main() {
       },
     );
 
+    test('Global loads public rides from everywhere', () async {
+      final repo = FakeFeedRepository(
+        posts,
+        scoped: {
+          FeedScope.global: [feedPost(id: 'g1', createdAt: now, awayM: 450000)],
+        },
+      );
+      final feed = await provider(repo);
+      feed.start();
+      await pumpEventQueue();
+      feed.setFilter(FeedFilter.global);
+      expect(feed.needsLocation, isFalse);
+      await pumpEventQueue();
+      expect(repo.scopeCalls, [FeedScope.global]);
+      expect([for (final p in feed.posts) p.id], ['g1']);
+    });
+
     test('switching filters drops a page that arrives late', () async {
       final repo = _SlowFeed(posts);
       final feed = await provider(repo);

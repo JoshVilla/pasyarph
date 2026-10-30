@@ -128,6 +128,8 @@ class _FeedScreenState extends State<FeedScreen> {
       emptyText: switch (feed.filter) {
         FeedFilter.nearYou =>
           'No rides near you yet. Finish a loop and post it to be the first.',
+        FeedFilter.global =>
+          'No rides on Pasyar yet. Finish a loop and post it to be the first.',
         FeedFilter.following =>
           "Rides from riders you follow show up here. Tap a rider's name on "
               'a post to see their profile and follow them.',

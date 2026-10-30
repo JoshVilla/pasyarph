@@ -7,6 +7,7 @@ import '../../../data/repositories/social_repository.dart';
 
 enum FeedFilter {
   nearYou('Near you'),
+  global('Global'),
   following('Following'),
   myClubs('My clubs');
 
@@ -53,6 +54,7 @@ class FeedProvider extends ChangeNotifier {
       _fixedScope ??
       switch (_filter) {
         FeedFilter.nearYou => FeedScope.near,
+        FeedFilter.global => FeedScope.global,
         FeedFilter.following => FeedScope.following,
         FeedFilter.myClubs => FeedScope.myClubs,
       };
