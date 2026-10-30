@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../data/models/routed_leg.dart';
+import '../ride/loop_stats.dart';
 
 /// Most points a custom loop can have (S not counted).
 const maxLoopPoints = 15;
@@ -177,11 +178,29 @@ int? mainStopAfterRemoving(int? mainStop, int removed) {
 String pointsLabel(int count) =>
     '$count ${count == 1 ? 'point' : 'points'} · closes back to start';
 
-/// The floating hint over the map. Teaches one gesture at a time while the
-/// loop grows.
-String hintFor(int count) => switch (count) {
+/// The floating hint over the map: what to do next. [selected] is the
+/// number of a tapped point, whose actions show beside it.
+String hintFor(int count, {int? selected}) => switch (count) {
+  _ when selected != null => 'Point $selected: main stop or remove?',
   >= maxLoopPoints => '$maxLoopPoints points is the limit',
-  1 => 'Tap a point for the main stop',
-  2 => 'Hold a point to remove it',
-  _ => 'Tap the map to add a point',
+  0 => 'Tap the map to add a point',
+  1 => 'Tap the map to add another point',
+  // A main stop is picked from two points on (the farthest).
+  _ => 'Tap a point to change the main stop',
 };
+
+/// The peek bar's big line: "96 KM · 3 H 10" once routed.
+String loopTotalsLine(
+  LoopTotals totals, {
+  required int points,
+  required bool failed,
+}) {
+  if (points == 0) return 'NO POINTS YET';
+  if (totals.complete) {
+    return '${formatDistance(totals.distanceM)} · '
+            '${formatRideTime(totals.durationS)}'
+        .toUpperCase();
+  }
+  if (failed) return '— KM';
+  return 'FINDING ROADS…';
+}

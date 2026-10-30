@@ -5,24 +5,29 @@ import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/club.dart';
 import '../../../data/models/enums.dart';
-import '../../ride/loop_stats.dart';
 import '../loop_builder.dart';
 
-/// Height of the sheet in design/mockups/06-create-loop.html (844 − 372),
-/// including its 36 px bottom padding.
+/// Height of the open sheet (the mockup's 472 px, including its 36 px
+/// bottom padding).
 const createSheetHeight = 472.0;
 const _bottomPadding = 36.0;
 
-/// Visibility segments as the mockup labels them: clubs are "Group".
+/// How much of the sheet shows while building: the handle and the totals
+/// bar with DONE (plus the phone's bottom inset).
+const createSheetPeek = 104.0;
+
+/// Visibility segments. Group loops are club loops, as everywhere else.
 const _visibilityLabels = {
   LoopVisibility.public: 'Public',
-  LoopVisibility.club: 'Group',
+  LoopVisibility.club: 'Club',
   LoopVisibility.private: 'Private',
 };
 
-/// Create sheet: loop name, live distance and ride time, visibility, SAVE
-/// and SHARE LINK.
-class CreateLoopSheet extends StatelessWidget {
+/// Create sheet. Its first row is the peek bar shown while building: the
+/// live totals and DONE (which raises the sheet). Below: loop name, a
+/// caption folded away behind "Add a caption", who can see it, SAVE and
+/// SHARE LINK.
+class CreateLoopSheet extends StatefulWidget {
   const CreateLoopSheet({
     super.key,
     required this.name,
@@ -39,6 +44,8 @@ class CreateLoopSheet extends StatelessWidget {
     required this.onPickClub,
     required this.onSave,
     required this.onShare,
+    required this.collapsed,
+    required this.onDone,
     this.saving = false,
     this.bottomInset = 0,
   });
@@ -65,38 +72,38 @@ class CreateLoopSheet extends StatelessWidget {
   final VoidCallback? onShare;
   final bool saving;
 
+  /// The sheet is lowered to its peek: the bar shows DONE.
+  final bool collapsed;
+
+  /// Raises the sheet; null while there are no points.
+  final VoidCallback? onDone;
+
   /// Extra bottom padding for the phone's navigation bar.
   final double bottomInset;
 
-  String get _stats {
-    if (pointCount == 0) return '0 km · 0 min';
-    if (totals.complete) {
-      return '${formatDistance(totals.distanceM)} · '
-          '${formatRideTime(totals.durationS)}';
-    }
-    if (routeFailed) return '— km';
-    return 'Finding roads…';
-  }
+  @override
+  State<CreateLoopSheet> createState() => _CreateLoopSheetState();
+}
 
-  String get _visibilityHelp => switch (visibility) {
+class _CreateLoopSheetState extends State<CreateLoopSheet> {
+  /// The caption field shows once asked for, or when there's a caption.
+  late bool _captionOpen = widget.caption.text.isNotEmpty;
+
+  String get _visibilityHelp => switch (widget.visibility) {
     LoopVisibility.public => 'Everyone on Pasyar can see and ride this loop.',
     LoopVisibility.private => 'Only you will see this loop.',
-    LoopVisibility.club when clubs == null => 'Loading your clubs…',
-    LoopVisibility.club when club == null =>
-      'Join a club to share loops with a group.',
-    LoopVisibility.club => 'Only members of ${club!.name} will see this loop.',
+    LoopVisibility.club when widget.clubs == null => 'Loading your clubs…',
+    LoopVisibility.club when widget.club == null =>
+      'Join or create a club under Me to share loops with it.',
+    LoopVisibility.club =>
+      'Only members of ${widget.club!.name} will see this loop.',
   };
 
   @override
   Widget build(BuildContext context) {
-    final muted = PasyarTextStyles.bodySmall.copyWith(
-      fontWeight: FontWeight.w400,
-      color: PasyarColors.muted,
-      height: 1.2,
-    );
+    final w = widget;
     final canPickClub =
-        visibility == LoopVisibility.club && (clubs?.length ?? 0) > 1;
-
+        w.visibility == LoopVisibility.club && (w.clubs?.length ?? 0) > 1;
 
     return Container(
       decoration: const BoxDecoration(
@@ -116,109 +123,157 @@ class CreateLoopSheet extends StatelessWidget {
                 PasyarSpacing.sheet,
                 12,
                 PasyarSpacing.sheet,
-                _bottomPadding + bottomInset,
+                _bottomPadding + w.bottomInset,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 14,
                 children: [
                   const DragHandle(),
-                  PasyarTextField(
-                    label: 'Loop name',
-                    controller: name,
-                    hint: 'Name your loop',
-                    height: 48,
-                    maxLength: 80,
-                    textStyle: PasyarTextStyles.choiceTitle.copyWith(
-                      fontSize: 22,
-                      height: 1.2,
+                  _TotalsBar(
+                    line: loopTotalsLine(
+                      w.totals,
+                      points: w.pointCount,
+                      failed: w.routeFailed,
                     ),
-                    enabled: !moving,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.done,
+                    detail: w.pointCount == 0
+                        ? 'Tap the map to add your first point'
+                        : pointsLabel(w.pointCount),
+                    showDone: w.collapsed,
+                    onDone: w.onDone,
                   ),
-                  PasyarTextField(
-                    label: 'Caption',
-                    controller: caption,
-                    hint: 'Describe your loop',
-                    maxLines: 3,
-                    maxLength: 500,
-                    enabled: !moving,
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  Row(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        _stats,
-                        style: PasyarTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
-                      ),
-                      Text('·', style: muted),
-                      Flexible(
-                        child: Text(
-                          pointsLabel(pointCount),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: muted,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 8,
-                    children: [
-                      Text('Who can see it', style: PasyarTextStyles.fieldLabel),
-                      SegmentedChoice<LoopVisibility>(
-                        semanticLabel: 'Visibility',
-                        options: _visibilityLabels,
-                        selected: visibility,
-                        onChanged: onVisibility,
-                      ),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: canPickClub ? onPickClub : null,
-                        child: Text.rich(
-                          TextSpan(
-                            text: _visibilityHelp,
-                            children: [
-                              if (canPickClub)
-                                TextSpan(
-                                  text: '  Change',
-                                  style: PasyarTextStyles.fieldLabel.copyWith(
-                                    color: PasyarColors.accentDark,
+                  // Hidden (and inert) while the sheet is lowered, so
+                  // nothing peeks out under the totals bar.
+                  Expanded(
+                    child: IgnorePointer(
+                      ignoring: w.collapsed,
+                      child: AnimatedOpacity(
+                        opacity: w.collapsed ? 0 : 1,
+                        duration: const Duration(milliseconds: 150),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: 14,
+                          children: [
+                            PasyarTextField(
+                              label: 'Loop name',
+                              controller: w.name,
+                              hint: 'Name your loop',
+                              height: 48,
+                              maxLength: 80,
+                              textStyle: PasyarTextStyles.choiceTitle.copyWith(
+                                fontSize: 22,
+                                height: 1.2,
+                              ),
+                              enabled: !w.moving,
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.done,
+                            ),
+                            if (_captionOpen)
+                              PasyarTextField(
+                                label: 'Caption',
+                                controller: w.caption,
+                                hint: 'Describe your loop',
+                                maxLines: 3,
+                                maxLength: 500,
+                                enabled: !w.moving,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                              )
+                            else
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: TextButton.icon(
+                                  onPressed: w.moving
+                                      ? null
+                                      : () =>
+                                            setState(() => _captionOpen = true),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(
+                                      0,
+                                      PasyarSpacing.minTouch,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    foregroundColor: PasyarColors.accentDark,
+                                  ),
+                                  icon: const Icon(LucideIcons.plus, size: 18),
+                                  label: Text(
+                                    'Add a caption',
+                                    style: PasyarTextStyles.bodyStrong.copyWith(
+                                      color: PasyarColors.accentDark,
+                                    ),
                                   ),
                                 ),
-                            ],
-                          ),
-                          style: PasyarTextStyles.label,
+                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: 8,
+                              children: [
+                                Text(
+                                  'Who can see it',
+                                  style: PasyarTextStyles.fieldLabel,
+                                ),
+                                SegmentedChoice<LoopVisibility>(
+                                  semanticLabel: 'Visibility',
+                                  options: _visibilityLabels,
+                                  selected: w.visibility,
+                                  onChanged: w.onVisibility,
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _visibilityHelp,
+                                        style: PasyarTextStyles.label,
+                                      ),
+                                    ),
+                                    if (canPickClub)
+                                      TextButton(
+                                        onPressed: w.onPickClub,
+                                        style: TextButton.styleFrom(
+                                          minimumSize: const Size(
+                                            PasyarSpacing.minTouch,
+                                            PasyarSpacing.minTouch,
+                                          ),
+                                          foregroundColor:
+                                              PasyarColors.accentDark,
+                                        ),
+                                        child: Text(
+                                          'Change',
+                                          style: PasyarTextStyles.fieldLabel
+                                              .copyWith(
+                                                color: PasyarColors.accentDark,
+                                              ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Row(
+                              spacing: PasyarSpacing.buttonGap,
+                              children: [
+                                SizedBox(
+                                  width: 120,
+                                  child: SecondaryButton(
+                                    label: 'SAVE',
+                                    onPressed: w.onSave,
+                                    loading: w.saving,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: PrimaryButton(
+                                    label: 'SHARE LINK',
+                                    icon: LucideIcons.link,
+                                    onPressed: w.onShare,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Row(
-                    spacing: PasyarSpacing.buttonGap,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: SecondaryButton(
-                          label: 'SAVE',
-                          onPressed: onSave,
-                          loading: saving,
-                        ),
-                      ),
-                      Expanded(
-                        child: PrimaryButton(
-                          label: 'SHARE LINK',
-                          icon: LucideIcons.link,
-                          onPressed: onShare,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -230,7 +285,64 @@ class CreateLoopSheet extends StatelessWidget {
   }
 }
 
-/// Picks one of the rider's clubs for a Group loop.
+/// The peek bar: "96 KM · 3 H 10" at stat size over "3 points · closes back
+/// to start", and DONE while the sheet is lowered.
+class _TotalsBar extends StatelessWidget {
+  const _TotalsBar({
+    required this.line,
+    required this.detail,
+    required this.showDone,
+    required this.onDone,
+  });
+
+  final String line;
+  final String detail;
+  final bool showDone;
+  final VoidCallback? onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Row(
+        spacing: 12,
+        children: [
+          Expanded(
+            child: Semantics(
+              liveRegion: true,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    line,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PasyarTextStyles.statValue.copyWith(height: 1),
+                  ),
+                  Text(
+                    detail,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PasyarTextStyles.label.copyWith(height: 1.2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (showDone)
+            SizedBox(
+              width: 120,
+              child: PrimaryButton(label: 'DONE', onPressed: onDone),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Picks one of the rider's clubs for a club loop.
 Future<String?> showClubPicker(
   BuildContext context, {
   required List<Club> clubs,

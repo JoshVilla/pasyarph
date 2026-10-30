@@ -7,13 +7,15 @@ const sheetPeekHeight = 112.0;
 /// Lets a bottom sheet over a map be dragged down to a peek (to see the
 /// map) and back up; a tap on its top edge toggles it. [builder] lays out
 /// the map and sheet for a collapse fraction (0 = open, 1 = collapsed) and
-/// wraps the sheet with `wrapSheet`, which adds the gestures.
+/// wraps the sheet with `wrapSheet`, which adds the gestures. Give it a
+/// `GlobalKey<CollapsibleSheetState>` to open or close it from a button.
 class CollapsibleSheet extends StatefulWidget {
   const CollapsibleSheet({
     super.key,
     required this.builder,
     this.enabled = true,
     this.peek = sheetPeekHeight,
+    this.startCollapsed = false,
   });
 
   final Widget Function(
@@ -28,21 +30,35 @@ class CollapsibleSheet extends StatefulWidget {
 
   final double peek;
 
+  /// Opens lowered to the peek (the map first).
+  final bool startCollapsed;
+
   @override
-  State<CollapsibleSheet> createState() => _CollapsibleSheetState();
+  State<CollapsibleSheet> createState() => CollapsibleSheetState();
 }
 
-class _CollapsibleSheetState extends State<CollapsibleSheet>
+class CollapsibleSheetState extends State<CollapsibleSheet>
     with SingleTickerProviderStateMixin {
   late final _collapse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 220),
+    value: widget.startCollapsed ? 1 : 0,
   )..addListener(() => setState(() {}));
+
+  bool get isCollapsed => _collapse.value > 0.5;
+
+  /// Raises the sheet all the way.
+  void open() => _collapse.animateTo(0, curve: Curves.easeOut);
+
+  /// Lowers the sheet to its peek.
+  void close() {
+    if (widget.enabled) _collapse.animateTo(1, curve: Curves.easeOut);
+  }
   final _sheetKey = GlobalKey();
 
   @override
-  void didUpdateWidget(CollapsibleSheet old) {
-    super.didUpdateWidget(old);
+  void didUpdateWidget(CollapsibleSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (!widget.enabled && _collapse.value > 0) _collapse.animateTo(0);
   }
 

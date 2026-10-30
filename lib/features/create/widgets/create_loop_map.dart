@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/map/map_markers.dart';
 import '../../../core/map/route_arrows.dart';
@@ -12,9 +14,11 @@ import '../loop_builder.dart';
 /// Where the map looks before the first location fix: the Philippines.
 const _philippines = LatLng(12.88, 121.77);
 
-/// The Create map: tap to add a point; tap a point to make it the main
-/// stop, hold it to remove it, drag it to move it. Draws routed legs as the
-/// route line and the closing leg (and legs still routing) dashed.
+/// The Create map: tap to add a point; tap a point to select it, which
+/// floats MAIN STOP · REMOVE above it ([onSelect]); hold a point to remove
+/// it at once; drag it to move it. While a point is selected, a tap on the
+/// map only closes its actions. Draws routed legs as the route line and the
+/// closing leg (and legs still routing) dashed.
 class CreateLoopMap extends StatefulWidget {
   const CreateLoopMap({
     super.key,
@@ -27,7 +31,10 @@ class CreateLoopMap extends StatefulWidget {
     required this.onRemove,
     required this.onDrag,
     required this.onDragEnd,
+    required this.onSelect,
+    this.selected,
     this.attributionBottom = 0,
+    this.topInset = 0,
   });
 
   final LatLng? start;
@@ -41,7 +48,15 @@ class CreateLoopMap extends StatefulWidget {
   final ValueChanged<int> onRemove;
   final void Function(int index, LatLng to) onDrag;
   final VoidCallback onDragEnd;
+
+  /// The tapped point (index into [points]) showing its actions, or null.
+  final int? selected;
+  final ValueChanged<int?> onSelect;
   final double attributionBottom;
+
+  /// Height of the controls floating on top; a point's actions open below
+  /// it rather than under them.
+  final double topInset;
 
   @override
   State<CreateLoopMap> createState() => _CreateLoopMapState();
@@ -74,7 +89,8 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
     const base = InteractionOptions(
       flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
     );
-    void onTap(TapPosition _, LatLng at) => widget.onAdd(at);
+    void onTap(TapPosition _, LatLng at) =>
+        widget.selected != null ? widget.onSelect(null) : widget.onAdd(at);
     void onReady() => _ready = true;
     if (stops.length > 1) {
       return MapOptions(
@@ -116,6 +132,7 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
   Widget build(BuildContext context) {
     final start = widget.start;
     final shape = widget.shape;
+    final selected = widget.selected;
     return FlutterMap(
       key: _key,
       mapController: _controller,
@@ -140,7 +157,11 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
                 child: _PointHandle(
                   number: i + 1,
                   isMainStop: i == widget.mainStop,
-                  onTap: () => widget.onMainStop(i),
+                  selected: i == selected,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.onSelect(i == selected ? null : i);
+                  },
                   onLongPress: () => widget.onRemove(i),
                   onDrag: (global) => _drag(i, global),
                   onDragEnd: widget.onDragEnd,
@@ -149,7 +170,100 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
             if (start != null) PasyarMarkers.loopStart(start),
           ],
         ),
+        if (selected != null && selected < widget.points.length)
+          _PointActionsLayer(
+            point: widget.points[selected],
+            topInset: widget.topInset,
+            actions: PointActions(
+              number: selected + 1,
+              isMainStop: selected == widget.mainStop,
+              onMainStop: () {
+                widget.onMainStop(selected);
+                widget.onSelect(null);
+              },
+              onRemove: () {
+                widget.onRemove(selected);
+                widget.onSelect(null);
+              },
+            ),
+          ),
         MapAttributionLayer(bottom: widget.attributionBottom),
+      ],
+    );
+  }
+}
+
+/// The main stop flag keeping its place in the order: a small number badge
+/// on its corner, so the points still read 1, 2, 3, 4.
+class _NumberedFlag extends StatelessWidget {
+  const _NumberedFlag({required this.number});
+
+  final int number;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        const MainStopMarker(radius: 15),
+        Positioned(
+          right: -6,
+          top: -6,
+          child: Container(
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: PasyarColors.accent,
+              shape: BoxShape.circle,
+              border: Border.all(color: PasyarColors.card, width: 2),
+            ),
+            child: Text(
+              '$number',
+              style: PasyarTextStyles.label.copyWith(
+                fontSize: 10,
+                height: 1,
+                fontWeight: FontWeight.w700,
+                color: PasyarColors.card,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Floats [actions] above [point], or below it when the controls on top of
+/// the map would cover them. Rebuilds as the map moves.
+class _PointActionsLayer extends StatelessWidget {
+  const _PointActionsLayer({
+    required this.point,
+    required this.topInset,
+    required this.actions,
+  });
+
+  final LatLng point;
+  final double topInset;
+  final Widget actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final y = MapCamera.of(context).latLngToScreenOffset(point).dy;
+    final above = y - PointActions.height - PointActions.lift > topInset;
+    return MarkerLayer(
+      markers: [
+        Marker(
+          point: point,
+          width: PointActions.width,
+          height: PointActions.height + PointActions.lift,
+          alignment: above ? Alignment.topCenter : Alignment.bottomCenter,
+          child: Align(
+            alignment: above ? Alignment.topCenter : Alignment.bottomCenter,
+            // Large system text shrinks the card rather than clip it.
+            child: FittedBox(fit: BoxFit.scaleDown, child: actions),
+          ),
+        ),
       ],
     );
   }
@@ -160,6 +274,7 @@ class _PointHandle extends StatelessWidget {
   const _PointHandle({
     required this.number,
     required this.isMainStop,
+    required this.selected,
     required this.onTap,
     required this.onLongPress,
     required this.onDrag,
@@ -170,6 +285,7 @@ class _PointHandle extends StatelessWidget {
 
   final int number;
   final bool isMainStop;
+  final bool selected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final ValueChanged<Offset> onDrag;
@@ -180,7 +296,8 @@ class _PointHandle extends StatelessWidget {
     return Semantics(
       button: true,
       label: isMainStop ? 'Point $number, main stop' : 'Point $number',
-      hint: 'Tap for the main stop, hold to remove',
+      hint: 'Tap for main stop or remove, hold to remove',
+      selected: selected,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -189,9 +306,128 @@ class _PointHandle extends StatelessWidget {
         onPanUpdate: (d) => onDrag(d.globalPosition),
         onPanEnd: (_) => onDragEnd(),
         child: Center(
-          child: isMainStop
-              ? const MainStopMarker(radius: 15)
-              : LoopPointMarker(label: '$number'),
+          child: DecoratedBox(
+            // A soft ring marks the point whose actions are open.
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: selected
+                  ? const [
+                      BoxShadow(
+                        color: PasyarColors.accentTint,
+                        spreadRadius: 6,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: isMainStop
+                ? _NumberedFlag(number: number)
+                : LoopPointMarker(label: '$number'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The card that floats above a tapped point: MAIN STOP · REMOVE, each a
+/// glove-sized button.
+class PointActions extends StatelessWidget {
+  const PointActions({
+    super.key,
+    required this.number,
+    required this.isMainStop,
+    required this.onMainStop,
+    required this.onRemove,
+  });
+
+  static const width = 248.0;
+  static const height = 60.0;
+
+  /// Room between the card and the point it belongs to.
+  static const lift = 34.0;
+
+  final int number;
+  final bool isMainStop;
+  final VoidCallback onMainStop;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'Point $number actions',
+      child: Container(
+        height: height,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: PasyarColors.card,
+          borderRadius: BorderRadius.circular(PasyarRadius.panel),
+          boxShadow: PasyarShadows.floating,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            // Each action fills the card's 48 px inner height (gloves).
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 6,
+            children: [
+              _PointAction(
+                icon: isMainStop ? LucideIcons.circleCheck : LucideIcons.flag,
+                label: 'MAIN STOP',
+                filled: true,
+                onTap: isMainStop ? null : onMainStop,
+              ),
+              _PointAction(
+                icon: LucideIcons.trash2,
+                label: 'REMOVE',
+                onTap: onRemove,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PointAction extends StatelessWidget {
+  const _PointAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = filled ? PasyarColors.accentDark : PasyarColors.ink;
+    return Material(
+      color: filled ? PasyarColors.accentTint : PasyarColors.ground,
+      borderRadius: BorderRadius.circular(PasyarRadius.input),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            spacing: 6,
+            children: [
+              Icon(icon, size: 18, color: color),
+              Text(
+                label,
+                style: PasyarTextStyles.buttonSecondary.copyWith(
+                  fontSize: 16,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

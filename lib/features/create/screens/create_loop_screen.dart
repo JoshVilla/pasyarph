@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/links.dart';
 import '../../../core/location/location_provider.dart';
+import '../../../core/map/map_legend.dart';
 import '../../../core/router.dart';
 import '../../../core/share.dart';
 import '../../../core/theme/pasyar_theme.dart';
@@ -17,9 +19,12 @@ import '../providers/create_loop_controller.dart';
 import '../widgets/create_loop_map.dart';
 import '../widgets/create_loop_sheet.dart';
 
-/// Create a loop (design/mockups/06-create-loop.html): tap points on the
-/// map, routed S → 1 → … → S, then name, visibility, SAVE and SHARE LINK.
-/// Expects a [CreateLoopController] above it.
+/// Create a loop: build on the map, publish from the sheet. The sheet starts
+/// lowered to a peek bar (live totals and DONE) so the map owns the screen
+/// while points are tapped in, routed S → 1 → … → S; a tapped point floats
+/// MAIN STOP · REMOVE above it. DONE raises the sheet: name, caption, who
+/// can see it, SAVE and SHARE LINK. Expects a [CreateLoopController] above
+/// it.
 class CreateLoopScreen extends StatefulWidget {
   const CreateLoopScreen({super.key});
 
@@ -32,6 +37,15 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
   late final LocationProvider _location = context.read<LocationProvider>();
   late final _name = TextEditingController(text: _loop.name);
   late final _caption = TextEditingController(text: _loop.caption);
+  final _sheet = GlobalKey<CollapsibleSheetState>();
+
+  /// The tapped point whose actions are showing.
+  int? _selected;
+
+  /// The map key starts open; a tap folds it to a chip.
+  bool _legendOpen = true;
+
+  void _select(int? index) => setState(() => _selected = index);
 
   @override
   void initState() {
@@ -152,6 +166,11 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
       media.size.height - keyboard - top - 48 - PasyarSpacing.floatingTop,
     );
     final mapHeight = media.size.height - sheetHeight + PasyarRadius.sheet;
+    final peek = createSheetPeek + bottomInset;
+    // A point removed elsewhere (undo) takes its actions with it.
+    final selected = _selected != null && _selected! < loop.points.length
+        ? _selected
+        : null;
 
     final status = location.status;
     final locationOff =
@@ -168,9 +187,13 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
         resizeToAvoidBottomInset: false,
         // Drag the sheet down to see more of the map (not while typing).
         body: CollapsibleSheet(
+          key: _sheet,
           enabled: keyboard == 0,
+          peek: peek,
+          // A new loop starts on the map; one being edited shows its form.
+          startCollapsed: loop.points.isEmpty,
           builder: (context, collapsed, wrapSheet) {
-            final down = collapsed * (sheetHeight - sheetPeekHeight);
+            final down = collapsed * (sheetHeight - peek);
             return Stack(
               children: [
                 Positioned(
@@ -186,6 +209,10 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                     onAdd: loop.addPoint,
                     onMainStop: loop.setMainStop,
                     onRemove: loop.removePoint,
+                    selected: selected,
+                    onSelect: _select,
+                    // Back, the hint and undo (and a location notice).
+                    topInset: top + 48 + (locationOff ? 140 : 0) + 8,
                     onDrag: loop.dragPoint,
                     onDragEnd: loop.endDrag,
                     attributionBottom: PasyarRadius.sheet,
@@ -210,14 +237,25 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: _HintPill(
-                                text: loop.start == null
-                                    ? 'Finding your location…'
-                                    : error != null
-                                    ? '${error.message} Tap to retry.'
-                                    : hintFor(loop.points.length),
-                                onTap: error == null ? null : loop.retryRoute,
-                              ),
+                              // The hint is about the map: gone while the
+                              // form is up.
+                              child: collapsed < 0.5 && error == null
+                                  ? const SizedBox.shrink()
+                                  : _HintPill(
+                                      text: loop.start == null
+                                          ? 'Finding your location…'
+                                          : error != null
+                                          ? '${error.message} Tap to retry.'
+                                          : hintFor(
+                                              loop.points.length,
+                                              selected: selected == null
+                                                  ? null
+                                                  : selected + 1,
+                                            ),
+                                      onTap: error == null
+                                          ? null
+                                          : loop.retryRoute,
+                                    ),
                             ),
                           ),
                           if (loop.points.isNotEmpty)
@@ -236,6 +274,25 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                     ],
                   ),
                 ),
+                // The map key, bottom left above the sheet (and clear of the
+                // attribution), while building on the map.
+                if (collapsed > 0.5 && keyboard == 0)
+                  Positioned(
+                    left: PasyarSpacing.screen,
+                    bottom: sheetHeight - down + 40,
+                    child: MapLegend(
+                      items: const [
+                        MapKeyItem.startS,
+                        MapKeyItem.points,
+                        MapKeyItem.mainStop,
+                        MapKeyItem.direction,
+                        MapKeyItem.backToStart,
+                      ],
+                      open: _legendOpen,
+                      onToggle: () =>
+                          setState(() => _legendOpen = !_legendOpen),
+                    ),
+                  ),
                 AnimatedPositioned(
                   // Follows the keyboard smoothly; follows a drag at once.
                   duration: collapsed > 0
@@ -260,6 +317,14 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                       onVisibility: loop.setVisibility,
                       onPickClub: _pickClub,
                       saving: loop.saving,
+                      collapsed: collapsed > 0.5,
+                      onDone: loop.points.isEmpty
+                          ? null
+                          : () {
+                              HapticFeedback.selectionClick();
+                              _select(null);
+                              _sheet.currentState?.open();
+                            },
                       bottomInset: keyboard > 0 ? 0 : bottomInset,
                       onSave: loop.canSave && loop.dirty && !moving
                           ? _save

@@ -135,7 +135,9 @@ void main() {
     expect(pointsLabel(1), '1 point · closes back to start');
     expect(pointsLabel(3), '3 points · closes back to start');
     expect(hintFor(0), 'Tap the map to add a point');
-    expect(hintFor(3), 'Tap the map to add a point');
+    expect(hintFor(1), 'Tap the map to add another point');
+    expect(hintFor(3), 'Tap a point to change the main stop');
     expect(hintFor(maxLoopPoints), '15 points is the limit');
+    expect(hintFor(3, selected: 2), 'Point 2: main stop or remove?');
   });
 }

@@ -124,15 +124,28 @@ void main() {
     tester,
   ) async {
     await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
-    expect(find.text('Tap the map to add a point'), findsOneWidget);
-    expect(find.text('96 km · 3 h 10'), findsOneWidget);
+    // The form is up for a loop in progress: the map hint is hidden.
+    expect(find.text('Tap a point to change the main stop'), findsNothing);
+    expect(find.text('96 KM · 3 H 10'), findsOneWidget);
     expect(find.text('3 points · closes back to start'), findsOneWidget);
     expect(
       find.text('Only members of [Club name] will see this loop.'),
       findsOneWidget,
     );
-    expect(find.byType(LoopPointMarker), findsNWidgets(3)); // S, 1, 2
-    expect(find.byType(MainStopMarker), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(CreateLoopMap),
+        matching: find.byType(LoopPointMarker),
+      ),
+      findsNWidgets(3),
+    ); // S, 1, 2
+    expect(
+      find.descendant(
+        of: find.byType(CreateLoopMap),
+        matching: find.byType(MainStopMarker),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('starts at the rider, tapping the map adds points', (
@@ -140,7 +153,9 @@ void main() {
   ) async {
     final loop = await pump(tester);
     expect(loop.start, DemoRoutes.start);
-    expect(find.text('0 km · 0 min'), findsOneWidget);
+    expect(find.text('NO POINTS YET'), findsOneWidget);
+    // A new loop starts on the map: the sheet is lowered to its peek.
+    expect(find.text('DONE'), findsOneWidget);
     expect(find.bySemanticsLabel('Undo last point'), findsNothing);
 
     await tester.tapAt(const Offset(100, 200));
@@ -149,24 +164,69 @@ void main() {
     await tester.pumpAndSettle();
     expect(loop.points, hasLength(1));
     expect(find.text('1 point · closes back to start'), findsOneWidget);
-    expect(find.text('Tap a point for the main stop'), findsOneWidget);
+    expect(find.text('Tap the map to add another point'), findsOneWidget);
 
     await tester.tap(find.bySemanticsLabel('Undo last point'));
     await tester.pumpAndSettle();
     expect(loop.points, isEmpty);
   });
 
-  testWidgets('hold a point to remove it, tap one for the main stop', (
+  testWidgets('tap a point for MAIN STOP or REMOVE; hold to remove', (
     tester,
   ) async {
     final loop = await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
     await tester.tap(find.bySemanticsLabel('Point 1'));
     await tester.pumpAndSettle();
+    expect(find.text('REMOVE'), findsOneWidget);
+    await tester.tap(find.text('MAIN STOP'));
+    await tester.pumpAndSettle();
     expect(loop.mainStopIndex, 0);
+    expect(find.text('MAIN STOP'), findsNothing); // the actions close
 
-    await tester.longPress(find.bySemanticsLabel('Point 2'));
+    await tester.tap(find.bySemanticsLabel('Point 2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('REMOVE'));
     await tester.pumpAndSettle();
     expect(loop.points, [DemoRoutes.point1, DemoRoutes.mainStop]);
+
+    await tester.longPress(find.bySemanticsLabel(RegExp('^Point 1')));
+    await tester.pumpAndSettle();
+    expect(loop.points, [DemoRoutes.mainStop]);
+  });
+
+  testWidgets('with a point selected, a map tap only closes its actions', (
+    tester,
+  ) async {
+    final loop = await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
+    await tester.tap(find.bySemanticsLabel('Point 1'));
+    // Past the map's double-tap wait: the actions stay open.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.text('REMOVE'), findsOneWidget);
+    expect(loop.points, hasLength(3));
+
+    await tester.tapAt(const Offset(40, 330));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.text('REMOVE'), findsNothing);
+    expect(loop.points, hasLength(3));
+  });
+
+  testWidgets('a new loop starts on the map; DONE raises the form', (
+    tester,
+  ) async {
+    final loop = await pump(tester);
+    // Only the totals bar shows above the bottom edge.
+    expect(tester.getTopLeft(find.text('NO POINTS YET')).dy, greaterThan(700));
+    expect(find.text('SAVE').hitTestable(), findsNothing);
+    loop.addPoint(DemoRoutes.point1);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('DONE'));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('SAVE')).dy, lessThan(844));
+    expect(find.text('DONE'), findsNothing);
+    expect(find.text('Add a caption'), findsOneWidget);
+    expect(find.text('Club'), findsOneWidget);
   });
 
   testWidgets('SAVE stores the loop; SHARE LINK shares its link', (
@@ -183,6 +243,8 @@ void main() {
     loop
       ..addPoint(DemoRoutes.point1)
       ..addPoint(DemoRoutes.point2);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('DONE'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -214,14 +276,17 @@ void main() {
     expect(loops.calls, ['create:loop-1']);
   });
 
-  testWidgets('drag the sheet down to see the map; back up on a tap', (
+  testWidgets('drag the sheet down to see the map; DONE brings it back', (
     tester,
   ) async {
     await pump(tester, loop: _mockupLoop(FakeRouteRepository()));
     final saveOpen = tester.getTopLeft(find.text('SAVE')).dy;
     final mapOpen = tester.getSize(find.byType(CreateLoopMap)).height;
 
-    await tester.drag(find.text('Who can see it'), const Offset(0, 400));
+    await tester.drag(
+      find.bySemanticsLabel('Hide details to see the map'),
+      const Offset(0, 400),
+    );
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.text('SAVE')).dy, greaterThan(844));
     expect(
@@ -229,7 +294,8 @@ void main() {
       greaterThan(mapOpen + 300),
     );
 
-    await tester.tap(find.bySemanticsLabel('Show details'));
+    // Lowered: the peek bar offers DONE, which raises the sheet again.
+    await tester.tap(find.text('DONE'));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.text('SAVE')).dy, saveOpen);
   });

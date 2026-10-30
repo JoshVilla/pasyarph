@@ -8,7 +8,8 @@ import '../theme/pasyar_colors.dart';
 /// - [ridden]: the part already ridden, 6 px `riddenRoute`, no casing.
 /// - [route]: 6 px `accent` with round joins on an 11 px white casing.
 /// - [closing]: unconfirmed segment back to start, 4 px dashed `accent`
-///   (8 on, 7 off).
+///   (8 on, 7 off) on a 7 px white casing, so it still reads as dashed where
+///   it runs along the route.
 ///
 /// Use with `PolylineLayer(polylines: routePolylines(...))`.
 List<Polyline> routePolylines({
@@ -33,6 +34,14 @@ List<Polyline> routePolylines({
         // flutter_map paints the casing at strokeWidth + borderStrokeWidth.
         borderStrokeWidth: 5,
         borderColor: PasyarColors.card,
+        strokeJoin: StrokeJoin.round,
+      ),
+    if (closing.length > 1)
+      Polyline(
+        points: closing,
+        color: PasyarColors.card,
+        strokeWidth: 7,
+        strokeCap: StrokeCap.round,
         strokeJoin: StrokeJoin.round,
       ),
     if (closing.length > 1)
