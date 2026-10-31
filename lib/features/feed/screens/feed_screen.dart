@@ -106,12 +106,6 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  void _soon(String what) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$what is coming soon.')));
-  }
-
   @override
   Widget build(BuildContext context) {
     final feed = context.watch<FeedProvider>();
@@ -130,8 +124,6 @@ class _FeedScreenState extends State<FeedScreen> {
       onFilter: feed.setFilter,
       onWrite: _write,
       onAddPhotos: () => postARide(context, clock: widget.clock),
-      onSearch: () => _soon('Search'),
-      onNotifications: () => _soon('Notifications'),
     );
 
     final body = _body(feed, now, actions, repo);

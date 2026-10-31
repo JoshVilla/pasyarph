@@ -15,8 +15,8 @@ class FeedHeader extends StatelessWidget {
     required this.onFilter,
     required this.onWrite,
     required this.onAddPhotos,
-    required this.onSearch,
-    required this.onNotifications,
+    this.onSearch,
+    this.onNotifications,
     this.myAvatar,
     this.unreadNotifications = false,
   });
@@ -27,8 +27,12 @@ class FeedHeader extends StatelessWidget {
   final ValueChanged<FeedFilter> onFilter;
   final VoidCallback onWrite;
   final VoidCallback onAddPhotos;
-  final VoidCallback onSearch;
-  final VoidCallback onNotifications;
+
+  /// Null hides the button (not built yet).
+  final VoidCallback? onSearch;
+
+  /// Null hides the button (not built yet).
+  final VoidCallback? onNotifications;
   final bool unreadNotifications;
 
   @override
@@ -47,55 +51,30 @@ class FeedHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 12,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'FEED',
-                    style: PasyarTextStyles.screenTitle(
-                      32,
-                    ).copyWith(letterSpacing: 0.5),
-                  ),
-                ),
-                RoundIconButton.ground(
-                  icon: LucideIcons.search,
-                  iconSize: 20,
-                  semanticLabel: 'Search',
-                  onPressed: onSearch,
-                ),
-                const SizedBox(width: 8),
-                Stack(
-                  children: [
-                    RoundIconButton.ground(
-                      icon: LucideIcons.bell,
-                      iconSize: 20,
-                      semanticLabel: unreadNotifications
-                          ? 'Notifications, new'
-                          : 'Notifications',
-                      onPressed: onNotifications,
+            // 44 px tall with or without the buttons, so nothing below moves.
+            SizedBox(
+              height: PasyarSpacing.minTouch,
+              child: Row(
+                spacing: 8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'FEED',
+                      style: PasyarTextStyles.screenTitle(
+                        32,
+                      ).copyWith(letterSpacing: 0.5),
                     ),
-                    if (unreadNotifications)
-                      Positioned(
-                        top: 9,
-                        right: 10,
-                        child: IgnorePointer(
-                          child: Container(
-                            width: 13,
-                            height: 13,
-                            decoration: BoxDecoration(
-                              color: PasyarColors.accent,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: PasyarColors.ground,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+                  ),
+                  if (onSearch case final search?)
+                    RoundIconButton.ground(
+                      icon: LucideIcons.search,
+                      iconSize: 20,
+                      semanticLabel: 'Search',
+                      onPressed: search,
+                    ),
+                  if (onNotifications != null) _bell(),
+                ],
+              ),
             ),
             Row(
               spacing: 10,
@@ -186,4 +165,34 @@ class FeedHeader extends StatelessWidget {
       ),
     );
   }
+
+  /// Notifications, with a dot when there's something new.
+  Widget _bell() => Stack(
+    children: [
+      RoundIconButton.ground(
+        icon: LucideIcons.bell,
+        iconSize: 20,
+        semanticLabel: unreadNotifications
+            ? 'Notifications, new'
+            : 'Notifications',
+        onPressed: onNotifications,
+      ),
+      if (unreadNotifications)
+        Positioned(
+          top: 9,
+          right: 10,
+          child: IgnorePointer(
+            child: Container(
+              width: 13,
+              height: 13,
+              decoration: BoxDecoration(
+                color: PasyarColors.accent,
+                shape: BoxShape.circle,
+                border: Border.all(color: PasyarColors.ground, width: 2),
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
 }
