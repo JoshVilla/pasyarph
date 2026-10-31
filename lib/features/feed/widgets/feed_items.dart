@@ -31,16 +31,31 @@ PostCardActions feedCardActions(
   }
 
   final repo = context.read<FeedRepository>();
-  void share(FeedPost post) => context.read<Sharer>().share(
-    shareMessage(
-      loopName: post.loop.name,
-      distanceM: post.loop.distanceM,
-      link: post.isLoopOnly
-          ? AppLinks.loop(post.loop.id)
-          : AppLinks.post(post.id),
-    ),
-    subject: post.loop.name,
-  );
+  void share(FeedPost post) {
+    final loop = post.loop;
+    final sharer = context.read<Sharer>();
+    if (loop == null) {
+      final author = post.author.displayName ?? 'A rider';
+      sharer.share(
+        textShareMessage(
+          author: author,
+          text: post.caption ?? '',
+          link: AppLinks.post(post.id),
+        ),
+        subject: '$author on Pasyar',
+      );
+      return;
+    }
+    sharer.share(
+      shareMessage(
+        loopName: loop.name,
+        distanceM: loop.distanceM,
+        link: post.isLoopOnly ? AppLinks.loop(loop.id) : AppLinks.post(post.id),
+      ),
+      subject: loop.name,
+    );
+  }
+
   return PostCardActions(
     onLike: (post) async {
       final error = await feed.toggleLike(post.id);
@@ -56,8 +71,9 @@ PostCardActions feedCardActions(
       c.dispose();
     },
     onShare: share,
+    // Text posts have no RIDE IT.
     onRide: (post) =>
-        rideThisLoop(context, loopId: post.loop.id, name: post.loop.name),
+        rideThisLoop(context, loopId: post.loop!.id, name: post.loop!.name),
     onMore: (post) => showPostMore(
       context,
       post,

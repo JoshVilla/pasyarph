@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/location/location_provider.dart';
 import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../data/models/enums.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../post_a_ride.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/feed_header.dart';
 import '../widgets/feed_items.dart';
@@ -56,6 +59,34 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  /// "Write a post…", then the filter where the post shows: Global, or
+  /// My clubs. Text posts never show in "Near you".
+  Future<void> _write() async {
+    final feed = context.read<FeedProvider>();
+    final posted = await context.push<LoopVisibility>(Routes.writePost);
+    if (posted == null || !mounted) return;
+    final (filter, note) = switch (posted) {
+      LoopVisibility.public => (
+        FeedFilter.global,
+        "Posted. It's under Global.",
+      ),
+      LoopVisibility.club => (FeedFilter.myClubs, 'Posted to your club.'),
+      LoopVisibility.private => (
+        null,
+        'Posted. Only you can see it, on your profile.',
+      ),
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(note)));
+    if (filter == null) return;
+    if (feed.filter == filter) {
+      await feed.refresh();
+    } else {
+      feed.setFilter(filter);
+    }
+  }
+
   void _soon(String what) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -78,27 +109,40 @@ class _FeedScreenState extends State<FeedScreen> {
       myAvatar: myAvatar == null ? null : repo.avatar(myAvatar),
       filter: feed.filter,
       onFilter: feed.setFilter,
-      onShare: () => context.push(Routes.create),
-      onAddPhotos: () => context.go(Routes.me),
+      onWrite: _write,
+      onAddPhotos: () => postARide(context, clock: widget.clock),
       onSearch: () => _soon('Search'),
       onNotifications: () => _soon('Notifications'),
     );
 
     final body = _body(feed, now, actions, repo);
+    final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
       backgroundColor: PasyarColors.line,
-      body: RefreshIndicator(
-        color: PasyarColors.accent,
-        edgeOffset: MediaQuery.paddingOf(context).top,
-        onRefresh: feed.refresh,
-        child: ListView.separated(
-          controller: _scroll,
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          itemCount: body.length + 1,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, i) => i == 0 ? header : body[i - 1],
-        ),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            color: PasyarColors.accent,
+            edgeOffset: top,
+            onRefresh: feed.refresh,
+            child: ListView.separated(
+              controller: _scroll,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: body.length + 1,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, i) => i == 0 ? header : body[i - 1],
+            ),
+          ),
+          // Posts scroll under a white status bar, not under the clock.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: top,
+            child: const ColoredBox(color: PasyarColors.card),
+          ),
+        ],
       ),
     );
   }
@@ -120,29 +164,95 @@ class _FeedScreenState extends State<FeedScreen> {
         ),
       ];
     }
-    return feedPostItems(
-      feed,
-      now: now,
-      actions: actions,
-      repo: repo,
-      emptyText: switch (feed.filter) {
-        FeedFilter.nearYou =>
-          'No rides near you yet. Finish a loop and post it to be the first.',
-        FeedFilter.global =>
-          'No rides on Pasyar yet. Finish a loop and post it to be the first.',
-        FeedFilter.following =>
-          "Rides from riders you follow show up here. Tap a rider's name on "
-              'a post to see their profile and follow them.',
-        FeedFilter.myClubs =>
-          'Rides and loops from your clubs show up here. Create or join a '
-              'club from the Me tab.',
-      },
-      emptyAction: feed.filter == FeedFilter.myClubs
-          ? SecondaryButton(
-              label: 'MY CLUBS',
-              onPressed: () => context.go(Routes.me),
-            )
-          : null,
+    final generate = PrimaryButton(
+      label: 'GENERATE A LOOP',
+      icon: LucideIcons.navigation,
+      onPressed: () => context.go(Routes.ride),
+    );
+    return [
+      if (feed.showingGlobalFallback && feed.posts.isNotEmpty)
+        const _NothingNearbyNote(),
+      ...feedPostItems(
+        feed,
+        now: now,
+        actions: actions,
+        repo: repo,
+        // "Near you" only ends up empty when Global is empty too.
+        emptyText: switch (feed.filter) {
+          FeedFilter.nearYou || FeedFilter.global =>
+            'No rides on Pasyar yet. Generate a loop, ride it, and post it '
+                'to be the first.',
+          FeedFilter.following =>
+            "Rides from riders you follow show up here. Tap a rider's name on "
+                'a post to see their profile and follow them.',
+          FeedFilter.myClubs =>
+            'Rides and loops from your clubs show up here. Create or join a '
+                'club from the Me tab.',
+        },
+        emptyAction: switch (feed.filter) {
+          FeedFilter.nearYou || FeedFilter.global => generate,
+          FeedFilter.following => null,
+          FeedFilter.myClubs => SecondaryButton(
+            label: 'MY CLUBS',
+            onPressed: () => context.go(Routes.me),
+          ),
+        },
+      ),
+    ];
+  }
+}
+
+/// Above Global posts shown because "Near you" is empty.
+class _NothingNearbyNote extends StatelessWidget {
+  const _NothingNearbyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: PasyarColors.card,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          PasyarSpacing.screen,
+          14,
+          PasyarSpacing.screen,
+          14,
+        ),
+        child: Row(
+          spacing: 12,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                color: PasyarColors.accentTint,
+                shape: BoxShape.circle,
+              ),
+              child: SizedBox.square(
+                dimension: 40,
+                child: Icon(
+                  LucideIcons.mapPin,
+                  size: 20,
+                  color: PasyarColors.accentDark,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No rides near you yet',
+                    style: PasyarTextStyles.bodyStrong.copyWith(height: 1.3),
+                  ),
+                  Text(
+                    "Here's what riders are posting elsewhere in the "
+                    'Philippines.',
+                    style: PasyarTextStyles.label.copyWith(height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -147,6 +147,16 @@ test("a post page uses its photo as the preview image", async () => {
   assert.match(html, /Sulit!/);
 });
 
+
+test("a text post page shows who wrote it and their words, no map", async () => {
+  fakeSupabase({ status: "ok", kind: "post", author: "Ana", caption: "Open ba ang Daranak?" });
+  const html = await (await linkPage(ctx(`/p/${loopId}`, loopId), "post")).text();
+  assert.match(html, /<h1>Ana on Pasyar<\/h1>/);
+  assert.match(html, /Open ba ang Daranak\?/);
+  assert.match(html, /class="overline">Post/);
+  assert.doesNotMatch(html, /class="map"/);
+  assert.doesNotMatch(html, /og:image/);
+});
 test("private, missing and bad links don't leak anything", async () => {
   fakeSupabase({ status: "private" });
   const res = await linkPage(ctx(`/l/${loopId}`, loopId), "loop");

@@ -6,7 +6,60 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/pasyar_theme.dart';
-import '../../../core/widgets/route_thumbnail.dart';
+import '../../../core/widgets/widgets.dart';
+
+EdgeInsets _sheetPadding(BuildContext context) => EdgeInsets.fromLTRB(
+  20,
+  12,
+  20,
+  math.max(20, MediaQuery.viewPaddingOf(context).bottom + 20),
+);
+
+/// "ADD PHOTOS": true for the camera, false for the gallery, null when
+/// closed.
+Future<bool?> askPhotoSource(BuildContext context) =>
+    showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BottomSheetPanel(
+        padding: _sheetPadding(context),
+        children: [
+          Text('ADD PHOTOS', style: PasyarTextStyles.screenTitle(30)),
+          PrimaryButton(
+            label: 'CHOOSE PHOTOS',
+            icon: LucideIcons.images,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          SecondaryButton(
+            label: 'TAKE A PHOTO',
+            icon: LucideIcons.camera,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+/// "REMOVE THIS PHOTO?": true to remove it.
+Future<bool> confirmRemovePhoto(BuildContext context) async =>
+    await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BottomSheetPanel(
+        padding: _sheetPadding(context),
+        children: [
+          Text('REMOVE THIS PHOTO?', style: PasyarTextStyles.screenTitle(30)),
+          PrimaryButton(
+            label: 'REMOVE',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+          SecondaryButton(
+            label: 'KEEP',
+            onPressed: () => Navigator.pop(context, false),
+          ),
+        ],
+      ),
+    ) ==
+    true;
 
 /// "Rode this loop": the verified badge (mockup 4, top right).
 class RodeBadge extends StatelessWidget {

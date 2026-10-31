@@ -116,7 +116,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('FEED'), findsOneWidget);
-    expect(find.text('Share a ride or a loop…'), findsOneWidget);
+    expect(find.text('Write a post…'), findsOneWidget);
     expect(
       find.text('2 h ago · at [Stop name] Falls · Public'),
       findsOneWidget,
@@ -259,11 +259,73 @@ void main() {
     expect(find.text('MY CLUBS'), findsOneWidget);
   });
 
-  testWidgets('no posts nearby: an invitation to post', (tester) async {
+  testWidgets('a text post: the rider, their words, no loop', (tester) async {
+    final text = feedPost(
+      id: 't1',
+      createdAt: _now.subtract(const Duration(hours: 2)),
+      author: 'Ana Lopez',
+      caption: 'Is the road to Daranak open?',
+      text: true,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home:
+            await tester.runAsync(
+                  () => _feed(
+                    mockupPosts(_now),
+                    scoped: {
+                      FeedScope.global: [text],
+                    },
+                  ),
+                )
+                as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Global'));
+    await tester.pumpAndSettle();
+
+    final card = find.byType(PostCard);
+    expect(card, findsOneWidget);
+    expect(find.text('Is the road to Daranak open?'), findsOneWidget);
+    expect(find.text('2 h ago · Public'), findsOneWidget);
+    expect(find.textContaining(' rode ', findRichText: true), findsNothing);
+    expect(find.text('RIDE IT'), findsNothing);
+    expect(find.text('RIDE THIS LOOP'), findsNothing);
+    expect(find.text('Comment'), findsOneWidget);
+  });
+
+  testWidgets('no posts anywhere: GENERATE A LOOP', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: await tester.runAsync(() => _feed(const [])) as Widget),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('No rides near you yet'), findsOneWidget);
+    expect(find.textContaining('No rides on Pasyar yet'), findsOneWidget);
+    expect(find.text('GENERATE A LOOP'), findsOneWidget);
+    expect(find.text('No rides near you yet'), findsNothing);
+  });
+
+  testWidgets('no posts nearby: Global posts under a note', (tester) async {
+    final elsewhere = [
+      feedPost(
+        id: 'g1',
+        createdAt: _now.subtract(const Duration(hours: 2)),
+        caption: 'Up north',
+        photos: const ['#9FB4C4'],
+      ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home:
+            await tester.runAsync(
+                  () => _feed(const [], scoped: {FeedScope.global: elsewhere}),
+                )
+                as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No rides near you yet'), findsOneWidget);
+    expect(find.text('Up north'), findsOneWidget);
+    expect(find.text('GENERATE A LOOP'), findsNothing);
   });
 }

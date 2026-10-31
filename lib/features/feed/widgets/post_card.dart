@@ -65,8 +65,11 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final caption = post.caption ?? post.loop.caption;
+    final loop = post.loop;
+    final caption = post.caption ?? loop?.caption;
     final comment = post.firstComment;
+    // Words alone read a size up, as the post itself.
+    final textOnly = loop == null && post.photos.isEmpty;
     return ColoredBox(
       color: PasyarColors.card,
       child: Column(
@@ -81,10 +84,21 @@ class PostCard extends StatelessWidget {
           ),
           if (caption != null && caption.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text(caption, style: PasyarTextStyles.body),
+              padding: EdgeInsets.fromLTRB(16, 0, 16, textOnly ? 0 : 12),
+              child: Text(
+                caption,
+                style: textOnly
+                    ? PasyarTextStyles.bodyLarge
+                    : PasyarTextStyles.body,
+              ),
             ),
-          if (_isRide) ...[
+          if (loop == null) ...[
+            if (post.photos.isNotEmpty)
+              PhotoCollage(
+                photos: [for (final p in post.photos) photo(p.storagePath)],
+                onTap: (i) => actions.onPhoto(post, i),
+              ),
+          ] else if (_isRide) ...[
             PhotoCollage(
               photos: [for (final p in post.photos) photo(p.storagePath)],
               onTap: (i) => actions.onPhoto(post, i),
@@ -147,11 +161,12 @@ class _Header extends StatelessWidget {
     final name = post.author.displayName ?? 'A rider';
     final url = post.author.avatarUrl;
     final bold = const TextStyle(fontWeight: FontWeight.w600);
+    final loop = post.loop;
     final meta = [
       timeAgo(post.createdAt, now),
-      ?stopLabel(post.loop.mainStop),
-      visibilityLabel(post.loop.visibility),
-      if (post.loop.clubName case final club?) club,
+      ?stopLabel(loop?.mainStop),
+      visibilityLabel(post.visibility),
+      ?post.clubName,
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 4, 10),
@@ -172,11 +187,15 @@ class _Header extends StatelessWidget {
                       children: [
                         Text.rich(
                           TextSpan(
-                            children: post.photos.isNotEmpty
+                            children: loop == null
+                                ? [TextSpan(text: name, style: bold)]
+                                : post.photos.isNotEmpty
                                 ? [
                                     TextSpan(text: name, style: bold),
-                                    const TextSpan(text: ' rode '),
-                                    TextSpan(text: post.loop.name, style: bold),
+                                    TextSpan(
+                                      text: ' rode ${rodeArticle(loop)}',
+                                    ),
+                                    TextSpan(text: loop.name, style: bold),
                                   ]
                                 : [
                                     TextSpan(text: name, style: bold),
@@ -223,11 +242,12 @@ class _LoopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loop = post.loop;
+    final loop = post.loop!;
     final away = switch (post.distanceAwayM) {
       final m? => distanceFromYou(m),
       null => null,
     };
+    final text = loopCardText(loop, away);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -249,30 +269,17 @@ class _LoopCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  loop.name,
+                  text.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: PasyarTextStyles.bodyStrong.copyWith(height: 1.2),
                 ),
-                // With a province: "118 km · 3 h 50" then "Ifugao · 6 km
-                // from you" (three lines still fit beside the thumbnail).
-                // No distance when the feed loaded without a location.
-                if (loop.province case final province?) ...[
+                // Up to two lines ("118 km · 3 h 50", "Ifugao · 6 km from
+                // you"), which still fit beside the thumbnail. No distance
+                // when the feed loaded without a location.
+                for (final line in text.details)
                   Text(
-                    loopStats(loop),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.label.copyWith(height: 1.2),
-                  ),
-                  Text(
-                    [province, ?away].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.label.copyWith(height: 1.2),
-                  ),
-                ] else
-                  Text(
-                    [loopStats(loop), ?away].join(' · '),
+                    line,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: PasyarTextStyles.label.copyWith(height: 1.2),
@@ -342,7 +349,7 @@ class _LoopMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loop = post.loop;
+    final loop = post.loop!;
     final route = loop.sharedRoute ?? const <LatLng>[];
     final stop = loop.mainStop?.location;
     final curvy = loop.curvinessScore;

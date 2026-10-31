@@ -43,3 +43,15 @@ String shareMessage({
   required int distanceM,
   required Uri link,
 }) => 'Pasyar tayo! ${loopName.trim()} · ${formatDistance(distanceM)}\n$link';
+
+/// A text post: "Ana on Pasyar: Is the road to Daranak open?" (cut at 100
+/// characters) and the link on its own line.
+String textShareMessage({
+  required String author,
+  required String text,
+  required Uri link,
+}) {
+  final words = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  final cut = words.length > 100 ? '${words.substring(0, 99).trim()}…' : words;
+  return '$author on Pasyar: $cut\n$link';
+}

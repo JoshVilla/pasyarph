@@ -157,7 +157,11 @@ export function previewPage(
   url: URL,
   android: boolean,
 ): string {
-  const name = p.name ?? "A Pasyar loop";
+  // A text post: words (and maybe a photo) without a loop.
+  const isText = kind === "post" && !p.loop_id && !p.name;
+  const name = isText
+    ? `${p.author ?? "A rider"} on Pasyar`
+    : (p.name ?? "A Pasyar loop");
   const stats = [
     p.distance_m != null ? formatDistance(p.distance_m) : null,
     p.duration_s != null ? formatRideTime(p.duration_s) : null,
@@ -169,7 +173,7 @@ export function previewPage(
   const description = [
     stats.join(" · "),
     p.main_stop ? `Main stop: ${p.main_stop}` : null,
-    "A motorcycle loop on Pasyar.",
+    isText ? (p.caption ?? null) : "A motorcycle loop on Pasyar.",
   ]
     .filter(Boolean)
     .join(". ");
@@ -186,13 +190,13 @@ export function previewPage(
   const body = `<article class="card">
 ${p.route ? `<img class="map" src="${escape(mapUrl)}" width="${mapWidth}" height="${mapHeight}" alt="Map of ${escape(name)}">` : ""}
 <div class="card-body">
-<p class="overline">${kind === "post" ? "Ride" : "Loop"}${escape(by)}${escape(club)}</p>
+<p class="overline">${isText ? "Post" : kind === "post" ? "Ride" : "Loop"}${escape(by)}${escape(club)}</p>
 <h1>${escape(name)}</h1>
 <div class="stats">${statsHtml}</div>
 ${p.main_stop ? `<p class="stop">Main stop: ${escape(p.main_stop)}</p>` : ""}
 ${p.caption ? `<p class="caption">${escape(p.caption)}</p>` : ""}
 ${storeButtons(url, android)}
-<p class="note">Get Pasyar to ride this loop from where you are, with turn-by-turn in Google Maps.</p>
+<p class="note">${isText ? "Get Pasyar to find motorcycle loops from where you are and ride with Filipino riders." : "Get Pasyar to ride this loop from where you are, with turn-by-turn in Google Maps."}</p>
 </div>
 </article>`;
 
@@ -200,7 +204,7 @@ ${storeButtons(url, android)}
     title: `Pasyar tayo! ${name}${stats.length ? ` · ${stats[0]}` : ""}`,
     description,
     // Chat apps need a PNG: the SVG fallback map only works on the page.
-    image: photo ?? (env.MAPTILER_KEY ? mapUrl : undefined),
+    image: photo ?? (env.MAPTILER_KEY && p.route ? mapUrl : undefined),
     url,
     body,
   });

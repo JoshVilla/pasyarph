@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/repositories/post_repository.dart';
 import 'package:pasyarph/features/post/post_draft.dart';
 
@@ -38,6 +39,24 @@ class FakePosts implements PostRepository {
       'rideId': rideId,
       'loopName': loopName,
       'caption': caption,
+      'paths': [for (final p in photos) p.storagePath],
+    });
+  }
+
+  @override
+  Future<void> createTextPost({
+    required String postId,
+    required String text,
+    required LoopVisibility visibility,
+    String? clubId,
+    required List<UploadedPhoto> photos,
+  }) async {
+    if (createErrors.isNotEmpty) throw createErrors.removeAt(0);
+    created.add({
+      'postId': postId,
+      'text': text,
+      'visibility': visibility,
+      'clubId': ?clubId,
       'paths': [for (final p in photos) p.storagePath],
     });
   }

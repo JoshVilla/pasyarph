@@ -42,6 +42,7 @@ import '../features/profile/providers/edit_profile_controller.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/follow_list_screen.dart';
 import '../features/post/screens/post_loop_screen.dart';
+import '../features/post/screens/write_post_screen.dart';
 import '../features/ride/screens/loop_preview_screen.dart';
 import '../features/moderation/screens/blocked_riders_screen.dart';
 import '../features/moderation/screens/moderation_screen.dart';
@@ -92,6 +93,9 @@ abstract final class Routes {
   /// Posting a finished ride (from the ride summary or the Me tab).
   static const postRide = '/post/:rideId';
   static String post(String rideId) => '/post/$rideId';
+
+  /// A post without a ride (words and maybe photos), from the Feed.
+  static const writePost = '/write';
 
   /// Share links (Prompt 18), the same paths as on the web
   /// (https://pasyar.pages.dev/l/id). See AppLinks.
@@ -326,6 +330,10 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
         path: Routes.postRide,
         builder: (context, state) =>
             PostLoopScreen(rideId: state.pathParameters['rideId']!),
+      ),
+      GoRoute(
+        path: Routes.writePost,
+        builder: (context, state) => const WritePostScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),

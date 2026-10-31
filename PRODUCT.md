@@ -28,7 +28,7 @@ Loops first, community second (confirmed). The loop generator is what brings rid
 
 - Rides start from the rider's current location, usually home, in the Philippines.
 - Navigation during a ride currently hands off to Google Maps; in-app turn-by-turn is planned for later.
-- Every post is tied to a ride Pasyar tracked; the rider chooses which photos (up to 10) to post.
+- A ride post is tied to a ride Pasyar tracked; the rider chooses which photos (up to 10) to post. Text posts (words, up to 10 optional photos, no route) need no ride; they have their own visibility (public, club, only me) and never show in "Near you", which only has rides.
 - Riders can also build custom loops by tapping points on the map, and share loops publicly, to a club, or privately.
 - Clubs are invite-link only; riders can follow other riders. Feed filters: Near you, Global, Following, My clubs.
 
@@ -59,7 +59,7 @@ Loops first, community second (confirmed). The loop generator is what brings rid
 1. **Get them riding.** The shortest path from opening the app to a loop worth riding wins; deciding where to go is the product's job, not the rider's.
 2. **Safe on the bike.** Big glanceable text, large touch targets for gloved hands, and no typing or posting while moving.
 3. **Home stays private.** Nothing shared ever shows where a rider starts.
-4. **Real rides only.** Posts come from rides Pasyar tracked; the feed shows loops people actually rode.
+4. **Real rides only.** Ride posts come from rides Pasyar tracked; the feed shows loops people actually rode. Text posts are for talk between riders and never pass as rides (no route, no RIDE IT).
 5. **Ride it yourself.** Anything another rider shares should be one tap away from being your own ride, from where you are.
 
 ## Accessibility & Inclusion

@@ -75,7 +75,7 @@ class _RideHistoryListState extends State<RideHistoryList> {
   Future<void> _more(RideSummary ride) async {
     final delete = await showActionSheet<bool>(
       context,
-      title: _rideName(ride),
+      title: rideName(ride),
       actions: const [
         SheetAction(
           value: true,
@@ -150,7 +150,7 @@ class _RideHistoryListState extends State<RideHistoryList> {
 }
 
 /// "Talon" (the main stop), or "82 km loop".
-String _rideName(RideSummary ride) =>
+String rideName(RideSummary ride) =>
     ride.stop?.name ?? '${formatDistance(ride.loopM)} loop';
 
 class _RideRow extends StatelessWidget {
@@ -177,7 +177,7 @@ class _RideRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = _rideName(ride);
+    final name = rideName(ride);
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
       decoration: BoxDecoration(

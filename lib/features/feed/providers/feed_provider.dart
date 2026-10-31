@@ -47,8 +47,12 @@ class FeedProvider extends ChangeNotifier {
   bool _started = false;
   String? _error;
   bool _waitingForFix = false;
+  bool _globalFallback = false;
 
   FeedFilter get filter => _filter;
+
+  /// "Near you" had nothing, so these are Global posts instead.
+  bool get showingGlobalFallback => _globalFallback;
 
   FeedScope get scope =>
       _fixedScope ??
@@ -82,6 +86,7 @@ class FeedProvider extends ChangeNotifier {
     if (_filter == f) return;
     _filter = f;
     _generation++;
+    _globalFallback = false;
     _posts.clear();
     _hasMore = true;
     _error = null;
@@ -94,9 +99,9 @@ class FeedProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<FeedPost>> _fetch({DateTime? before}) {
+  Future<List<FeedPost>> _fetch({DateTime? before, required bool fallback}) {
     final here = _location.hasFix ? _location.position : null;
-    final scope = this.scope;
+    final scope = fallback ? FeedScope.global : this.scope;
     if (scope == FeedScope.near) {
       return _feed.near(here!, before: before, limit: pageSize);
     }
@@ -104,7 +109,8 @@ class FeedProvider extends ChangeNotifier {
   }
 
   /// Reloads from the newest post. Keeps the old posts on screen until the
-  /// new page arrives (or on failure).
+  /// new page arrives (or on failure). An empty "Near you" shows Global
+  /// posts instead, so the home screen isn't blank before riders nearby post.
   Future<void> refresh() async {
     if (scope == FeedScope.near &&
         (_location.position == null || !_location.hasFix)) {
@@ -117,8 +123,15 @@ class FeedProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final page = await _fetch();
+      var page = await _fetch(fallback: false);
+      var fallback = false;
+      if (page.isEmpty && scope == FeedScope.near) {
+        if (generation != _generation) return;
+        fallback = true;
+        page = await _fetch(fallback: true);
+      }
       if (generation != _generation) return;
+      _globalFallback = fallback;
       _posts
         ..clear()
         ..addAll(page);
@@ -147,7 +160,10 @@ class FeedProvider extends ChangeNotifier {
     _loadingMore = true;
     notifyListeners();
     try {
-      final page = await _fetch(before: _posts.last.createdAt);
+      final page = await _fetch(
+        before: _posts.last.createdAt,
+        fallback: _globalFallback,
+      );
       if (generation != _generation) return;
       final seen = {for (final p in _posts) p.id};
       _posts.addAll(page.where((p) => !seen.contains(p.id)));

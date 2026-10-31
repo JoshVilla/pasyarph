@@ -618,7 +618,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save loop to ride later'));
     await tester.pumpAndSettle();
-    expect(w.me.saved, [post.loop.id]);
+    expect(w.me.saved, [post.loop!.id]);
     expect(find.text('Saved. Find it under Me → Saved.'), findsOneWidget);
 
     // ignore: unawaited_futures
@@ -660,7 +660,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Block this loop'));
     await tester.pumpAndSettle();
-    expect(w.moderation.blockedItems, [(BlockedItem.loop, post.loop.id)]);
+    expect(w.moderation.blockedItems, [(BlockedItem.loop, post.loop!.id)]);
   });
 
   group('Settings', () {

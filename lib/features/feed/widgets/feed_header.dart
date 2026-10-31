@@ -6,14 +6,14 @@ import '../../../core/widgets/widgets.dart';
 import '../providers/feed_provider.dart';
 
 /// Top of the feed (mockup 5): FEED with search and notifications, the
-/// "Share a ride or a loop…" row, and the filter chips.
+/// "Write a post…" row (and posting a ride), and the filter chips.
 class FeedHeader extends StatelessWidget {
   const FeedHeader({
     super.key,
     required this.myName,
     required this.filter,
     required this.onFilter,
-    required this.onShare,
+    required this.onWrite,
     required this.onAddPhotos,
     required this.onSearch,
     required this.onNotifications,
@@ -25,7 +25,7 @@ class FeedHeader extends StatelessWidget {
   final ImageProvider? myAvatar;
   final FeedFilter filter;
   final ValueChanged<FeedFilter> onFilter;
-  final VoidCallback onShare;
+  final VoidCallback onWrite;
   final VoidCallback onAddPhotos;
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
@@ -110,7 +110,7 @@ class FeedHeader extends StatelessWidget {
                   child: Semantics(
                     button: true,
                     child: GestureDetector(
-                      onTap: onShare,
+                      onTap: onWrite,
                       child: Container(
                         height: 44,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -124,7 +124,7 @@ class FeedHeader extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'Share a ride or a loop…',
+                          'Write a post…',
                           style: PasyarTextStyles.body.copyWith(
                             height: 1.2,
                             color: PasyarColors.muted,
@@ -136,7 +136,7 @@ class FeedHeader extends StatelessWidget {
                 ),
                 Semantics(
                   button: true,
-                  label: 'Post a ride',
+                  label: 'Post photos from a ride',
                   excludeSemantics: true,
                   child: Material(
                     color: PasyarColors.accentTint,

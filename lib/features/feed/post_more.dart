@@ -35,11 +35,10 @@ Future<void> showPostMore(
 
   // Saving twice is harmless, so a slow or failed check just offers Save.
   var saved = false;
-  if (!mine) {
+  final loop = post.loop;
+  if (!mine && loop != null) {
     try {
-      saved = await me
-          .isSaved(post.loop.id)
-          .timeout(const Duration(seconds: 3));
+      saved = await me.isSaved(loop.id).timeout(const Duration(seconds: 3));
     } on Exception {
       saved = false;
     }
@@ -48,9 +47,9 @@ Future<void> showPostMore(
 
   final action = await showActionSheet<_PostAction>(
     context,
-    title: post.loop.name,
+    title: loop?.name ?? "${post.author.displayName ?? 'A rider'}'s post",
     actions: [
-      if (!mine)
+      if (!mine && loop != null)
         saved
             ? const SheetAction(
                 value: _PostAction.unsave,
@@ -93,14 +92,14 @@ Future<void> showPostMore(
       return;
     case _PostAction.save:
       try {
-        await me.saveLoop(post.loop.id);
+        await me.saveLoop(loop!.id);
         snack('Saved. Find it under Me → Saved.');
       } on MeException catch (e) {
         snack(e.message);
       }
     case _PostAction.unsave:
       try {
-        await me.unsaveLoop(post.loop.id);
+        await me.unsaveLoop(loop!.id);
         snack('Removed from your saved loops.');
       } on MeException catch (e) {
         snack(e.message);
@@ -114,7 +113,7 @@ Future<void> showPostMore(
         ReportSubject(
           // A loop shared without a post is reported as the loop.
           target: post.isLoopOnly ? ReportTarget.loop : ReportTarget.post,
-          id: post.isLoopOnly ? post.loop.id : post.id,
+          id: post.isLoopOnly ? loop!.id : post.id,
           what: post.isLoopOnly ? 'loop' : 'post',
           authorId: post.author.id,
           authorName: post.author.displayName,
@@ -150,7 +149,7 @@ Future<void> _blockItem(
   final moderation = context.read<ModerationRepository>();
   final messenger = ScaffoldMessenger.of(context);
   final (item, id, what) = post.isLoopOnly
-      ? (BlockedItem.loop, post.loop.id, 'Loop')
+      ? (BlockedItem.loop, post.loop!.id, 'Loop')
       : (BlockedItem.post, post.id, 'Post');
   void show(String text, {SnackBarAction? action}) => messenger
     ..hideCurrentSnackBar()

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/enums.dart';
+
 /// A photo already in storage, for [PostRepository.createPost].
 class UploadedPhoto {
   const UploadedPhoto({
@@ -49,10 +51,14 @@ class PostException implements Exception {
     'ride_too_old': 'Rides can only be posted within 7 days.',
     'ride_too_short': 'Ride at least a quarter of the loop to post it.',
     'ride_already_posted': 'This ride is already posted.',
-    'bad_photos': 'Add 1 to 10 photos, then try again.',
+    'bad_photos': 'Add up to 10 photos, then try again.',
+    'bad_text': 'Write something first (up to 2000 characters).',
+    'not_club_member': "You're not in that club anymore. Pick another one.",
+    'too_many_posts':
+        "You've posted a lot this hour. Try again in a little while.",
   };
 
-  /// Maps the errors create_post_from_ride raises.
+  /// Maps the errors create_post_from_ride and create_text_post raise.
   static PostException fromServer(String message) {
     for (final e in _messages.entries) {
       if (message.contains(e.key)) return PostException(e.key, e.value);
@@ -78,6 +84,16 @@ abstract interface class PostRepository {
     required String rideId,
     required String loopName,
     required String caption,
+    required List<UploadedPhoto> photos,
+  });
+
+  /// Posts words without a ride, with 0-10 photos already uploaded
+  /// (create_text_post). Throws [PostException].
+  Future<void> createTextPost({
+    required String postId,
+    required String text,
+    required LoopVisibility visibility,
+    String? clubId,
     required List<UploadedPhoto> photos,
   });
 }
@@ -136,6 +152,34 @@ class SupabasePostRepository implements PostRepository {
       throw PostException.fromServer(e.message);
     } on Exception catch (e) {
       debugPrint('post: create_post_from_ride failed: $e');
+      throw PostException.offline;
+    }
+  }
+
+  @override
+  Future<void> createTextPost({
+    required String postId,
+    required String text,
+    required LoopVisibility visibility,
+    String? clubId,
+    required List<UploadedPhoto> photos,
+  }) async {
+    try {
+      await _client.rpc<void>(
+        'create_text_post',
+        params: {
+          'p_post_id': postId,
+          'p_caption': text,
+          'p_visibility': visibility.value,
+          'p_club_id': clubId,
+          'p_photos': [for (final p in photos) p.toJson()],
+        },
+      );
+    } on PostgrestException catch (e) {
+      debugPrint('post: create_text_post failed: ${e.code} ${e.message}');
+      throw PostException.fromServer(e.message);
+    } on Exception catch (e) {
+      debugPrint('post: create_text_post failed: $e');
       throw PostException.offline;
     }
   }

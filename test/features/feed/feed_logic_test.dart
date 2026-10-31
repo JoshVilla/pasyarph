@@ -50,6 +50,51 @@ void main() {
       expect(plural(1, 'like'), '1 like');
       expect(plural(48, 'like'), '48 likes');
     });
+
+    test('loops named by their distance', () {
+      expect(isDistanceName('25 km loop'), isTrue);
+      expect(isDistanceName('7.5 km loop'), isTrue);
+      expect(isDistanceName('Talon loop'), isFalse);
+      expect(isDistanceName('25 km loop to Tanay'), isFalse);
+
+      Loop loop(String name, {String? province}) => feedPost(
+        id: 'x',
+        createdAt: now,
+        loopName: name,
+        distanceM: 25000,
+        durationS: 1620,
+        province: province,
+      ).loop!;
+
+      // Title, then the detail lines.
+      List<String> card(Loop l, String? away) {
+        final t = loopCardText(l, away);
+        return [t.title, ...t.details];
+      }
+
+      expect(rodeArticle(loop('25 km loop')), 'a ');
+      expect(rodeArticle(loop('Talon loop')), '');
+
+      // Titled by place; the distance isn't said twice.
+      expect(card(loop('25 km loop', province: 'Rizal'), '10 km from you'), [
+        'Loop in Rizal',
+        '25 km · 27 min',
+        '10 km from you',
+      ]);
+      expect(card(loop('25 km loop'), '10 km from you'), [
+        '25 km loop',
+        '27 min · 10 km from you',
+      ]);
+      expect(card(loop('25 km loop'), null), ['25 km loop', '27 min']);
+
+      // Named loops keep what they showed before.
+      expect(card(loop('Talon loop', province: 'Rizal'), '6 km from you'), [
+        'Talon loop',
+        '25 km · 27 min',
+        'Rizal · 6 km from you',
+      ]);
+      expect(card(loop('Talon loop'), null), ['Talon loop', '25 km · 27 min']);
+    });
   });
 
   group('FeedProvider', () {
@@ -188,6 +233,41 @@ void main() {
       await pumpEventQueue();
       expect(repo.scopeCalls, [FeedScope.global]);
       expect([for (final p in feed.posts) p.id], ['g1']);
+    });
+
+    test('nothing near you: Global posts instead, paged as Global', () async {
+      final repo = FakeFeedRepository(
+        const [],
+        scoped: {FeedScope.global: posts},
+      );
+      final feed = await provider(repo);
+      await feed.refresh();
+      expect(feed.showingGlobalFallback, isTrue);
+      expect(feed.posts, hasLength(20));
+
+      await feed.loadMore();
+      expect(feed.posts, hasLength(40));
+      expect(repo.calls, hasLength(1)); // "Near you" asked only once
+      expect(repo.scopeCalls, [FeedScope.global, FeedScope.global]);
+
+      feed.setFilter(FeedFilter.global);
+      expect(feed.showingGlobalFallback, isFalse);
+    });
+
+    test('posts near you again: the fallback ends on refresh', () async {
+      final nearby = <FeedPost>[];
+      final repo = FakeFeedRepository(
+        nearby,
+        scoped: {FeedScope.global: posts},
+      );
+      final feed = await provider(repo);
+      await feed.refresh();
+      expect(feed.showingGlobalFallback, isTrue);
+
+      nearby.add(feedPost(id: 'n1', createdAt: now));
+      await feed.refresh();
+      expect(feed.showingGlobalFallback, isFalse);
+      expect([for (final p in feed.posts) p.id], ['n1']);
     });
 
     test('switching filters drops a page that arrives late', () async {
@@ -342,7 +422,7 @@ void main() {
       });
       expect(item.isLoopOnly, isTrue);
       expect(item.distanceAwayM, isNull);
-      expect(item.loop.clubId, 'k');
+      expect(item.loop!.clubId, 'k');
     });
   });
 }

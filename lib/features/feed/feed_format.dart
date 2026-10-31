@@ -44,6 +44,47 @@ String? stopLabel(MainStop? stop) =>
 String loopStats(Loop loop) =>
     '${formatDistance(loop.distanceM)} · ${formatRideTime(loop.durationS)}';
 
+final _distanceName = RegExp(r'^\d+(\.\d)? km loop$');
+
+/// A loop posted without a named stop is called by its distance
+/// ("25 km loop"), which says nothing on its own.
+bool isDistanceName(String name) => _distanceName.hasMatch(name.trim());
+
+/// "rode Sunday Falls Loop", but "rode a 25 km loop".
+String rodeArticle(Loop loop) => isDistanceName(loop.name) ? 'a ' : '';
+
+/// The loop card's title and detail lines. A loop named by its distance
+/// is titled by where it is ("Loop in Ifugao"), and the distance isn't
+/// repeated next to a title that already says it.
+({String title, List<String> details}) loopCardText(Loop loop, String? away) {
+  final province = loop.province;
+  final time = formatRideTime(loop.durationS);
+  if (isDistanceName(loop.name)) {
+    return province != null
+        ? (title: 'Loop in $province', details: [loopStats(loop), ?away])
+        : (
+            title: loop.name,
+            details: [
+              [time, ?away].join(' · '),
+            ],
+          );
+  }
+  return province != null
+      ? (
+          title: loop.name,
+          details: [
+            loopStats(loop),
+            [province, ?away].join(' · '),
+          ],
+        )
+      : (
+          title: loop.name,
+          details: [
+            [loopStats(loop), ?away].join(' · '),
+          ],
+        );
+}
+
 /// "1 like", "48 likes".
 String plural(int n, String one, [String? many]) =>
     '$n ${n == 1 ? one : (many ?? '${one}s')}';

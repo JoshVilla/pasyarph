@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../geo/geo_codec.dart';
+import 'enums.dart';
 import 'json.dart';
 import 'loop.dart';
 import 'profile.dart';
@@ -146,7 +147,7 @@ class Comment {
 /// A row from the `feed_near` / `feed_page` RPCs: post, author, photos,
 /// loop and counts. From `feed_page` it can also be a loop shared without a
 /// post ([isLoopOnly]): then [id] is the loop's id and there are no photos,
-/// likes or comments.
+/// likes or comments; or a text post ([isText]): no loop and no location.
 class FeedPost {
   const FeedPost({
     required this.id,
@@ -159,6 +160,8 @@ class FeedPost {
     required this.likeCount,
     required this.commentCount,
     required this.likedByMe,
+    required this.visibility,
+    this.clubName,
     this.caption,
     this.firstComment,
     this.isLoopOnly = false,
@@ -167,16 +170,27 @@ class FeedPost {
   final String id;
   final String? caption;
   final DateTime createdAt;
-  final LatLng stopLocation;
 
-  /// Null when the feed was loaded without the rider's location.
+  /// Null for a text post.
+  final LatLng? stopLocation;
+
+  /// Null when the feed was loaded without the rider's location, and for a
+  /// text post.
   final double? distanceAwayM;
   final ProfileSummary author;
   final List<PostPhoto> photos;
-  final Loop loop;
+
+  /// Null for a text post.
+  final Loop? loop;
   final int likeCount;
   final int commentCount;
   final bool likedByMe;
+
+  /// Who sees it: the loop's, or the text post's own.
+  final LoopVisibility visibility;
+
+  /// The club it's shared to, for [LoopVisibility.club].
+  final String? clubName;
 
   /// The oldest comment, previewed under the card.
   final FeedComment? firstComment;
@@ -184,6 +198,9 @@ class FeedPost {
   /// A loop shared without a post: it can be ridden but not liked or
   /// commented on.
   final bool isLoopOnly;
+
+  /// Words (and maybe photos) without a ride.
+  bool get isText => loop == null;
 
   FeedPost copyWith({
     int? likeCount,
@@ -203,29 +220,46 @@ class FeedPost {
     likedByMe: likedByMe ?? this.likedByMe,
     commentCount: commentCount ?? this.commentCount,
     firstComment: firstComment == null ? this.firstComment : firstComment(),
+    visibility: visibility,
+    clubName: clubName,
     isLoopOnly: isLoopOnly,
   );
 
-  factory FeedPost.fromJson(Json json) => FeedPost(
-    id: json['id'] as String,
-    caption: json['caption'] as String?,
-    createdAt: parseTimestamp(json['created_at']),
-    stopLocation: GeoCodec.parsePoint(json['stop_location'] as Object),
-    distanceAwayM: toDoubleOrNull(json['distance_away_m']),
-    author: ProfileSummary.fromJson(json['author'] as Json),
-    photos: [
-      for (final p in json['photos'] as List) PostPhoto.fromJson(p as Json),
-    ],
-    loop: Loop.fromJson(json['loop'] as Json),
-    likeCount: (json['like_count'] as num).toInt(),
-    commentCount: (json['comment_count'] as num).toInt(),
-    likedByMe: json['liked_by_me'] as bool,
-    firstComment: switch (json['first_comment']) {
-      final Json c => FeedComment.fromJson(c),
+  factory FeedPost.fromJson(Json json) {
+    final loop = switch (json['loop']) {
+      final Json l => Loop.fromJson(l),
       _ => null,
-    },
-    isLoopOnly: json['kind'] == 'loop',
-  );
+    };
+    return FeedPost(
+      id: json['id'] as String,
+      caption: json['caption'] as String?,
+      createdAt: parseTimestamp(json['created_at']),
+      stopLocation: switch (json['stop_location']) {
+        final Object p => GeoCodec.parsePoint(p),
+        null => null,
+      },
+      distanceAwayM: toDoubleOrNull(json['distance_away_m']),
+      author: ProfileSummary.fromJson(json['author'] as Json),
+      photos: [
+        for (final p in json['photos'] as List) PostPhoto.fromJson(p as Json),
+      ],
+      loop: loop,
+      // feed_near has no visibility column: it only returns ride posts.
+      visibility: switch (json['visibility']) {
+        final String v => LoopVisibility.fromValue(v),
+        _ => loop!.visibility,
+      },
+      clubName: json['club_name'] as String? ?? loop?.clubName,
+      likeCount: (json['like_count'] as num).toInt(),
+      commentCount: (json['comment_count'] as num).toInt(),
+      likedByMe: json['liked_by_me'] as bool,
+      firstComment: switch (json['first_comment']) {
+        final Json c => FeedComment.fromJson(c),
+        _ => null,
+      },
+      isLoopOnly: json['kind'] == 'loop',
+    );
+  }
 }
 
 /// A comment as the feed shows it: author and text.

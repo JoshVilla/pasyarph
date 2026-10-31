@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:pasyarph/core/links.dart';
 import 'package:pasyarph/data/models/models.dart';
 
 void main() {
@@ -129,8 +130,46 @@ void main() {
     });
     expect(post.author.displayName, 'Ana');
     expect(post.photos.single.storagePath, 'u1/p1/0.jpg');
-    expect(post.loop.sharedRoute, hasLength(2));
+    expect(post.loop!.sharedRoute, hasLength(2));
     expect(post.likedByMe, isTrue);
+    // feed_near has no visibility column: the loop's.
+    expect(post.visibility, LoopVisibility.public);
+    expect(post.isText, isFalse);
+  });
+
+  test('FeedPost from a text post row: no loop, no location', () {
+    final post = FeedPost.fromJson({
+      'kind': 'text',
+      'id': 'p2',
+      'caption': 'Is the road to Daranak open?',
+      'created_at': '2026-10-18T03:00:00Z',
+      'stop_location': null,
+      'distance_away_m': null,
+      'author': {'id': 'u1', 'display_name': 'Ana', 'avatar_url': null},
+      'photos': [],
+      'loop': null,
+      'like_count': 0,
+      'comment_count': 0,
+      'liked_by_me': false,
+      'first_comment': null,
+      'visibility': 'club',
+      'club_name': 'Iloilo Riders',
+    });
+    expect(post.isText, isTrue);
+    expect(post.isLoopOnly, isFalse);
+    expect(post.stopLocation, isNull);
+    expect(post.visibility, LoopVisibility.club);
+    expect(post.clubName, 'Iloilo Riders');
+  });
+
+  test('text share message: author, words cut at 100, link', () {
+    final link = Uri.parse('https://pasyar.pages.dev/p/p2');
+    expect(
+      textShareMessage(author: 'Ana', text: ' Is the road\nopen? ', link: link),
+      'Ana on Pasyar: Is the road open?\n$link',
+    );
+    final long = textShareMessage(author: 'Ana', text: 'a' * 150, link: link);
+    expect(long.split('\n').first, 'Ana on Pasyar: ${'a' * 99}…');
   });
 
   test('enums reject unknown values', () {

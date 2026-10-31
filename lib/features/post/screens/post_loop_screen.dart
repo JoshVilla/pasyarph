@@ -94,61 +94,14 @@ class _PostLoopScreenState extends State<PostLoopScreen> {
   }
 
   Future<void> _add() async {
-    final camera = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BottomSheetPanel(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          math.max(20, MediaQuery.viewPaddingOf(context).bottom + 20),
-        ),
-        children: [
-          Text('ADD PHOTOS', style: PasyarTextStyles.screenTitle(30)),
-          PrimaryButton(
-            label: 'CHOOSE PHOTOS',
-            icon: LucideIcons.images,
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          SecondaryButton(
-            label: 'TAKE A PHOTO',
-            icon: LucideIcons.camera,
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
+    final camera = await askPhotoSource(context);
     if (camera == null || !mounted) return;
     final picked = await widget.pick(camera: camera, max: _composer.remaining);
     if (picked.isNotEmpty) await _composer.addPhotos(picked);
   }
 
   Future<void> _photoTapped(int index) async {
-    final remove = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BottomSheetPanel(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          math.max(20, MediaQuery.viewPaddingOf(context).bottom + 20),
-        ),
-        children: [
-          Text('REMOVE THIS PHOTO?', style: PasyarTextStyles.screenTitle(30)),
-          PrimaryButton(
-            label: 'REMOVE',
-            onPressed: () => Navigator.pop(context, true),
-          ),
-          SecondaryButton(
-            label: 'KEEP',
-            onPressed: () => Navigator.pop(context, false),
-          ),
-        ],
-      ),
-    );
-    if (remove == true) await _composer.removePhoto(index);
+    if (await confirmRemovePhoto(context)) await _composer.removePhoto(index);
   }
 
   Future<void> _post() async {
