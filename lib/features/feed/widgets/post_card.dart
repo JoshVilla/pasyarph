@@ -85,8 +85,9 @@ class PostCard extends StatelessWidget {
           if (caption != null && caption.isNotEmpty)
             Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, textOnly ? 0 : 12),
-              child: Text(
-                caption,
+              child: _Caption(
+                key: ValueKey(post.id),
+                text: caption,
                 style: textOnly
                     ? PasyarTextStyles.bodyLarge
                     : PasyarTextStyles.body,
@@ -137,6 +138,65 @@ class PostCard extends StatelessWidget {
             const SizedBox(height: 4),
         ],
       ),
+    );
+  }
+}
+
+/// The post's words, cut at [maxLines] with "See more" (a text post can be
+/// 2000 characters; the feed shouldn't be one post long).
+class _Caption extends StatefulWidget {
+  const _Caption({super.key, required this.text, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  static const maxLines = 6;
+
+  @override
+  State<_Caption> createState() => _CaptionState();
+}
+
+class _CaptionState extends State<_Caption> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final full = Text(widget.text, style: widget.style);
+    if (_expanded) return full;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: _Caption.maxLines,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final long = painter.didExceedMaxLines;
+        painter.dispose();
+        if (!long) return full;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              maxLines: _Caption.maxLines,
+              overflow: TextOverflow.ellipsis,
+              style: widget.style,
+            ),
+            TextButton(
+              onPressed: () => setState(() => _expanded = true),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(44, PasyarSpacing.minTouch),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: PasyarColors.muted,
+                textStyle: PasyarTextStyles.bodyStrong,
+              ),
+              child: const Text('See more'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -633,29 +693,36 @@ class _CommentPreview extends StatelessWidget {
                 size: 32,
                 image: url == null ? null : avatar(url),
               ),
+              // The name and up to 3 lines; the bubble opens the comments
+              // to read the rest.
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: PasyarColors.ground,
-                    borderRadius: BorderRadius.circular(
-                      PasyarRadius.choiceCard,
+                child: GestureDetector(
+                  onTap: onViewAll,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$name\n',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        TextSpan(text: comment.body),
-                      ],
+                    decoration: BoxDecoration(
+                      color: PasyarColors.ground,
+                      borderRadius: BorderRadius.circular(
+                        PasyarRadius.choiceCard,
+                      ),
                     ),
-                    style: text,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '$name\n',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          TextSpan(text: comment.body),
+                        ],
+                      ),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: text,
+                    ),
                   ),
                 ),
               ),

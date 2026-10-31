@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
+import 'package:pasyarph/core/widgets/app_shell.dart';
 import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
@@ -32,6 +33,7 @@ final _feedList = find.byWidgetPredicate(
 Future<Widget> _feed(
   List<FeedPost> posts, {
   Map<FeedScope, List<FeedPost>>? scoped,
+  FakeFeedRepository? repo,
 }) async {
   final location = LocationProvider(
     permissions: FakeLocationPermission(),
@@ -40,7 +42,7 @@ Future<Widget> _feed(
     ),
   );
   await location.start();
-  final repo = FakeFeedRepository(posts, scoped: scoped);
+  repo ??= FakeFeedRepository(posts, scoped: scoped);
   final social = FakeSocialRepository(comments: threadOf('p1', 3));
   final feed = FeedProvider(feed: repo, social: social, location: location);
   await feed.refresh();
@@ -293,6 +295,74 @@ void main() {
     expect(find.text('RIDE IT'), findsNothing);
     expect(find.text('RIDE THIS LOOP'), findsNothing);
     expect(find.text('Comment'), findsOneWidget);
+  });
+
+  testWidgets('offline: what happened, and TRY AGAIN loads', (tester) async {
+    final repo = FakeFeedRepository(mockupPosts(_now))..fail = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home:
+            await tester.runAsync(() => _feed(const [], repo: repo)) as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining("Couldn't load the feed"), findsOneWidget);
+
+    repo.fail = false;
+    await tester.tap(find.text('TRY AGAIN'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining("Couldn't load the feed"), findsNothing);
+    expect(find.byType(PostCard), findsWidgets);
+  });
+
+  testWidgets('a long post is cut at 6 lines with See more', (tester) async {
+    final long = feedPost(
+      id: 't1',
+      createdAt: _now,
+      text: true,
+      caption: List.filled(40, 'Long road update from Antipolo.').join(' '),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home:
+            await tester.runAsync(
+                  () => _feed(
+                    mockupPosts(_now),
+                    scoped: {
+                      FeedScope.global: [long],
+                    },
+                  ),
+                )
+                as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Global'));
+    await tester.pumpAndSettle();
+
+    final caption = find.textContaining('Long road update');
+    expect(tester.widget<Text>(caption).maxLines, 6);
+    await tester.tap(find.text('See more'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(caption).maxLines, isNull);
+    expect(find.text('See more'), findsNothing);
+  });
+
+  testWidgets('tapping Feed again scrolls back to the top', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await tester.runAsync(() => _feed(mockupPosts(_now))) as Widget,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(_feedList, const Offset(0, -1500));
+    await tester.pumpAndSettle();
+    final scrollable = tester.state<ScrollableState>(_feedList);
+    expect(scrollable.position.pixels, greaterThan(0));
+
+    tabReselects.reselect(feedBranch);
+    await tester.pumpAndSettle();
+    expect(scrollable.position.pixels, 0);
   });
 
   testWidgets('no posts anywhere: GENERATE A LOOP', (tester) async {

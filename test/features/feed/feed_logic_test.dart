@@ -49,6 +49,11 @@ void main() {
       expect(stopLabel(const MainStop(location: LatLng(0, 0))), isNull);
       expect(plural(1, 'like'), '1 like');
       expect(plural(48, 'like'), '48 likes');
+      expect(plural(12345, 'like'), '12,345 likes');
+      expect(groupThousands(999), '999');
+      expect(groupThousands(1000), '1,000');
+      expect(groupThousands(1234567), '1,234,567');
+      expect(groupThousands(0), '0');
     });
 
     test('loops named by their distance', () {
@@ -163,7 +168,43 @@ void main() {
       repo.fail = true;
       await feed.refresh();
       expect(feed.posts, hasLength(20));
-      expect(feed.error, contains('pull to refresh'));
+      expect(feed.error, contains('try again'));
+      // A failed refresh, not a failed next page.
+      expect(feed.pagingFailed, isFalse);
+    });
+
+    test('next page fails: waits for TRY AGAIN, then clears', () async {
+      final repo = FakeFeedRepository(posts);
+      final feed = await provider(repo);
+      await feed.refresh();
+      repo.fail = true;
+      await feed.loadMore();
+      expect(feed.pagingFailed, isTrue);
+      expect(feed.posts, hasLength(20));
+
+      // Scrolling doesn't keep retrying.
+      final calls = repo.calls.length;
+      await feed.loadMore();
+      expect(repo.calls, hasLength(calls));
+
+      repo.fail = false;
+      await feed.retry();
+      expect(feed.error, isNull);
+      expect(feed.posts, hasLength(40));
+    });
+
+    test('TRY AGAIN after a failed refresh reloads from the newest', () async {
+      final repo = FakeFeedRepository(posts);
+      final feed = await provider(repo);
+      repo.fail = true;
+      await feed.refresh();
+      expect(feed.posts, isEmpty);
+      expect(feed.error, isNotNull);
+
+      repo.fail = false;
+      await feed.retry();
+      expect(feed.error, isNull);
+      expect(feed.posts, hasLength(20));
     });
 
     test('no location yet: waits for the first fix, then loads', () async {

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/location/location_provider.dart';
 import '../../../core/router.dart';
 import '../../../core/theme/pasyar_theme.dart';
+import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../data/models/enums.dart';
 import '../../../data/repositories/feed_repository.dart';
@@ -30,6 +31,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   final _scroll = ScrollController();
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   /// Load the next page this close to the end of the list.
   static const _loadAheadPx = 1200.0;
@@ -38,6 +40,7 @@ class _FeedScreenState extends State<FeedScreen> {
   void initState() {
     super.initState();
     _scroll.addListener(_maybeLoadMore);
+    tabReselects.addListener(_onTabReselected);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // The Feed is the first screen after logging in, so it starts
@@ -49,8 +52,24 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   void dispose() {
+    tabReselects.removeListener(_onTabReselected);
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// Feed tapped while open: back to the top, or new posts when already
+  /// there.
+  void _onTabReselected() {
+    if (tabReselects.branch != feedBranch || !_scroll.hasClients) return;
+    if (_scroll.offset > 0) {
+      _scroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _refreshKey.currentState?.show();
+    }
   }
 
   void _maybeLoadMore() {
@@ -122,6 +141,7 @@ class _FeedScreenState extends State<FeedScreen> {
       body: Stack(
         children: [
           RefreshIndicator(
+            key: _refreshKey,
             color: PasyarColors.accent,
             edgeOffset: top,
             onRefresh: feed.refresh,

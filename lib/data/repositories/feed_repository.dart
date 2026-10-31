@@ -13,7 +13,7 @@ class FeedException implements Exception {
   final String message;
 
   static const offline = FeedException(
-    "Couldn't load the feed. Check your connection and pull to refresh.",
+    "Couldn't load the feed. Check your connection and try again.",
   );
 }
 

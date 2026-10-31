@@ -85,6 +85,17 @@ String rodeArticle(Loop loop) => isDistanceName(loop.name) ? 'a ' : '';
         );
 }
 
-/// "1 like", "48 likes".
+/// "1 like", "48 likes", "12,345 likes".
 String plural(int n, String one, [String? many]) =>
-    '$n ${n == 1 ? one : (many ?? '${one}s')}';
+    '${groupThousands(n)} ${n == 1 ? one : (many ?? '${one}s')}';
+
+/// "12,345".
+String groupThousands(int n) {
+  final digits = n.abs().toString();
+  final out = StringBuffer(n < 0 ? '-' : '');
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) out.write(',');
+    out.write(digits[i]);
+  }
+  return out.toString();
+}

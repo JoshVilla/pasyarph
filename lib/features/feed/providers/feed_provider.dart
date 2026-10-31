@@ -46,6 +46,7 @@ class FeedProvider extends ChangeNotifier {
   bool _hasMore = true;
   bool _started = false;
   String? _error;
+  bool _pagingFailed = false;
   bool _waitingForFix = false;
   bool _globalFallback = false;
 
@@ -69,6 +70,13 @@ class FeedProvider extends ChangeNotifier {
   bool get loadingMore => _loadingMore;
   bool get hasMore => _hasMore;
   String? get error => _error;
+
+  /// The [error] is from loading the next page (shown at the end of the
+  /// list), not from (re)loading the first one.
+  bool get pagingFailed => _error != null && _pagingFailed;
+
+  /// TRY AGAIN: whatever failed last.
+  Future<void> retry() => _pagingFailed ? loadMore(retry: true) : refresh();
 
   /// No position yet (permission or the phone's location is off). Only
   /// "Near you" needs one.
@@ -121,6 +129,7 @@ class FeedProvider extends ChangeNotifier {
     final generation = _generation;
     _loading = _posts.isEmpty;
     _error = null;
+    _pagingFailed = false;
     notifyListeners();
     try {
       var page = await _fetch(fallback: false);
@@ -147,17 +156,21 @@ class FeedProvider extends ChangeNotifier {
     }
   }
 
-  /// Next page, when the list nears its end.
-  Future<void> loadMore() async {
+  /// Next page, when the list nears its end. After a failure it waits for
+  /// TRY AGAIN ([retry]) instead of trying on every scroll.
+  Future<void> loadMore({bool retry = false}) async {
     if (_loading ||
         _loadingMore ||
         !_hasMore ||
         _posts.isEmpty ||
-        needsLocation) {
+        needsLocation ||
+        (_error != null && !retry)) {
       return;
     }
     final generation = _generation;
     _loadingMore = true;
+    _error = null;
+    _pagingFailed = false;
     notifyListeners();
     try {
       final page = await _fetch(
@@ -171,6 +184,7 @@ class FeedProvider extends ChangeNotifier {
     } on FeedException catch (e) {
       if (generation != _generation) return;
       _error = e.message;
+      _pagingFailed = true;
     } finally {
       if (generation == _generation) {
         _loadingMore = false;

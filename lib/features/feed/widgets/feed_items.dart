@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/links.dart';
 import '../../../core/router.dart';
 import '../../../core/share.dart';
 import '../../../core/theme/pasyar_theme.dart';
+import '../../../core/widgets/widgets.dart';
 import '../../../data/models/post.dart';
 import '../../../data/repositories/feed_repository.dart';
 import '../../ride/ride_this_loop.dart';
@@ -102,15 +104,24 @@ List<Widget> feedPostItems(
     return const [PostCardSkeleton(), PostCardSkeleton()];
   }
   final posts = feed.posts;
+  final error = feed.error;
+  final tryAgain = SecondaryButton(
+    label: 'TRY AGAIN',
+    icon: LucideIcons.rotateCw,
+    onPressed: feed.retry,
+  );
   if (posts.isEmpty) {
-    final error = feed.error;
     return [
       error != null
-          ? FeedEmpty(text: error)
+          ? FeedEmpty(text: error, action: tryAgain)
           : FeedEmpty(text: emptyText, action: emptyAction),
     ];
   }
   return [
+    // A refresh that failed with posts still shown: say so at the top,
+    // where the rider pulled.
+    if (error != null && !feed.pagingFailed)
+      FeedEmpty(text: error, action: tryAgain),
     for (final FeedPost p in posts)
       PostCard(
         key: ValueKey(p.id),
@@ -127,8 +138,8 @@ List<Widget> feedPostItems(
           child: CircularProgressIndicator(color: PasyarColors.accent),
         ),
       )
-    else if (feed.error != null)
-      FeedEmpty(text: feed.error!)
+    else if (error != null && feed.pagingFailed)
+      FeedEmpty(text: error, action: tryAgain)
     else
       const SizedBox(height: 24),
   ];

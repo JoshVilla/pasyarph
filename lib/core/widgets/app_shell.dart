@@ -8,6 +8,22 @@ import 'bottom_tabs.dart';
 /// full-screen Create a loop screen over the tabs (design/mockups/06).
 const createTab = 2;
 
+/// Branch index of Feed (the first tab).
+const feedBranch = 0;
+
+/// Taps on the tab that's already open, for its screen to react (the Feed
+/// scrolls back to the top). [branch] is the tapped branch.
+class TabReselects extends ChangeNotifier {
+  int? branch;
+
+  void reselect(int b) {
+    branch = b;
+    notifyListeners();
+  }
+}
+
+final tabReselects = TabReselects();
+
 /// Bottom navigation shell for the four main tabs: Feed, Ride, Create, Me.
 /// Branches are the tabs without Create, in order (see `createRouter()`).
 class AppShell extends StatelessWidget {
@@ -30,6 +46,7 @@ class AppShell extends StatelessWidget {
             return;
           }
           final branch = branchFor(tab);
+          if (branch == shell.currentIndex) tabReselects.reselect(branch);
           shell.goBranch(
             branch,
             // Tapping the active tab again returns to its first screen.
