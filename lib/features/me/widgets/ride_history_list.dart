@@ -104,7 +104,7 @@ class _RideHistoryListState extends State<RideHistoryList> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
-              foregroundColor: PasyarColors.accentDark,
+              foregroundColor: PasyarColors.of(context).accentDark,
             ),
             child: const Text('DELETE'),
           ),
@@ -131,16 +131,33 @@ class _RideHistoryListState extends State<RideHistoryList> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
       children: [
-        Text('YOUR RIDES', style: PasyarTextStyles.screenTitle(24)),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Ride history',
+                style: PasyarTextStyles.of(
+                  context,
+                ).bodyLarge.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+            Text(
+              '${shown.length} ${shown.length == 1 ? 'ride' : 'rides'}',
+              style: PasyarTextStyles.of(context).label,
+            ),
+          ],
+        ),
         if (shown.isEmpty)
           Text(
             'Rides you finish show up here. Post one within 7 days.',
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           ),
         for (final r in shown)
           _RideRow(
             ride: r,
-            now: now,
+
             onPost: r.canPost(now) ? () => _post(r) : null,
             onMore: () => _more(r),
           ),
@@ -154,15 +171,10 @@ String rideName(RideSummary ride) =>
     ride.stop?.name ?? '${formatDistance(ride.loopM)} loop';
 
 class _RideRow extends StatelessWidget {
-  const _RideRow({
-    required this.ride,
-    required this.now,
-    required this.onMore,
-    this.onPost,
-  });
+  const _RideRow({required this.ride, required this.onMore, this.onPost});
 
   final RideSummary ride;
-  final DateTime now;
+
   final VoidCallback? onPost;
 
   /// Delete ride.
@@ -177,61 +189,154 @@ class _RideRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = rideName(ride);
+    final ready = onPost != null;
+    final route = ride.preview.isNotEmpty ? ride.preview : ride.route;
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
+        border: Border.all(
+          color: ready
+              ? PasyarColors.of(context).accentTint
+              : PasyarColors.of(context).line,
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 12,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 2,
-              children: [
-                Text(
-                  '${shortDate(ride.endedAt).toUpperCase()} · '
-                  '${_status.toUpperCase()}',
-                  style: onPost != null
-                      ? PasyarTextStyles.overline
-                      : PasyarTextStyles.overline.copyWith(
-                          color: PasyarColors.muted,
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      MaterialLocalizations.of(
+                        context,
+                      ).formatMediumDate(ride.endedAt.toLocal()),
+                      style: PasyarTextStyles.of(context).label,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: ready
+                            ? PasyarColors.of(context).accentTint
+                            : PasyarColors.of(context).card,
+                        borderRadius: BorderRadius.circular(PasyarRadius.pill),
+                      ),
+                      child: Text(
+                        _status.toUpperCase(),
+                        style: PasyarTextStyles.of(context).overline.copyWith(
+                          fontSize: 12,
+                          color: ready
+                              ? PasyarColors.of(context).accentDark
+                              : PasyarColors.of(context).muted,
                         ),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  name,
-                  style: PasyarTextStyles.bodyLarge,
-                  maxLines: 1,
+              ),
+              IconButton(
+                onPressed: onMore,
+                tooltip: 'More',
+                constraints: const BoxConstraints.tightFor(
+                  width: 48,
+                  height: 48,
+                ),
+                icon: Icon(
+                  LucideIcons.ellipsis,
+                  size: 22,
+                  color: PasyarColors.of(context).muted,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            spacing: 12,
+            children: [
+              if (route != null && route.length > 1)
+                RouteThumbnail(route: route, width: 60, height: 60)
+              else
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: PasyarColors.of(context).card,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    LucideIcons.route,
+                    color: PasyarColors.of(context).accent,
+                    size: 26,
+                  ),
+                ),
+              Expanded(
+                child: Text(
+                  rideName(ride),
+                  style: PasyarTextStyles.of(context).bodyLarge,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  '${formatDistance(ride.riddenM.round())} ridden · '
-                  '${formatRideTime(ride.duration.inSeconds)}',
-                  style: PasyarTextStyles.label,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          if (onPost != null)
-            SizedBox(
-              width: 96,
-              child: PrimaryButton(label: 'POST', onPressed: onPost),
-            ),
-          IconButton(
-            onPressed: onMore,
-            tooltip: 'More',
-            constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-            icon: const Icon(
-              LucideIcons.ellipsis,
-              size: 22,
-              color: PasyarColors.muted,
-            ),
+          Divider(height: 1, color: PasyarColors.of(context).line),
+          Wrap(
+            spacing: 20,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
+            children: [
+              Wrap(
+                spacing: 20,
+                runSpacing: 8,
+                children: [
+                  _stat(
+                    context,
+                    formatDistance(ride.riddenM.round()),
+                    'Distance ridden',
+                  ),
+                  _stat(
+                    context,
+                    formatRideTime(ride.duration.inSeconds),
+                    'Ride time',
+                  ),
+                ],
+              ),
+              if (ready)
+                FilledButton.icon(
+                  onPressed: onPost,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: PasyarColors.of(context).accent,
+                    foregroundColor: PasyarColors.of(context).onAccent,
+                    minimumSize: const Size(96, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(LucideIcons.plus, size: 16),
+                  label: const Text('POST'),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
+
+  Widget _stat(BuildContext context, String value, String label) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(value, style: PasyarTextStyles.of(context).statValueSmall),
+      Text(label, style: PasyarTextStyles.of(context).label),
+    ],
+  );
 }

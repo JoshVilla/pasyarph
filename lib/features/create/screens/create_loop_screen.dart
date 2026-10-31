@@ -183,7 +183,7 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
         if (!didPop) _back();
       },
       child: Scaffold(
-        backgroundColor: PasyarColors.mapGround,
+        backgroundColor: PasyarColors.of(context).mapGround,
         resizeToAvoidBottomInset: false,
         // Drag the sheet down to see more of the map (not while typing).
         body: CollapsibleSheet(
@@ -362,15 +362,15 @@ class _HintPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
-            color: PasyarColors.ink,
+            color: PasyarColors.of(context).ink,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             text,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: PasyarTextStyles.bodySmall.copyWith(
-              color: PasyarColors.card,
+            style: PasyarTextStyles.of(context).bodySmall.copyWith(
+              color: PasyarColors.of(context).card,
               height: 1.2,
             ),
           ),

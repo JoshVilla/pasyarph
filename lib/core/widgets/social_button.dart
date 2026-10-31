@@ -31,7 +31,9 @@ class SocialButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apple = provider == SocialProvider.apple;
-    final foreground = apple ? PasyarColors.card : PasyarColors.ink;
+    final foreground = apple
+        ? PasyarColors.of(context).card
+        : PasyarColors.of(context).ink;
     final enabled = onPressed != null && !loading;
 
     return Semantics(
@@ -44,12 +46,17 @@ class SocialButton extends StatelessWidget {
         child: SizedBox(
           height: 52,
           child: Material(
-            color: apple ? PasyarColors.ink : PasyarColors.card,
+            color: apple
+                ? PasyarColors.of(context).ink
+                : PasyarColors.of(context).card,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(PasyarRadius.social),
               side: apple
                   ? BorderSide.none
-                  : const BorderSide(color: PasyarColors.line, width: 1.5),
+                  : BorderSide(
+                      color: PasyarColors.of(context).line,
+                      width: 1.5,
+                    ),
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
@@ -73,7 +80,7 @@ class SocialButton extends StatelessWidget {
                             Text(
                               label,
                               maxLines: 1,
-                              style: PasyarTextStyles.body.copyWith(
+                              style: PasyarTextStyles.of(context).body.copyWith(
                                 fontSize: 16,
                                 height: 1.2,
                                 fontWeight: FontWeight.w600,
@@ -106,11 +113,13 @@ class _ProviderMark extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: apple ? PasyarColors.card : PasyarColors.ground,
+        color: apple
+            ? PasyarColors.of(context).card
+            : PasyarColors.of(context).ground,
       ),
       child: Text(
         apple ? 'A' : 'G',
-        style: PasyarTextStyles.body.copyWith(
+        style: PasyarTextStyles.of(context).body.copyWith(
           height: 1,
           fontSize: apple ? 13 : 14,
           fontWeight: FontWeight.w700,

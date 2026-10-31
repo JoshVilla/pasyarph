@@ -18,6 +18,7 @@ import 'data/repositories/club_repository.dart';
 import 'data/repositories/cover_repository.dart';
 import 'data/repositories/feed_repository.dart';
 import 'data/repositories/loop_repository.dart';
+import 'data/repositories/discovery_repository.dart';
 import 'data/repositories/post_repository.dart';
 import 'data/repositories/ride_history_repository.dart';
 import 'data/repositories/route_repository.dart';
@@ -102,6 +103,9 @@ Future<void> main() async {
           ),
         ),
         Provider<PostRepository>(create: (_) => SupabasePostRepository(client)),
+        Provider<DiscoveryRepository>(
+          create: (_) => SupabaseDiscoveryRepository(client),
+        ),
         Provider<LoopRepository>(create: (_) => SupabaseLoopRepository(client)),
         Provider<ClubRepository>(create: (_) => SupabaseClubRepository(client)),
         Provider<PostDraftStore>(create: (_) => const LocalPostDraftStore()),

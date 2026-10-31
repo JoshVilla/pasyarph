@@ -14,17 +14,17 @@ import '../../profile/edit_cover.dart';
 import '../../profile/providers/cover_controller.dart';
 import '../../profile/widgets/profile_cover.dart';
 import '../../profile/widgets/profile_header.dart';
-import '../../profile/widgets/rides_grid.dart';
+import '../widgets/posted_rides_list.dart';
 import '../providers/me_controller.dart';
 import '../widgets/my_loops_list.dart';
 import '../widgets/ride_history_list.dart';
 import '../widgets/saved_loops_list.dart';
 
-enum MeTab { rides, loops, saved }
+enum MeTab { rides, loops, clubs, saved }
 
 /// The Me tab: cover banner (Edit cover), picture, name, @username, bio,
-/// follower counts and stat tiles, then Rides (a grid of posts, and the
-/// rides still to post), My loops (with clubs) and Saved. Expects a
+/// follower counts and stat tiles, then Rides (a journal of posts, and the
+/// rides still to post), My loops, My clubs and Saved. Expects a
 /// [MeController] above it.
 class MeScreen extends StatefulWidget {
   const MeScreen({super.key, this.initialTab = MeTab.rides, this.pick});
@@ -89,7 +89,7 @@ class _MeScreenState extends State<MeScreen> {
         posts: t.posts,
       ),
       action: ProfilePillButton(label: 'Edit profile', onPressed: editProfile),
-      coverActions: [
+      profileActions: [
         CoverIconButton(
           icon: LucideIcons.share2,
           label: 'Share profile',
@@ -113,7 +113,7 @@ class _MeScreenState extends State<MeScreen> {
     final sections = <Widget>[
       header,
       ColoredBox(
-        color: PasyarColors.card,
+        color: PasyarColors.of(context).background,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             PasyarSpacing.screen,
@@ -129,6 +129,7 @@ class _MeScreenState extends State<MeScreen> {
                 tabs: const {
                   MeTab.rides: 'Rides',
                   MeTab.loops: 'My loops',
+                  MeTab.clubs: 'My clubs',
                   MeTab.saved: 'Saved',
                 },
                 selected: _tab,
@@ -136,11 +137,8 @@ class _MeScreenState extends State<MeScreen> {
               ),
               ...switch (_tab) {
                 MeTab.rides => _rides(me, feed),
-                MeTab.loops => const [
-                  MyLoopsList(),
-                  SizedBox(height: 16),
-                  MyClubsList(),
-                ],
+                MeTab.loops => const [MyLoopsList()],
+                MeTab.clubs => const [MyClubsList()],
                 MeTab.saved => const [SavedLoopsList()],
               },
             ],
@@ -150,9 +148,9 @@ class _MeScreenState extends State<MeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: RefreshIndicator(
-        color: PasyarColors.accent,
+        color: PasyarColors.of(context).accent,
         edgeOffset: MediaQuery.paddingOf(context).top,
         onRefresh: () => Future.wait([me.load(), auth.reloadProfile()]),
         child: ListView(
@@ -166,26 +164,30 @@ class _MeScreenState extends State<MeScreen> {
 
   List<Widget> _rides(MeController me, FeedRepository feed) {
     final posts = me.posts;
-    final empty = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final empty = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
     return [
       if (posts == null)
         me.error != null
             ? Text(me.error!, style: empty)
-            : const Padding(
+            : Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: CircularProgressIndicator(color: PasyarColors.accent),
+                  child: CircularProgressIndicator(
+                    color: PasyarColors.of(context).accent,
+                  ),
                 ),
               )
       else if (posts.isEmpty)
         Text('Ride a loop, then post it with your photos.', style: empty)
       else
-        RidesGrid(
+        PostedRidesList(
           posts: posts,
           photo: feed.photo,
           onTap: (p) => context.push(Routes.postLink(p.id)),
         ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 12),
       // Rides still to post (and deleting rides) live here too.
       const RideHistoryList(),
     ];

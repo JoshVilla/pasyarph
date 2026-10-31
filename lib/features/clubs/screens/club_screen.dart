@@ -223,9 +223,9 @@ class _ClubScreenState extends State<ClubScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: PasyarColors.line,
+      backgroundColor: PasyarColors.of(context).line,
       body: RefreshIndicator(
-        color: PasyarColors.accent,
+        color: PasyarColors.of(context).accent,
         edgeOffset: MediaQuery.paddingOf(context).top,
         onRefresh: _refresh,
         child: ListView.separated(
@@ -268,9 +268,11 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final club = this.club;
-    final muted = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final muted = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           PasyarSpacing.screen,
@@ -303,9 +305,9 @@ class _Header extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: loading
-                    ? const Center(
+                    ? Center(
                         child: CircularProgressIndicator(
-                          color: PasyarColors.accent,
+                          color: PasyarColors.of(context).accent,
                         ),
                       )
                     : Text(
@@ -328,9 +330,15 @@ class _Header extends StatelessWidget {
               const SizedBox(height: 12),
               Semantics(
                 header: true,
-                child: Text(club.name, style: PasyarTextStyles.screenTitle(32)),
+                child: Text(
+                  club.name,
+                  style: PasyarTextStyles.of(context).screenTitle(32),
+                ),
               ),
-              Text(clubSubtitle(club), style: PasyarTextStyles.label),
+              Text(
+                clubSubtitle(club),
+                style: PasyarTextStyles.of(context).label,
+              ),
               const SizedBox(height: PasyarSpacing.groupGap),
               switch (club.myRole) {
                 ClubRole.owner => PrimaryButton(
@@ -374,7 +382,7 @@ class _Members extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatars = context.read<FeedRepository>();
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           PasyarSpacing.screen,
@@ -385,7 +393,10 @@ class _Members extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('MEMBERS', style: PasyarTextStyles.screenTitle(24)),
+            Text(
+              'MEMBERS',
+              style: PasyarTextStyles.of(context).screenTitle(24),
+            ),
             const SizedBox(height: 4),
             for (final m in members)
               PersonRow(
@@ -402,13 +413,13 @@ class _Members extends StatelessWidget {
                 onPressed: onShowAll,
                 style: TextButton.styleFrom(
                   minimumSize: const Size.fromHeight(PasyarSpacing.minTouch),
-                  foregroundColor: PasyarColors.accentDark,
+                  foregroundColor: PasyarColors.of(context).accentDark,
                 ),
                 child: Text(
                   'SHOW ALL ${memberCount(total).toUpperCase()}',
-                  style: PasyarTextStyles.buttonSecondary.copyWith(
+                  style: PasyarTextStyles.of(context).buttonSecondary.copyWith(
                     fontSize: 16,
-                    color: PasyarColors.accentDark,
+                    color: PasyarColors.of(context).accentDark,
                   ),
                 ),
               ),
@@ -442,8 +453,8 @@ class _SheetOption extends StatelessWidget {
           child: Row(
             spacing: 14,
             children: [
-              Icon(icon, size: 22, color: PasyarColors.ink),
-              Text(label, style: PasyarTextStyles.bodyLarge),
+              Icon(icon, size: 22, color: PasyarColors.of(context).ink),
+              Text(label, style: PasyarTextStyles.of(context).bodyLarge),
             ],
           ),
         ),

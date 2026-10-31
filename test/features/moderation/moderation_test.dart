@@ -325,7 +325,14 @@ void main() {
       await w.moderation.block('rico');
       await w.moderation.block('jun');
       await _pump(tester, Routes.settings, world: w);
+      await tester.scrollUntilVisible(
+        find.text('BLOCKED RIDERS'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('BLOCKED RIDERS'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('BLOCKED RIDERS'));
       await tester.pumpAndSettle();
       expect(find.text('Rico Navarro'), findsOneWidget);
@@ -345,7 +352,14 @@ void main() {
       expect(find.text('REVIEW REPORTS'), findsNothing);
 
       await _pump(tester, Routes.settings, world: _World(admin: true));
+      await tester.scrollUntilVisible(
+        find.text('REVIEW REPORTS'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('REVIEW REPORTS'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('REVIEW REPORTS'));
       await tester.pumpAndSettle();
       expect(find.byType(ModerationScreen), findsOneWidget);

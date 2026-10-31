@@ -13,14 +13,14 @@ class PostCardSkeleton extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(height / 2),
       ),
     );
     return Semantics(
       label: 'Loading post',
       child: ColoredBox(
-        color: PasyarColors.card,
+        color: PasyarColors.of(context).card,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,8 +32,8 @@ class PostCardSkeleton extends StatelessWidget {
                   Container(
                     width: 44,
                     height: 44,
-                    decoration: const BoxDecoration(
-                      color: PasyarColors.ground,
+                    decoration: BoxDecoration(
+                      color: PasyarColors.of(context).ground,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -49,13 +49,13 @@ class PostCardSkeleton extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: bar(280, 12),
             ),
-            Container(height: 263, color: PasyarColors.ground),
+            Container(height: 263, color: PasyarColors.of(context).ground),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
                 height: 70,
                 decoration: BoxDecoration(
-                  color: PasyarColors.ground,
+                  color: PasyarColors.of(context).ground,
                   borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
                 ),
               ),

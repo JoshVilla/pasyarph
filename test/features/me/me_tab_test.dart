@@ -10,6 +10,7 @@ import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/router.dart';
 import 'package:pasyarph/core/settings/app_settings.dart';
 import 'package:pasyarph/core/share.dart';
+import 'package:pasyarph/core/theme/pasyar_theme.dart';
 import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/loop.dart';
 import 'package:pasyarph/data/models/profile.dart';
@@ -234,9 +235,14 @@ class _World {
         ),
         Provider<RouteRepository>(create: (_) => FakeRouteRepository()),
       ],
-      child: MaterialApp.router(
-        routerConfig: router,
-        debugShowCheckedModeBanner: banner,
+      child: Consumer<AppSettings>(
+        builder: (context, settings, _) => MaterialApp.router(
+          theme: PasyarTheme.light(),
+          darkTheme: PasyarTheme.dark(),
+          themeMode: settings.themeMode,
+          routerConfig: router,
+          debugShowCheckedModeBanner: banner,
+        ),
       ),
     );
   }
@@ -284,6 +290,33 @@ void main() {
       },
     );
     goldenTest(
+      'Me tab, Midnight Blue',
+      fileName: 'me_posts_dark',
+      constraints: _screen,
+      pumpBeforeTest: (tester) async {
+        await tester.pumpAndSettle();
+        await _settle(tester);
+      },
+      builder: () {
+        final w = _World();
+        unawaited(w.settings.setThemeMode(ThemeMode.dark));
+        unawaited(w.location.start());
+        return w.app();
+      },
+    );
+    goldenTest(
+      'Settings, Midnight Blue',
+      fileName: 'settings_dark',
+      constraints: _screen,
+      pumpBeforeTest: (tester) async => tester.pumpAndSettle(),
+      builder: () {
+        final w = _World();
+        unawaited(w.settings.setThemeMode(ThemeMode.dark));
+        unawaited(w.location.start());
+        return w.app(initial: Routes.settings);
+      },
+    );
+    goldenTest(
       'Edit profile',
       fileName: 'edit_profile',
       constraints: _screen,
@@ -327,7 +360,23 @@ void main() {
     expect(find.text('23'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('Edit profile'), findsOneWidget);
-    expect(find.bySemanticsLabel('Edit cover'), findsOneWidget);
+    expect(find.text('Edit cover'), findsNothing);
+    final cover = find.bySemanticsLabel('Edit cover');
+    expect(cover, findsOneWidget);
+    final edit = find.bySemanticsLabel('Edit profile');
+    final share = find.bySemanticsLabel('Share profile');
+    final settings = find.bySemanticsLabel('Settings');
+    for (final button in [edit, share, settings]) {
+      expect(
+        tester.getTopLeft(button).dy,
+        greaterThanOrEqualTo(tester.getBottomRight(cover).dy),
+      );
+    }
+    expect(tester.getCenter(share).dx, greaterThan(tester.getCenter(edit).dx));
+    expect(
+      tester.getCenter(settings).dx,
+      greaterThan(tester.getCenter(share).dx),
+    );
   });
 
   testWidgets('no username yet: Add a username opens Edit profile', (
@@ -489,23 +538,25 @@ void main() {
     expect(find.text('24'), findsOneWidget);
   });
 
-  testWidgets('Rides: a 2-column grid of posts; tapping one opens it', (
+  testWidgets('Rides: journal cards show loop details; tapping one opens it', (
     tester,
   ) async {
     await _pump(tester);
     await _settle(tester);
-    // Four posts; the loop shared without a post isn't in the grid.
-    final cards = find.bySemanticsLabel('Sunday Falls Loop, 118 km');
+    // Four posts; the loop shared without a post isn't in the journal.
+    final cards = find.bySemanticsLabel(RegExp(r'^Sunday Falls Loop, 118 km,'));
     expect(cards, findsNWidgets(4));
-    expect(tester.getSize(cards.first).height, 132);
+    expect(find.text('Ride journal'), findsOneWidget);
+    expect(find.text('4 posts'), findsOneWidget);
+    expect(find.text('118 km'), findsNWidgets(4));
     expect(
       tester.getTopLeft(cards.at(0)).dy,
-      tester.getTopLeft(cards.at(1)).dy,
-      reason: 'two per row',
+      lessThan(tester.getTopLeft(cards.at(1)).dy),
+      reason: 'one ride per row',
     );
-    // Rides to post stay under the grid.
+    // Ride history stays under the journal.
     await tester.scrollUntilVisible(
-      find.text('YOUR RIDES'),
+      find.text('Ride history'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
@@ -518,6 +569,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('POST p0'), findsOneWidget);
   });
+
+  testWidgets(
+    'journal handles text updates and large text on a narrow screen',
+    (tester) async {
+      final w = _World();
+      w.feed.scoped[const FeedScope.rider(_uid)] = [
+        feedPost(
+          id: 'words',
+          createdAt: _now,
+          text: true,
+          caption: 'A quiet morning on the road.',
+        ),
+        feedPost(
+          id: 'route',
+          createdAt: _now,
+          loopName: 'A long Sunday ride through the mountains of Sierra Madre',
+        ),
+      ];
+      await _pump(tester, world: w);
+      tester.view.physicalSize = const Size(320 * 3, 844 * 3);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('A quiet morning on the road.'), findsOneWidget);
+      expect(find.text('118 km'), findsOneWidget);
+      final card = find.bySemanticsLabel(
+        RegExp(r'^A quiet morning on the road.'),
+      );
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
+      await tester.tap(card);
+      await tester.pumpAndSettle();
+      expect(find.text('POST words'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'appearance switches immediately between Dark, Light and System',
+    (tester) async {
+      final w = await _pump(tester, initial: Routes.settings);
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+      expect(w.settings.themeMode, ThemeMode.dark);
+      expect(
+        Theme.of(tester.element(find.text('SETTINGS'))).brightness,
+        Brightness.dark,
+      );
+      await tester.tap(find.text('Light'));
+      await tester.pumpAndSettle();
+      expect(
+        Theme.of(tester.element(find.text('SETTINGS'))).brightness,
+        Brightness.light,
+      );
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await tester.tap(find.text('System'));
+      await tester.pumpAndSettle();
+      expect(w.settings.themeMode, ThemeMode.system);
+      expect(
+        Theme.of(tester.element(find.text('SETTINGS'))).brightness,
+        Brightness.dark,
+      );
+    },
+  );
 
   group('My loops', () {
     Future<_World> openLoops(WidgetTester tester) async {
@@ -543,7 +659,19 @@ void main() {
       expect(find.text('Sunday Falls Loop'), findsOneWidget);
       expect(find.text('Public'), findsOneWidget);
       expect(find.text('Made by you'), findsOneWidget);
+      expect(find.text('YOUR CLUBS'), findsNothing);
+
+      await tester.tap(find.text('My clubs'));
+      await tester.pumpAndSettle();
       expect(find.text('YOUR CLUBS'), findsOneWidget);
+      expect(find.text('CREATE A CLUB'), findsOneWidget);
+      expect(find.text('JOIN WITH A LINK'), findsOneWidget);
+      expect(find.text('Sunday Falls Loop'), findsNothing);
+
+      await tester.tap(find.text('My loops'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sunday Falls Loop'), findsOneWidget);
+      expect(find.text('YOUR CLUBS'), findsNothing);
     });
 
     testWidgets('⋯ → edit renames it and makes it private', (tester) async {
@@ -596,6 +724,8 @@ void main() {
     final w = _World();
     await w.me.saveLoop('saved-1');
     await _pump(tester, world: w);
+    await tester.ensureVisible(find.text('Saved'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Saved'));
     await tester.pumpAndSettle();
     expect(find.text('Tanay Sunrise Loop'), findsOneWidget);

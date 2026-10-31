@@ -71,10 +71,15 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
           math.max(20, MediaQuery.viewPaddingOf(context).bottom + 20),
         ),
         children: [
-          Text('END THIS RIDE?', style: PasyarTextStyles.screenTitle(30)),
+          Text(
+            'END THIS RIDE?',
+            style: PasyarTextStyles.of(context).screenTitle(30),
+          ),
           Text(
             "We'll save what you've ridden so far.",
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           ),
           PrimaryButton(
             label: 'END RIDE',
@@ -101,12 +106,12 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
 
     if (loop == null || stop == null) {
       if (_leaving) {
-        return const Scaffold(backgroundColor: PasyarColors.mapGround);
+        return Scaffold(backgroundColor: PasyarColors.of(context).mapGround);
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted && context.canPop()) context.pop();
       });
-      return const Scaffold(backgroundColor: PasyarColors.mapGround);
+      return Scaffold(backgroundColor: PasyarColors.of(context).mapGround);
     }
 
     final finished = ride.phase == RidePhase.finished;
@@ -146,7 +151,7 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
       // While riding, Back would leave the ride without ending it.
       canPop: !ride.active,
       child: Scaffold(
-        backgroundColor: PasyarColors.mapGround,
+        backgroundColor: PasyarColors.of(context).mapGround,
         body: Stack(
           children: [
             MapUnderSheet(
@@ -182,7 +187,7 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
                       FloatingPill(
                         child: Text(
                           finished ? 'LOOP DONE' : 'RIDE IN PROGRESS',
-                          style: PasyarTextStyles.pillTitle,
+                          style: PasyarTextStyles.of(context).pillTitle,
                         ),
                       ),
                     ],
@@ -299,7 +304,7 @@ class _SummarySheet extends StatelessWidget {
               label: 'Main stop',
               value: (summary?.reachedStop ?? false) ? 'Yes' : 'No',
               valueColor: (summary?.reachedStop ?? false)
-                  ? PasyarColors.accentDark
+                  ? PasyarColors.of(context).accentDark
                   : null,
             ),
           ],
@@ -326,7 +331,9 @@ class _SummarySheet extends StatelessWidget {
           if (summary != null && !summary.longEnough)
             Text(
               'Ride at least a quarter of the loop to post it.',
-              style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+              style: PasyarTextStyles.of(
+                context,
+              ).body.copyWith(color: PasyarColors.of(context).muted),
             ),
           PrimaryButton(label: 'FINISH LOOP', onPressed: onDone),
         ],

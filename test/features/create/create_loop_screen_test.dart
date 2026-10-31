@@ -266,6 +266,9 @@ void main() {
       isNull,
     );
 
+    // Let the save confirmation leave the button before sharing.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('SHARE LINK'));
     await tester.pumpAndSettle();
     expect(sharer.shared, [

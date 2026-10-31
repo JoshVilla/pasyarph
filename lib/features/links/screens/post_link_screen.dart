@@ -85,9 +85,9 @@ class _PostLinkScreenState extends State<PostLinkScreen> {
       ),
     ];
     return Scaffold(
-      backgroundColor: PasyarColors.line,
+      backgroundColor: PasyarColors.of(context).line,
       body: RefreshIndicator(
-        color: PasyarColors.accent,
+        color: PasyarColors.of(context).accent,
         edgeOffset: MediaQuery.paddingOf(context).top,
         onRefresh: feed.refresh,
         child: ListView.separated(
@@ -112,7 +112,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           PasyarSpacing.screen,
@@ -130,7 +130,10 @@ class _Header extends StatelessWidget {
             ),
             Semantics(
               header: true,
-              child: Text('RIDE', style: PasyarTextStyles.screenTitle(32)),
+              child: Text(
+                'RIDE',
+                style: PasyarTextStyles.of(context).screenTitle(32),
+              ),
             ),
           ],
         ),

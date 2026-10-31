@@ -4,16 +4,9 @@ import '../theme/pasyar_theme.dart';
 
 /// A floating notice shown on the map (ride status, errors, loading, etc.).
 class MapNotice extends StatelessWidget {
-  const MapNotice({
-    super.key,
-    required this.icon,
-    required this.text,
-  });
+  const MapNotice({super.key, required this.icon, required this.text});
 
-  const MapNotice.loading({
-    super.key,
-    required this.text,
-  }) : icon = null;
+  const MapNotice.loading({super.key, required this.text}) : icon = null;
 
   final IconData? icon;
   final String text;
@@ -24,7 +17,7 @@ class MapNotice extends StatelessWidget {
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: PasyarColors.card,
+        color: PasyarColors.of(context).card,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
         boxShadow: PasyarShadows.floating,
       ),
@@ -39,11 +32,11 @@ class MapNotice extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else
-            Icon(icon, size: 20, color: PasyarColors.accentDark),
+            Icon(icon, size: 20, color: PasyarColors.of(context).accentDark),
           Flexible(
             child: Text(
               text,
-              style: PasyarTextStyles.body.copyWith(height: 1.3),
+              style: PasyarTextStyles.of(context).body.copyWith(height: 1.3),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

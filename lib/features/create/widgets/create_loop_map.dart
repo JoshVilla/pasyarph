@@ -101,7 +101,7 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
         ),
         minZoom: 4,
         maxZoom: 18,
-        backgroundColor: PasyarColors.mapGround,
+        backgroundColor: PasyarColors.of(context).mapGround,
         interactionOptions: base,
         onTap: onTap,
         onMapReady: onReady,
@@ -112,7 +112,7 @@ class _CreateLoopMapState extends State<CreateLoopMap> {
       initialZoom: widget.start == null ? 6 : 13,
       minZoom: 4,
       maxZoom: 18,
-      backgroundColor: PasyarColors.mapGround,
+      backgroundColor: PasyarColors.of(context).mapGround,
       interactionOptions: base,
       onTap: onTap,
       onMapReady: onReady,
@@ -214,17 +214,20 @@ class _NumberedFlag extends StatelessWidget {
             height: 18,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: PasyarColors.accent,
+              color: PasyarColors.of(context).accent,
               shape: BoxShape.circle,
-              border: Border.all(color: PasyarColors.card, width: 2),
+              border: Border.all(
+                color: PasyarColors.of(context).card,
+                width: 2,
+              ),
             ),
             child: Text(
               '$number',
-              style: PasyarTextStyles.label.copyWith(
+              style: PasyarTextStyles.of(context).label.copyWith(
                 fontSize: 10,
                 height: 1,
                 fontWeight: FontWeight.w700,
-                color: PasyarColors.card,
+                color: PasyarColors.of(context).card,
               ),
             ),
           ),
@@ -311,9 +314,9 @@ class _PointHandle extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: selected
-                  ? const [
+                  ? [
                       BoxShadow(
-                        color: PasyarColors.accentTint,
+                        color: PasyarColors.of(context).accentTint,
                         spreadRadius: 6,
                       ),
                     ]
@@ -360,7 +363,7 @@ class PointActions extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: PasyarColors.card,
+          color: PasyarColors.of(context).card,
           borderRadius: BorderRadius.circular(PasyarRadius.panel),
           boxShadow: PasyarShadows.floating,
         ),
@@ -406,9 +409,13 @@ class _PointAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = filled ? PasyarColors.accentDark : PasyarColors.ink;
+    final color = filled
+        ? PasyarColors.of(context).accentDark
+        : PasyarColors.of(context).ink;
     return Material(
-      color: filled ? PasyarColors.accentTint : PasyarColors.ground,
+      color: filled
+          ? PasyarColors.of(context).accentTint
+          : PasyarColors.of(context).ground,
       borderRadius: BorderRadius.circular(PasyarRadius.input),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -421,10 +428,9 @@ class _PointAction extends StatelessWidget {
               Icon(icon, size: 18, color: color),
               Text(
                 label,
-                style: PasyarTextStyles.buttonSecondary.copyWith(
-                  fontSize: 16,
-                  color: color,
-                ),
+                style: PasyarTextStyles.of(
+                  context,
+                ).buttonSecondary.copyWith(fontSize: 16, color: color),
               ),
             ],
           ),

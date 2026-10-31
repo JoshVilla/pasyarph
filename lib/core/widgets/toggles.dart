@@ -16,20 +16,27 @@ class PasyarCheckbox extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: value ? PasyarColors.accent : PasyarColors.card,
+        color: value
+            ? PasyarColors.of(context).accent
+            : PasyarColors.of(context).card,
         borderRadius: BorderRadius.circular(3),
         border: value
             ? null
-            : Border.all(color: PasyarColors.muted, width: 1.5),
+            : Border.all(color: PasyarColors.of(context).muted, width: 1.5),
       ),
       child: value
-          ? CustomPaint(painter: _CheckPainter(), size: Size.square(size))
+          ? CustomPaint(
+              painter: _CheckPainter(PasyarColors.of(context).onAccent),
+              size: Size.square(size),
+            )
           : null,
     );
   }
 }
 
 class _CheckPainter extends CustomPainter {
+  _CheckPainter(this.color);
+  final Color color;
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width;
@@ -40,7 +47,7 @@ class _CheckPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = PasyarColors.card
+        ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = s * 0.14
         ..strokeCap = StrokeCap.round
@@ -49,7 +56,7 @@ class _CheckPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CheckPainter oldDelegate) => false;
+  bool shouldRepaint(_CheckPainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// 44 px `ground` pill with a checkbox, e.g. "Avoid highways".
@@ -75,7 +82,7 @@ class PillToggle extends StatelessWidget {
       child: SizedBox(
         height: 44,
         child: Material(
-          color: PasyarColors.ground,
+          color: PasyarColors.of(context).ground,
           shape: const StadiumBorder(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -91,7 +98,7 @@ class PillToggle extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodySmall,
+                      style: PasyarTextStyles.of(context).bodySmall,
                     ),
                   ),
                 ],
@@ -136,21 +143,25 @@ class PasyarFilterChip extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
               decoration: ShapeDecoration(
-                color: selected ? PasyarColors.ink : PasyarColors.card,
+                color: selected
+                    ? PasyarColors.of(context).ink
+                    : PasyarColors.of(context).card,
                 shape: StadiumBorder(
                   side: selected
                       ? BorderSide.none
-                      : const BorderSide(
-                          color: PasyarColors.lineStrong,
+                      : BorderSide(
+                          color: PasyarColors.of(context).lineStrong,
                           width: 1.5,
                         ),
                 ),
               ),
               child: Text(
                 label,
-                style: PasyarTextStyles.bodySmall.copyWith(
+                style: PasyarTextStyles.of(context).bodySmall.copyWith(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? PasyarColors.card : PasyarColors.ink,
+                  color: selected
+                      ? PasyarColors.of(context).card
+                      : PasyarColors.of(context).ink,
                 ),
               ),
             ),
@@ -191,7 +202,7 @@ class SegmentedChoice<T> extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: PasyarColors.ground,
+          color: PasyarColors.of(context).ground,
           borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
         ),
         child: Row(
@@ -235,7 +246,7 @@ class _Segment extends StatelessWidget {
           alignment: Alignment.center,
           decoration: selected
               ? BoxDecoration(
-                  color: PasyarColors.card,
+                  color: PasyarColors.of(context).card,
                   borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
                   boxShadow: SegmentedChoice._selectedShadow,
                 )
@@ -243,10 +254,12 @@ class _Segment extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style: PasyarTextStyles.body.copyWith(
+            style: PasyarTextStyles.of(context).body.copyWith(
               height: 1.2,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? PasyarColors.accentDark : PasyarColors.ink,
+              color: selected
+                  ? PasyarColors.of(context).accentDark
+                  : PasyarColors.of(context).ink,
             ),
           ),
         ),

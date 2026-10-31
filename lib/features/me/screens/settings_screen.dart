@@ -47,10 +47,12 @@ class SettingsScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
     final auth = context.read<AuthProvider>();
     final top = MediaQuery.paddingOf(context).top;
-    final body = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final body = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
 
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           PasyarSpacing.sheet,
@@ -71,7 +73,28 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Semantics(
             header: true,
-            child: Text('SETTINGS', style: PasyarTextStyles.screenTitle(36)),
+            child: Text(
+              'SETTINGS',
+              style: PasyarTextStyles.of(context).screenTitle(36),
+            ),
+          ),
+          const _Section('APPEARANCE'),
+          Text('Theme', style: PasyarTextStyles.of(context).bodyStrong),
+          const SizedBox(height: 10),
+          SegmentedChoice<ThemeMode>(
+            semanticLabel: 'App theme',
+            options: const {
+              ThemeMode.system: 'System',
+              ThemeMode.light: 'Light',
+              ThemeMode.dark: 'Dark',
+            },
+            selected: settings.themeMode,
+            onChanged: settings.setThemeMode,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dark uses the Midnight Blue palette. System follows your device.',
+            style: PasyarTextStyles.of(context).label,
           ),
           const _Section('RIDING'),
           PillToggle(
@@ -83,7 +106,7 @@ class SettingsScreen extends StatelessWidget {
           Text(
             'Says ride alerts out loud: reaching the main stop, leaving the '
             'loop, and getting back home.',
-            style: PasyarTextStyles.label,
+            style: PasyarTextStyles.of(context).label,
           ),
           const _Section('UNITS'),
           const _InfoPanel(
@@ -139,9 +162,9 @@ class SettingsScreen extends StatelessWidget {
           TextButton(
             onPressed: () => _delete(context),
             style: TextButton.styleFrom(
-              foregroundColor: PasyarColors.accentDark,
+              foregroundColor: PasyarColors.of(context).accentDark,
               minimumSize: const Size.fromHeight(48),
-              textStyle: PasyarTextStyles.buttonSecondary,
+              textStyle: PasyarTextStyles.of(context).buttonSecondary,
             ),
             child: const Text('DELETE ACCOUNT'),
           ),
@@ -201,7 +224,7 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 28, bottom: 10),
-      child: Text(title, style: PasyarTextStyles.overline),
+      child: Text(title, style: PasyarTextStyles.of(context).overline),
     );
   }
 }
@@ -223,23 +246,25 @@ class _InfoPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 12,
         children: [
-          Icon(icon, size: 22, color: PasyarColors.accent),
+          Icon(icon, size: 22, color: PasyarColors.of(context).accent),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text(title, style: PasyarTextStyles.bodyStrong),
+                Text(title, style: PasyarTextStyles.of(context).bodyStrong),
                 Text(
                   text,
-                  style: PasyarTextStyles.label.copyWith(fontSize: 14),
+                  style: PasyarTextStyles.of(
+                    context,
+                  ).label.copyWith(fontSize: 14),
                 ),
               ],
             ),
@@ -308,17 +333,17 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
                 child: Row(
                   spacing: 16,
                   children: [
-                    const SizedBox.square(
+                    SizedBox.square(
                       dimension: 28,
                       child: CircularProgressIndicator(
-                        color: PasyarColors.accent,
+                        color: PasyarColors.of(context).accent,
                         strokeWidth: 3,
                       ),
                     ),
                     Expanded(
                       child: Text(
                         'Deleting your account and photos…',
-                        style: PasyarTextStyles.body,
+                        style: PasyarTextStyles.of(context).body,
                       ),
                     ),
                   ],
@@ -354,7 +379,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
                 TextButton(
                   onPressed: ok && !moving ? _delete : null,
                   style: TextButton.styleFrom(
-                    foregroundColor: PasyarColors.accentDark,
+                    foregroundColor: PasyarColors.of(context).accentDark,
                   ),
                   child: const Text('DELETE'),
                 ),

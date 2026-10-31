@@ -35,7 +35,7 @@ class LoopPreviewScreen extends StatelessWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) _back(context);
       });
-      return const Scaffold(backgroundColor: PasyarColors.mapGround);
+      return Scaffold(backgroundColor: PasyarColors.of(context).mapGround);
     }
 
     final error = preview.error;
@@ -51,7 +51,7 @@ class LoopPreviewScreen extends StatelessWidget {
         : null;
 
     return Scaffold(
-      backgroundColor: PasyarColors.mapGround,
+      backgroundColor: PasyarColors.of(context).mapGround,
       body: Stack(
         children: [
           // Drag the sheet down to see more of the loop.
@@ -121,7 +121,7 @@ class LoopPreviewScreen extends StatelessWidget {
                           preview.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: PasyarTextStyles.pillTitle,
+                          style: PasyarTextStyles.of(context).pillTitle,
                         ),
                       ),
                     ),
@@ -178,14 +178,14 @@ class _Overnights extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 4,
         children: [
-          Text('OVERNIGHT STOPS', style: PasyarTextStyles.overline),
+          Text('OVERNIGHT STOPS', style: PasyarTextStyles.of(context).overline),
           for (final (i, n) in nights.indexed)
             Row(
               spacing: 8,
@@ -195,12 +195,16 @@ class _Overnights extends StatelessWidget {
                     'Night ${i + 1} · ${n.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.bodySmall.copyWith(height: 1.3),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).bodySmall.copyWith(height: 1.3),
                   ),
                 ),
                 Text(
                   '${n.kmIntoRoute} km in',
-                  style: PasyarTextStyles.label.copyWith(height: 1.3),
+                  style: PasyarTextStyles.of(
+                    context,
+                  ).label.copyWith(height: 1.3),
                 ),
               ],
             ),
@@ -258,7 +262,7 @@ class _PreviewSheet extends StatelessWidget {
               label: 'Curvy roads',
               value: curvy.label,
               valueColor: curvy == CurvyLevel.high
-                  ? PasyarColors.accentDark
+                  ? PasyarColors.of(context).accentDark
                   : null,
             ),
           ],
@@ -275,7 +279,9 @@ class _PreviewSheet extends StatelessWidget {
           Text(
             'Includes ${formatDistance(loop.approachM)} to the loop and '
             'back.',
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           ),
         Row(
           spacing: PasyarSpacing.buttonGap,
@@ -285,7 +291,7 @@ class _PreviewSheet extends StatelessWidget {
               SizedBox(
                 width: 132,
                 child: SecondaryButton(
-                  label: 'SHUFFLE',
+                  label: 'Shuffle',
                   icon: LucideIcons.shuffle,
                   loading: preview.loading,
                   onPressed: preview.shuffle,
@@ -293,7 +299,7 @@ class _PreviewSheet extends StatelessWidget {
               ),
             Expanded(
               child: PrimaryButton(
-                label: 'START RIDE',
+                label: 'Start ride',
                 icon: Icons.play_arrow_rounded,
                 // Google Maps navigates; Pasyar tracks the ride (Prompt 10a).
                 onPressed: preview.loading || stop == null

@@ -29,6 +29,7 @@ import '../features/create/providers/create_loop_controller.dart';
 import '../features/create/screens/create_loop_screen.dart';
 import '../features/dev/screens/widget_gallery_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
+import '../features/discover/screens/discover_screen.dart';
 import '../data/repositories/me_repository.dart';
 import '../data/repositories/moderation_repository.dart';
 import '../data/repositories/ride_history_repository.dart';
@@ -59,6 +60,7 @@ import 'widgets/app_shell.dart';
 abstract final class Routes {
   static const ride = '/ride';
   static const feed = '/feed';
+  static const discover = '/discover';
   static const me = '/me';
 
   /// Where riders land after logging in or opening the app: the Feed.
@@ -141,6 +143,10 @@ GoRouter createRouter({required AuthProvider auth, bool? includeDevRoutes}) {
       ),
     ),
     routes: [
+      GoRoute(
+        path: Routes.discover,
+        builder: (context, state) => const DiscoverScreen(),
+      ),
       GoRoute(
         path: Routes.loopLinkPath,
         builder: (context, state) =>

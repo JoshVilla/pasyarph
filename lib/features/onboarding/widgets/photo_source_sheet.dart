@@ -71,8 +71,8 @@ class _Option extends StatelessWidget {
           child: Row(
             spacing: 14,
             children: [
-              Icon(icon, size: 22, color: PasyarColors.ink),
-              Text(label, style: PasyarTextStyles.bodyLarge),
+              Icon(icon, size: 22, color: PasyarColors.of(context).ink),
+              Text(label, style: PasyarTextStyles.of(context).bodyLarge),
             ],
           ),
         ),

@@ -30,26 +30,32 @@ class RouteThumbnail extends StatelessWidget {
       child: SizedBox(
         width: width,
         height: height,
-        child: CustomPaint(painter: _RouteThumbPainter(route, startColor)),
+        child: CustomPaint(
+          painter: _RouteThumbPainter(
+            route,
+            startColor == PasyarColors.rider && PasyarColors.of(context).isDark
+                ? PasyarColors.of(context).ink
+                : startColor,
+            PasyarColors.of(context),
+          ),
+        ),
       ),
     );
   }
 }
 
 class _RouteThumbPainter extends CustomPainter {
-  const _RouteThumbPainter(this.route, this.startColor);
+  const _RouteThumbPainter(this.route, this.startColor, this.colors);
 
   final List<LatLng> route;
   final Color startColor;
+  final PasyarPalette colors;
 
   static const _inset = 9.0;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = PasyarColors.mapGround,
-    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = colors.mapGround);
     if (route.length < 2) return;
 
     // Flat projection: longitude shrinks with latitude.
@@ -75,7 +81,7 @@ class _RouteThumbPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = PasyarColors.accent
+        ..color = colors.accent
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeJoin = StrokeJoin.round
@@ -87,5 +93,6 @@ class _RouteThumbPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RouteThumbPainter oldDelegate) =>
       !identical(oldDelegate.route, route) ||
-      oldDelegate.startColor != startColor;
+      oldDelegate.startColor != startColor ||
+      oldDelegate.colors.isDark != colors.isDark;
 }

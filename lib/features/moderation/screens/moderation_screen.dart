@@ -160,31 +160,33 @@ class _ReportCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 8,
         children: [
-          Text(overline, style: PasyarTextStyles.overline),
+          Text(overline, style: PasyarTextStyles.of(context).overline),
           Text(
             item.preview ?? 'Deleted since it was reported.',
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: item.preview == null
-                ? PasyarTextStyles.body.copyWith(color: PasyarColors.muted)
-                : PasyarTextStyles.bodyLarge,
+                ? PasyarTextStyles.of(
+                    context,
+                  ).body.copyWith(color: PasyarColors.of(context).muted)
+                : PasyarTextStyles.of(context).bodyLarge,
           ),
           Text(
             [
               if (item.authorName != null) 'By ${item.authorName}',
               'Last reported ${timeAgo(item.lastReportedAt, now).toLowerCase()}',
             ].join(' · '),
-            style: PasyarTextStyles.label,
+            style: PasyarTextStyles.of(context).label,
           ),
           for (final r in summarizeReasons(item.reasons))
-            Text('• $r', style: PasyarTextStyles.bodySmall),
+            Text('• $r', style: PasyarTextStyles.of(context).bodySmall),
           const SizedBox(height: 4),
           Row(
             spacing: PasyarSpacing.buttonGap,

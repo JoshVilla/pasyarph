@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:pasyarph/core/location/location_provider.dart';
 import 'package:pasyarph/core/location/position_source.dart';
 import 'package:pasyarph/core/widgets/app_shell.dart';
+import 'package:pasyarph/core/theme/pasyar_theme.dart';
 import 'package:pasyarph/data/models/enums.dart';
 import 'package:pasyarph/data/models/post.dart';
 import 'package:pasyarph/data/repositories/feed_repository.dart';
@@ -124,14 +125,18 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('+3'), findsOneWidget);
-    expect(find.text('RIDE IT'), findsOneWidget);
+    expect(find.text('Ride it'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Ride it')).dy,
+      lessThan(tester.getTopLeft(find.bySemanticsLabel('Photo 1')).dy),
+    );
     expect(find.text('118 km · 3 h 50'), findsOneWidget);
     expect(find.text('Isabela · 6 km from you'), findsOneWidget);
     expect(find.text('Liked'), findsOneWidget);
     expect(find.text('View all 12 comments'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('RIDE THIS LOOP'),
+      find.text('Ride this loop'),
       300,
       scrollable: _feedList,
     );
@@ -141,12 +146,48 @@ void main() {
     expect(find.text('Isabela'), findsOneWidget); // province chip
   });
 
+  testWidgets(
+    'route details fit narrow screens with larger text in dark mode',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 844);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final feed = await tester.runAsync(
+        () => _feed([
+          feedPost(
+            id: 'long',
+            createdAt: _now,
+            loopName: 'A Sunday ride through the mountains of Sierra Madre',
+            province: 'Mountain Province',
+            photos: const ['#9FB4C4'],
+          ),
+        ]),
+      );
+      await tester.pumpWidget(
+        MaterialApp(theme: PasyarTheme.dark(), home: feed),
+      );
+      await _settleImages(tester);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        find.text('Ride it'),
+        150,
+        scrollable: _feedList,
+      );
+      expect(find.text('Ride it'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('tapping a photo opens the gallery at it', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: await tester.runAsync(() => _feed(mockupPosts(_now))) as Widget,
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.bySemanticsLabel('Photo 3, 3 more'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Photo 3, 3 more'));
     await tester.pumpAndSettle();
@@ -216,13 +257,13 @@ void main() {
     expect(find.text('Isabela · 6 km from you'), findsNothing);
 
     await tester.scrollUntilVisible(
-      find.text('RIDE THIS LOOP'),
+      find.text('Ride this loop'),
       300,
       scrollable: _feedList,
     );
     // The loop without a post can be ridden but not liked.
     final loopCard = find.ancestor(
-      of: find.text('RIDE THIS LOOP'),
+      of: find.text('Ride this loop'),
       matching: find.byType(PostCard),
     );
     expect(
@@ -253,7 +294,7 @@ void main() {
     await tester.tap(find.text('Following'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Rides from riders you follow'), findsOneWidget);
-    expect(find.text('RIDE IT'), findsNothing);
+    expect(find.text('Ride it'), findsNothing);
 
     await tester.tap(find.text('My clubs'));
     await tester.pumpAndSettle();
@@ -292,8 +333,8 @@ void main() {
     expect(find.text('Is the road to Daranak open?'), findsOneWidget);
     expect(find.text('2 h ago · Public'), findsOneWidget);
     expect(find.textContaining(' rode ', findRichText: true), findsNothing);
-    expect(find.text('RIDE IT'), findsNothing);
-    expect(find.text('RIDE THIS LOOP'), findsNothing);
+    expect(find.text('Ride it'), findsNothing);
+    expect(find.text('Ride this loop'), findsNothing);
     expect(find.text('Comment'), findsOneWidget);
   });
 

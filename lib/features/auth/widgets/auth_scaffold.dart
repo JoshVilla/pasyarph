@@ -70,7 +70,7 @@ class AuthScaffold extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: PasyarColors.card,
+        backgroundColor: PasyarColors.of(context).background,
         resizeToAvoidBottomInset: true,
         body: Column(
           children: [
@@ -148,16 +148,18 @@ class _TitleBlock extends StatelessWidget {
           header: true,
           child: Text(
             title,
-            style: PasyarTextStyles.screenTitle(size).copyWith(height: height),
+            style: PasyarTextStyles.of(
+              context,
+            ).screenTitle(size).copyWith(height: height),
           ),
         ),
         if (subtitle != null)
           Text(
             subtitle!,
-            style: PasyarTextStyles.body.copyWith(
+            style: PasyarTextStyles.of(context).body.copyWith(
               fontSize: 16,
               height: subtitleHeight,
-              color: PasyarColors.muted,
+              color: PasyarColors.of(context).muted,
             ),
           ),
       ],
@@ -182,10 +184,9 @@ class AuthFooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = PasyarTextStyles.body.copyWith(
-      height: 1.2,
-      color: PasyarColors.muted,
-    );
+    final base = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(height: 1.2, color: PasyarColors.of(context).muted);
     return Padding(
       padding: const EdgeInsets.only(top: 1),
       // Wraps onto two lines with very large system text instead of
@@ -207,7 +208,7 @@ class AuthFooterLink extends StatelessWidget {
                     link,
                     style: base.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: PasyarColors.accentDark,
+                      color: PasyarColors.of(context).accentDark,
                     ),
                   ),
                 ),
@@ -240,9 +241,9 @@ class AuthErrorText extends StatelessWidget {
         child: Text(
           message!,
           textAlign: TextAlign.center,
-          style: PasyarTextStyles.bodySmall.copyWith(
+          style: PasyarTextStyles.of(context).bodySmall.copyWith(
             fontWeight: FontWeight.w600,
-            color: PasyarColors.accentDark,
+            color: PasyarColors.of(context).accentDark,
           ),
         ),
       ),
@@ -271,9 +272,9 @@ class AuthTextLink extends StatelessWidget {
             widthFactor: 1,
             child: Text(
               label,
-              style: PasyarTextStyles.bodySmall.copyWith(
+              style: PasyarTextStyles.of(context).bodySmall.copyWith(
                 fontWeight: FontWeight.w600,
-                color: PasyarColors.accentDark,
+                color: PasyarColors.of(context).accentDark,
               ),
             ),
           ),
@@ -296,11 +297,11 @@ class AuthIconBadge extends StatelessWidget {
       child: Container(
         width: 88,
         height: 88,
-        decoration: const BoxDecoration(
-          color: PasyarColors.accentTint,
+        decoration: BoxDecoration(
+          color: PasyarColors.of(context).accentTint,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 36, color: PasyarColors.accentDark),
+        child: Icon(icon, size: 36, color: PasyarColors.of(context).accentDark),
       ),
     );
   }

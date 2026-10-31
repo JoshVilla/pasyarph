@@ -40,9 +40,9 @@ class PasyarBottomTabs extends StatelessWidget {
     return Container(
       height: 60 + bottom,
       padding: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: PasyarColors.card,
-        border: Border(top: BorderSide(color: PasyarColors.line)),
+      decoration: BoxDecoration(
+        color: PasyarColors.of(context).card,
+        border: Border(top: BorderSide(color: PasyarColors.of(context).line)),
       ),
       child: Row(
         children: [
@@ -73,7 +73,9 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? PasyarColors.accent : PasyarColors.muted;
+    final color = active
+        ? PasyarColors.of(context).accent
+        : PasyarColors.of(context).muted;
     return Semantics(
       button: true,
       selected: active,
@@ -92,8 +94,8 @@ class _TabButton extends StatelessWidget {
               tab.label,
               style:
                   (active
-                          ? PasyarTextStyles.tabLabelActive
-                          : PasyarTextStyles.tabLabel)
+                          ? PasyarTextStyles.of(context).tabLabelActive
+                          : PasyarTextStyles.of(context).tabLabel)
                       .copyWith(color: color),
             ),
           ],

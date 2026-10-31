@@ -94,15 +94,15 @@ class _CoverCropScreenState extends State<CoverCropScreen> {
                 children: [
                   Text(
                     'MOVE AND ZOOM',
-                    style: PasyarTextStyles.screenTitle(
-                      28,
-                    ).copyWith(color: PasyarColors.card),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).screenTitle(28).copyWith(color: PasyarColors.card),
                   ),
                   Text(
                     'This is how your cover fits the top of your profile.',
-                    style: PasyarTextStyles.body.copyWith(
-                      color: PasyarColors.onInkMuted,
-                    ),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).body.copyWith(color: PasyarColors.of(context).onInkMuted),
                   ),
                   const Spacer(),
                   ClipRRect(

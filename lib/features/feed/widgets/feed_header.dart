@@ -39,7 +39,7 @@ class FeedHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           PasyarSpacing.screen,
@@ -60,9 +60,9 @@ class FeedHeader extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'FEED',
-                      style: PasyarTextStyles.screenTitle(
-                        32,
-                      ).copyWith(letterSpacing: 0.5),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).screenTitle(32).copyWith(letterSpacing: 0.5),
                     ),
                   ),
                   if (onSearch case final search?)
@@ -72,7 +72,7 @@ class FeedHeader extends StatelessWidget {
                       semanticLabel: 'Search',
                       onPressed: search,
                     ),
-                  if (onNotifications != null) _bell(),
+                  if (onNotifications != null) _bell(context),
                 ],
               ),
             ),
@@ -83,7 +83,7 @@ class FeedHeader extends StatelessWidget {
                   name: myName,
                   image: myAvatar,
                   size: 40,
-                  color: PasyarColors.ink,
+                  color: PasyarColors.of(context).ink,
                 ),
                 Expanded(
                   child: Semantics(
@@ -95,18 +95,18 @@ class FeedHeader extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         alignment: Alignment.centerLeft,
                         decoration: ShapeDecoration(
-                          shape: const StadiumBorder(
+                          shape: StadiumBorder(
                             side: BorderSide(
-                              color: PasyarColors.line,
+                              color: PasyarColors.of(context).line,
                               width: 1.5,
                             ),
                           ),
                         ),
                         child: Text(
                           'Write a post…',
-                          style: PasyarTextStyles.body.copyWith(
+                          style: PasyarTextStyles.of(context).body.copyWith(
                             height: 1.2,
-                            color: PasyarColors.muted,
+                            color: PasyarColors.of(context).muted,
                           ),
                         ),
                       ),
@@ -118,17 +118,17 @@ class FeedHeader extends StatelessWidget {
                   label: 'Post photos from a ride',
                   excludeSemantics: true,
                   child: Material(
-                    color: PasyarColors.accentTint,
+                    color: PasyarColors.of(context).accentTint,
                     shape: const CircleBorder(),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: onAddPhotos,
-                      child: const SizedBox.square(
+                      child: SizedBox.square(
                         dimension: 44,
                         child: Icon(
                           LucideIcons.image,
                           size: 20,
-                          color: PasyarColors.accentDark,
+                          color: PasyarColors.of(context).accentDark,
                         ),
                       ),
                     ),
@@ -167,7 +167,7 @@ class FeedHeader extends StatelessWidget {
   }
 
   /// Notifications, with a dot when there's something new.
-  Widget _bell() => Stack(
+  Widget _bell(BuildContext context) => Stack(
     children: [
       RoundIconButton.ground(
         icon: LucideIcons.bell,
@@ -186,9 +186,12 @@ class FeedHeader extends StatelessWidget {
               width: 13,
               height: 13,
               decoration: BoxDecoration(
-                color: PasyarColors.accent,
+                color: PasyarColors.of(context).accent,
                 shape: BoxShape.circle,
-                border: Border.all(color: PasyarColors.ground, width: 2),
+                border: Border.all(
+                  color: PasyarColors.of(context).ground,
+                  width: 2,
+                ),
               ),
             ),
           ),

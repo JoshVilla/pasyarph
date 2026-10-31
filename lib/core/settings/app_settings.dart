@@ -1,14 +1,23 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Where settings are kept. Replaceable in tests.
 abstract interface class SettingsStore {
   Future<bool?> getBool(String key);
   Future<void> setBool(String key, bool value);
+  Future<String?> getString(String key);
+  Future<void> setString(String key, String value);
 }
 
 class PrefsSettingsStore implements SettingsStore {
   const PrefsSettingsStore();
+
+  @override
+  Future<String?> getString(String key) =>
+      SharedPreferencesAsync().getString(key);
+  @override
+  Future<void> setString(String key, String value) =>
+      SharedPreferencesAsync().setString(key, value);
 
   @override
   Future<bool?> getBool(String key) => SharedPreferencesAsync().getBool(key);
@@ -23,6 +32,17 @@ class AppSettings extends ChangeNotifier {
   AppSettings([this._store = const PrefsSettingsStore()]);
 
   final SettingsStore _store;
+
+  static const _themeKey = 'settings.theme_mode';
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
+    _themeMode = mode;
+    notifyListeners();
+    await _store.setString(_themeKey, mode.name);
+  }
 
   static const _voiceKey = 'settings.voice_prompts';
   static const _safetyKey = 'settings.first_ride_safety_seen';
@@ -40,6 +60,12 @@ class AppSettings extends ChangeNotifier {
   /// Reads the saved settings; keeps the defaults if that fails.
   Future<void> load() async {
     try {
+      final savedTheme = await _store.getString(_themeKey);
+      _themeMode =
+          ThemeMode.values
+              .where((mode) => mode.name == savedTheme)
+              .firstOrNull ??
+          ThemeMode.system;
       _voicePrompts = await _store.getBool(_voiceKey) ?? true;
       _firstRideSafetySeen = await _store.getBool(_safetyKey) ?? false;
       notifyListeners();

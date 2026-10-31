@@ -122,6 +122,7 @@ class _FeedScreenState extends State<FeedScreen> {
       myAvatar: myAvatar == null ? null : repo.avatar(myAvatar),
       filter: feed.filter,
       onFilter: feed.setFilter,
+      onSearch: () => context.push(Routes.discover),
       onWrite: _write,
       onAddPhotos: () => postARide(context, clock: widget.clock),
     );
@@ -129,12 +130,12 @@ class _FeedScreenState extends State<FeedScreen> {
     final body = _body(feed, now, actions, repo);
     final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
-      backgroundColor: PasyarColors.line,
+      backgroundColor: PasyarColors.of(context).line,
       body: Stack(
         children: [
           RefreshIndicator(
             key: _refreshKey,
-            color: PasyarColors.accent,
+            color: PasyarColors.of(context).accent,
             edgeOffset: top,
             onRefresh: feed.refresh,
             child: ListView.separated(
@@ -152,7 +153,7 @@ class _FeedScreenState extends State<FeedScreen> {
             left: 0,
             right: 0,
             height: top,
-            child: const ColoredBox(color: PasyarColors.card),
+            child: ColoredBox(color: PasyarColors.of(context).card),
           ),
         ],
       ),
@@ -221,7 +222,7 @@ class _NothingNearbyNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           PasyarSpacing.screen,
@@ -232,9 +233,9 @@ class _NothingNearbyNote extends StatelessWidget {
         child: Row(
           spacing: 12,
           children: [
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: PasyarColors.accentTint,
+                color: PasyarColors.of(context).accentTint,
                 shape: BoxShape.circle,
               ),
               child: SizedBox.square(
@@ -242,7 +243,7 @@ class _NothingNearbyNote extends StatelessWidget {
                 child: Icon(
                   LucideIcons.mapPin,
                   size: 20,
-                  color: PasyarColors.accentDark,
+                  color: PasyarColors.of(context).accentDark,
                 ),
               ),
             ),
@@ -252,12 +253,16 @@ class _NothingNearbyNote extends StatelessWidget {
                 children: [
                   Text(
                     'No rides near you yet',
-                    style: PasyarTextStyles.bodyStrong.copyWith(height: 1.3),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).bodyStrong.copyWith(height: 1.3),
                   ),
                   Text(
                     "Here's what riders are posting elsewhere in the "
                     'Philippines.',
-                    style: PasyarTextStyles.label.copyWith(height: 1.3),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).label.copyWith(height: 1.3),
                   ),
                 ],
               ),

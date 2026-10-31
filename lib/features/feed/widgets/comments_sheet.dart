@@ -97,7 +97,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
           MediaQuery.viewPaddingOf(context).bottom + 20,
         ),
         children: [
-          Text('DELETE COMMENT?', style: PasyarTextStyles.screenTitle(30)),
+          Text(
+            'DELETE COMMENT?',
+            style: PasyarTextStyles.of(context).screenTitle(30),
+          ),
           PrimaryButton(
             label: 'DELETE',
             onPressed: () => Navigator.pop(context, true),
@@ -153,8 +156,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
         return FractionallySizedBox(
           heightFactor: 0.9,
           child: Container(
-            decoration: const BoxDecoration(
-              color: PasyarColors.card,
+            decoration: BoxDecoration(
+              color: PasyarColors.of(context).card,
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(PasyarRadius.sheet),
               ),
@@ -171,12 +174,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
                       Expanded(
                         child: Text(
                           'COMMENTS',
-                          style: PasyarTextStyles.screenTitle(28),
+                          style: PasyarTextStyles.of(context).screenTitle(28),
                         ),
                       ),
                       Text(
                         plural(_c.count, 'comment'),
-                        style: PasyarTextStyles.label,
+                        style: PasyarTextStyles.of(context).label,
                       ),
                       RoundIconButton.ground(
                         icon: LucideIcons.x,
@@ -188,7 +191,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   ),
                 ),
                 Expanded(child: _list(now, feed)),
-                const Divider(height: 1, color: PasyarColors.line),
+                Divider(height: 1, color: PasyarColors.of(context).line),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -205,8 +208,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
                           moving
                               ? 'Stop riding to write a comment.'
                               : _c.error!,
-                          style: PasyarTextStyles.label.copyWith(
-                            color: PasyarColors.accentDark,
+                          style: PasyarTextStyles.of(context).label.copyWith(
+                            color: PasyarColors.of(context).accentDark,
                           ),
                         ),
                       _InputRow(
@@ -228,8 +231,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
   Widget _list(DateTime now, FeedRepository feed) {
     if (_c.loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: PasyarColors.accent),
+      return Center(
+        child: CircularProgressIndicator(
+          color: PasyarColors.of(context).accent,
+        ),
       );
     }
     final comments = _c.comments;
@@ -240,7 +245,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
           child: Text(
             'No comments yet. Ask about the road, or say how the ride was.',
             textAlign: TextAlign.center,
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           ),
         ),
       );
@@ -252,10 +259,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, i) {
         if (i == comments.length) {
-          return const Center(
+          return Center(
             child: Padding(
               padding: EdgeInsets.all(8),
-              child: CircularProgressIndicator(color: PasyarColors.accent),
+              child: CircularProgressIndicator(
+                color: PasyarColors.of(context).accent,
+              ),
             ),
           );
         }
@@ -309,7 +318,7 @@ class _CommentTile extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: PasyarColors.ground,
+                  color: PasyarColors.of(context).ground,
                   borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
                 ),
                 child: Text.rich(
@@ -322,7 +331,7 @@ class _CommentTile extends StatelessWidget {
                       TextSpan(text: comment.body),
                     ],
                   ),
-                  style: PasyarTextStyles.bodySmall.copyWith(
+                  style: PasyarTextStyles.of(context).bodySmall.copyWith(
                     fontWeight: FontWeight.w400,
                     height: 1.35,
                   ),
@@ -336,7 +345,10 @@ class _CommentTile extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 12, right: 4),
-                      child: Text(when, style: PasyarTextStyles.label),
+                      child: Text(
+                        when,
+                        style: PasyarTextStyles.of(context).label,
+                      ),
                     ),
                     for (final (label, onPressed) in [
                       if (onDelete != null) ('Delete', onDelete!),
@@ -357,10 +369,10 @@ class _CommentTile extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                               ),
-                              foregroundColor: PasyarColors.muted,
-                              textStyle: PasyarTextStyles.label.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              foregroundColor: PasyarColors.of(context).muted,
+                              textStyle: PasyarTextStyles.of(
+                                context,
+                              ).label.copyWith(fontWeight: FontWeight.w600),
                             ),
                             child: Text(label),
                           ),
@@ -410,21 +422,21 @@ class _InputRow extends StatelessWidget {
             maxLines: 4,
             maxLength: 1000,
             textCapitalization: TextCapitalization.sentences,
-            style: PasyarTextStyles.body,
+            style: PasyarTextStyles.of(context).body,
             decoration: InputDecoration(
               hintText: 'Write a comment…',
-              hintStyle: PasyarTextStyles.body.copyWith(
-                color: PasyarColors.muted,
-              ),
+              hintStyle: PasyarTextStyles.of(
+                context,
+              ).body.copyWith(color: PasyarColors.of(context).muted),
               counterText: '',
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 11,
               ),
-              border: border(PasyarColors.line),
-              enabledBorder: border(PasyarColors.line),
-              focusedBorder: border(PasyarColors.ink),
+              border: border(PasyarColors.of(context).line),
+              enabledBorder: border(PasyarColors.of(context).line),
+              focusedBorder: border(PasyarColors.of(context).ink),
             ),
           ),
         ),
@@ -440,8 +452,8 @@ class _InputRow extends StatelessWidget {
               excludeSemantics: true,
               child: Material(
                 color: ready
-                    ? PasyarColors.accent
-                    : PasyarColors.accent.withValues(alpha: 0.4),
+                    ? PasyarColors.of(context).accent
+                    : PasyarColors.of(context).accent.withValues(alpha: 0.4),
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
@@ -449,17 +461,17 @@ class _InputRow extends StatelessWidget {
                   child: SizedBox.square(
                     dimension: PasyarSpacing.minTouch,
                     child: sending
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(12),
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              color: PasyarColors.card,
+                              color: PasyarColors.of(context).card,
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             LucideIcons.sendHorizontal,
                             size: 20,
-                            color: PasyarColors.card,
+                            color: PasyarColors.of(context).card,
                           ),
                   ),
                 ),

@@ -78,7 +78,7 @@ class _LoopMapState extends State<LoopMap> {
         initialCameraFit: _fit,
         minZoom: 4,
         maxZoom: 18,
-        backgroundColor: PasyarColors.mapGround,
+        backgroundColor: PasyarColors.of(context).mapGround,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),

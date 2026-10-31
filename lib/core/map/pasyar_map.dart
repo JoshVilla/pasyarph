@@ -56,12 +56,12 @@ class MapAttribution extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: PasyarColors.card.withValues(alpha: 0.85),
+            color: PasyarColors.of(context).card.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             '© MapTiler © OpenStreetMap contributors',
-            style: PasyarTextStyles.label.copyWith(fontSize: 11),
+            style: PasyarTextStyles.of(context).label.copyWith(fontSize: 11),
           ),
         ),
       ),

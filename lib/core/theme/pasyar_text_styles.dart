@@ -11,6 +11,9 @@ abstract final class PasyarFonts {
 /// One style per row of the Typography table in design/DESIGN.md.
 /// Strings for UPPERCASE styles are written in uppercase by the caller.
 abstract final class PasyarTextStyles {
+  static PasyarTypography of(BuildContext context) =>
+      PasyarTypography(PasyarColors.of(context));
+
   static const _display = TextStyle(
     fontFamily: PasyarFonts.display,
     fontWeight: FontWeight.w700,
@@ -48,17 +51,22 @@ abstract final class PasyarTextStyles {
   static final statValue = _display.copyWith(fontSize: 28);
   static final statValueSmall = _display.copyWith(fontSize: 22);
 
-  static final buttonPrimary = _display.copyWith(
-    fontSize: 22,
-    letterSpacing: 1,
+  static final buttonPrimary = _body.copyWith(
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
   );
-  static final buttonSecondary = _display.copyWith(
-    fontSize: 20,
-    letterSpacing: 1,
+  static final buttonSecondary = _body.copyWith(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
   );
 
   /// QUICK / HALF-DAY / FULL DAY.
-  static final choiceTitle = _display.copyWith(fontSize: 20);
+  static final choiceTitle = _body.copyWith(
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+  );
 
   /// Floating "HALF-DAY LOOP" pill.
   static final pillTitle = _display.copyWith(fontSize: 18, letterSpacing: 0.5);
@@ -80,11 +88,16 @@ abstract final class PasyarTextStyles {
   );
 
   /// Stat labels and meta lines ("2 h ago · …").
-  static final label = _body.copyWith(fontSize: 13, color: PasyarColors.muted);
+  static final label = _body.copyWith(
+    fontSize: 14,
+    height: 1.35,
+    color: PasyarColors.muted,
+  );
 
   /// Labels above inputs and option groups ("Email", "What do you ride?").
   static final fieldLabel = _body.copyWith(
-    fontSize: 13,
+    fontSize: 14,
+    height: 1.3,
     fontWeight: FontWeight.w600,
     color: PasyarColors.muted,
   );
@@ -102,4 +115,46 @@ abstract final class PasyarTextStyles {
     fontWeight: FontWeight.w500,
   );
   static final tabLabelActive = tabLabel.copyWith(fontWeight: FontWeight.w600);
+}
+
+/// The bundled typography with colors from the active theme.
+class PasyarTypography {
+  const PasyarTypography(this.colors);
+  final PasyarPalette colors;
+  TextStyle screenTitle([double size = 36]) =>
+      PasyarTextStyles.screenTitle(size).copyWith(color: colors.ink);
+  TextStyle get wordmark =>
+      PasyarTextStyles.wordmark.copyWith(color: colors.ink);
+  TextStyle get tagline =>
+      PasyarTextStyles.tagline.copyWith(color: colors.taglineOnInk);
+  TextStyle get navDistance =>
+      PasyarTextStyles.navDistance.copyWith(color: colors.ink);
+  TextStyle get statValue =>
+      PasyarTextStyles.statValue.copyWith(color: colors.ink);
+  TextStyle get statValueSmall =>
+      PasyarTextStyles.statValueSmall.copyWith(color: colors.ink);
+  TextStyle get buttonPrimary =>
+      PasyarTextStyles.buttonPrimary.copyWith(color: colors.ink);
+  TextStyle get buttonSecondary =>
+      PasyarTextStyles.buttonSecondary.copyWith(color: colors.ink);
+  TextStyle get choiceTitle =>
+      PasyarTextStyles.choiceTitle.copyWith(color: colors.ink);
+  TextStyle get pillTitle =>
+      PasyarTextStyles.pillTitle.copyWith(color: colors.ink);
+  TextStyle get bodyLarge =>
+      PasyarTextStyles.bodyLarge.copyWith(color: colors.ink);
+  TextStyle get body => PasyarTextStyles.body.copyWith(color: colors.ink);
+  TextStyle get bodyStrong =>
+      PasyarTextStyles.bodyStrong.copyWith(color: colors.ink);
+  TextStyle get bodySmall =>
+      PasyarTextStyles.bodySmall.copyWith(color: colors.ink);
+  TextStyle get label => PasyarTextStyles.label.copyWith(color: colors.muted);
+  TextStyle get fieldLabel =>
+      PasyarTextStyles.fieldLabel.copyWith(color: colors.muted);
+  TextStyle get overline =>
+      PasyarTextStyles.overline.copyWith(color: colors.accentDark);
+  TextStyle get tabLabel =>
+      PasyarTextStyles.tabLabel.copyWith(color: colors.ink);
+  TextStyle get tabLabelActive =>
+      PasyarTextStyles.tabLabelActive.copyWith(color: colors.ink);
 }

@@ -30,7 +30,9 @@ class ChoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasSubtitle = subtitle != null;
     final image = this.image;
-    final textColor = selected ? PasyarColors.accentDark : PasyarColors.ink;
+    final textColor = selected
+        ? PasyarColors.of(context).accentDark
+        : PasyarColors.of(context).ink;
 
     return Semantics(
       button: true,
@@ -43,19 +45,21 @@ class ChoiceCard extends StatelessWidget {
             ? 72
             : 52,
         child: Material(
-          color: selected ? PasyarColors.accentTint : PasyarColors.card,
+          color: selected
+              ? PasyarColors.of(context).accentTint
+              : PasyarColors.of(context).card,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
             side: selected
-                ? const BorderSide(color: PasyarColors.accent, width: 2)
-                : const BorderSide(color: PasyarColors.line, width: 1.5),
+                ? BorderSide(color: PasyarColors.of(context).accent, width: 2)
+                : BorderSide(color: PasyarColors.of(context).line, width: 1.5),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 2,
+              spacing: 5,
               children: [
                 if (image != null)
                   Expanded(
@@ -72,8 +76,9 @@ class ChoiceCard extends StatelessWidget {
                 Text(
                   title,
                   maxLines: 1,
-                  style: PasyarTextStyles.choiceTitle.copyWith(
-                    fontSize: hasSubtitle ? 20 : 19,
+                  overflow: TextOverflow.ellipsis,
+                  style: PasyarTextStyles.of(context).choiceTitle.copyWith(
+                    fontSize: hasSubtitle ? 17 : 16,
                     color: textColor,
                   ),
                 ),
@@ -82,10 +87,10 @@ class ChoiceCard extends StatelessWidget {
                   Text(
                     subtitle!,
                     maxLines: 1,
-                    style: PasyarTextStyles.label.copyWith(
+                    style: PasyarTextStyles.of(context).label.copyWith(
                       color: selected
-                          ? PasyarColors.accentDark
-                          : PasyarColors.muted,
+                          ? PasyarColors.of(context).accentDark
+                          : PasyarColors.of(context).muted,
                     ),
                   ),
               ],

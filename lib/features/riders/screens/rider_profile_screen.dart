@@ -157,11 +157,13 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       label: 'Back',
       onPressed: _back,
     );
-    final muted = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final muted = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
 
     if (rider == null) {
       return Scaffold(
-        backgroundColor: PasyarColors.card,
+        backgroundColor: PasyarColors.of(context).background,
         body: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -169,9 +171,9 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
             Padding(
               padding: const EdgeInsets.all(32),
               child: c.loading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: PasyarColors.accent,
+                        color: PasyarColors.of(context).accent,
                       ),
                     )
                   : Text(
@@ -271,9 +273,9 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: RefreshIndicator(
-        color: PasyarColors.accent,
+        color: PasyarColors.of(context).accent,
         edgeOffset: MediaQuery.paddingOf(context).top,
         onRefresh: () => Future.wait([
           c.load(),
@@ -309,11 +311,13 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     TextStyle muted,
   ) {
     if (feed.loading) {
-      return const [
+      return [
         Padding(
           padding: EdgeInsets.all(16),
           child: Center(
-            child: CircularProgressIndicator(color: PasyarColors.accent),
+            child: CircularProgressIndicator(
+              color: PasyarColors.of(context).accent,
+            ),
           ),
         ),
       ];
@@ -337,10 +341,12 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
         onTap: (p) => context.push(Routes.postLink(p.id)),
       ),
       if (feed.loadingMore)
-        const Padding(
+        Padding(
           padding: EdgeInsets.all(16),
           child: Center(
-            child: CircularProgressIndicator(color: PasyarColors.accent),
+            child: CircularProgressIndicator(
+              color: PasyarColors.of(context).accent,
+            ),
           ),
         ),
     ];
@@ -353,10 +359,12 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
         if (_loopsError != null)
           Text(_loopsError!, style: muted)
         else
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(16),
             child: Center(
-              child: CircularProgressIndicator(color: PasyarColors.accent),
+              child: CircularProgressIndicator(
+                color: PasyarColors.of(context).accent,
+              ),
             ),
           ),
       ];

@@ -103,7 +103,9 @@ class _OnboardingLocationScreenState extends State<OnboardingLocationScreen> {
                     widthFactor: 1,
                     child: Text(
                       'Not now',
-                      style: PasyarTextStyles.bodyStrong.copyWith(height: 1.2),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).bodyStrong.copyWith(height: 1.2),
                     ),
                   ),
                 ),

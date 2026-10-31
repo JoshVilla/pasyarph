@@ -83,7 +83,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final mapOpen = tester.getSize(find.byType(LoopMap)).height;
-    final startOpen = tester.getTopLeft(find.text('START RIDE')).dy;
+    final startOpen = tester.getTopLeft(find.text('Start ride')).dy;
 
     await tester.drag(find.text('118 km'), const Offset(0, 400));
     await tester.pumpAndSettle();
@@ -93,22 +93,22 @@ void main() {
     );
     // The stats peek out; the buttons are below the screen.
     expect(tester.getTopLeft(find.text('118 km')).dy, lessThan(844));
-    expect(tester.getTopLeft(find.text('START RIDE')).dy, greaterThan(844));
+    expect(tester.getTopLeft(find.text('Start ride')).dy, greaterThan(844));
 
     await tester.drag(find.text('118 km'), const Offset(0, -400));
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
+    expect(tester.getTopLeft(find.text('Start ride')).dy, startOpen);
 
     // A small drag snaps back open; the handle toggles.
     await tester.drag(find.text('118 km'), const Offset(0, 40));
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
+    expect(tester.getTopLeft(find.text('Start ride')).dy, startOpen);
     await tester.tap(find.bySemanticsLabel('Hide details to see the map'));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Show details'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Show details'));
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.text('START RIDE')).dy, startOpen);
+    expect(tester.getTopLeft(find.text('Start ride')).dy, startOpen);
   });
 
   testWidgets('multi-day: title by days, overnight stops, one try', (
@@ -220,7 +220,7 @@ void main() {
 
     repo.gate = Completer();
     repo.results.add(demoLoop(seed: 2, curviness: 100));
-    await tester.tap(find.text('SHUFFLE'));
+    await tester.tap(find.text('Shuffle'));
     await tester.pump();
     expect(find.text('Finding another loop…'), findsOneWidget);
     expect(find.text('High'), findsOneWidget); // old loop still shown
@@ -248,11 +248,11 @@ void main() {
       MaterialApp(home: _screenWith(_preview(FakeRouteRepository()))),
     );
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(SecondaryButton, 'SHUFFLE'), findsOneWidget);
+    expect(find.widgetWithText(SecondaryButton, 'Shuffle'), findsOneWidget);
     expect(
       tester
           .widget<PrimaryButton>(
-            find.widgetWithText(PrimaryButton, 'START RIDE'),
+            find.widgetWithText(PrimaryButton, 'Start ride'),
           )
           .onPressed,
       isNotNull,

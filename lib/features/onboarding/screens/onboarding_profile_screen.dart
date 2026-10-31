@@ -124,11 +124,15 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
                 children: [
                   Text(
                     'Add a photo',
-                    style: PasyarTextStyles.bodyLarge.copyWith(fontSize: 16),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).bodyLarge.copyWith(fontSize: 16),
                   ),
                   Text(
                     'Riders trust faces in the feed. Optional.',
-                    style: PasyarTextStyles.label.copyWith(fontSize: 14),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).label.copyWith(fontSize: 14),
                   ),
                 ],
               ),
@@ -151,7 +155,10 @@ class _OnboardingProfileScreenState extends State<OnboardingProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 8,
           children: [
-            Text('What do you ride?', style: PasyarTextStyles.fieldLabel),
+            Text(
+              'What do you ride?',
+              style: PasyarTextStyles.of(context).fieldLabel,
+            ),
             Column(
               spacing: 10,
               children: [

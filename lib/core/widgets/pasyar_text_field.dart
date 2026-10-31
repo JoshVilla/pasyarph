@@ -79,7 +79,7 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
   Widget build(BuildContext context) {
     final textStyle =
         widget.textStyle ??
-        PasyarTextStyles.body.copyWith(fontSize: 16, height: 1.2);
+        PasyarTextStyles.of(context).body.copyWith(fontSize: 16, height: 1.2);
     // Every field locks while riding, wherever it is.
     final moving = watchMoving(context);
     final enabled = widget.enabled && !moving;
@@ -87,15 +87,15 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
     final message =
         widget.error ?? (moving ? movingLockMessage : null) ?? widget.helper;
     final idle = hasError
-        ? _border(PasyarColors.accent, 2)
-        : _border(PasyarColors.line, 1.5);
+        ? _border(PasyarColors.of(context).accent, 2)
+        : _border(PasyarColors.of(context).line, 1.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       spacing: 6,
       children: [
-        Text(widget.label, style: PasyarTextStyles.fieldLabel),
+        Text(widget.label, style: PasyarTextStyles.of(context).fieldLabel),
         TextField(
           controller: widget.controller,
           focusNode: widget.focusNode,
@@ -114,7 +114,9 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
           minLines: widget.maxLines > 1 ? 3 : 1,
           maxLines: widget.maxLines,
           style: textStyle.copyWith(
-            color: enabled ? PasyarColors.ink : PasyarColors.muted,
+            color: enabled
+                ? PasyarColors.of(context).ink
+                : PasyarColors.of(context).muted,
           ),
           decoration: InputDecoration(
             constraints: widget.maxLines == 1
@@ -133,19 +135,27 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
                     ),
                     child: Text(
                       widget.prefixText!,
-                      style: textStyle.copyWith(color: PasyarColors.muted),
+                      style: textStyle.copyWith(
+                        color: PasyarColors.of(context).muted,
+                      ),
                     ),
                   ),
             prefixIconConstraints: const BoxConstraints(),
             counterText: '',
             hintText: widget.hint,
-            hintStyle: textStyle.copyWith(color: PasyarColors.muted),
+            hintStyle: textStyle.copyWith(
+              color: PasyarColors.of(context).muted,
+            ),
             filled: true,
-            fillColor: enabled ? PasyarColors.card : PasyarColors.ground,
+            fillColor: enabled
+                ? PasyarColors.of(context).card
+                : PasyarColors.of(context).ground,
             border: idle,
             enabledBorder: idle,
-            disabledBorder: _border(PasyarColors.line, 1.5),
-            focusedBorder: hasError ? idle : _border(PasyarColors.ink, 1.5),
+            disabledBorder: _border(PasyarColors.of(context).line, 1.5),
+            focusedBorder: hasError
+                ? idle
+                : _border(PasyarColors.of(context).ink, 1.5),
             suffixIcon: widget.password
                 ? Padding(
                     padding: const EdgeInsetsDirectional.only(end: 4),
@@ -155,7 +165,7 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
                       icon: Icon(
                         _obscured ? LucideIcons.eye : LucideIcons.eyeOff,
                         size: 20,
-                        color: PasyarColors.muted,
+                        color: PasyarColors.of(context).muted,
                       ),
                       constraints: const BoxConstraints.tightFor(
                         width: 44,
@@ -174,8 +184,10 @@ class _PasyarTextFieldState extends State<PasyarTextField> {
         if (message != null)
           Text(
             message,
-            style: PasyarTextStyles.label.copyWith(
-              color: hasError ? PasyarColors.accentDark : PasyarColors.muted,
+            style: PasyarTextStyles.of(context).label.copyWith(
+              color: hasError
+                  ? PasyarColors.of(context).accentDark
+                  : PasyarColors.of(context).muted,
               fontWeight: hasError ? FontWeight.w600 : FontWeight.w400,
             ),
           ),

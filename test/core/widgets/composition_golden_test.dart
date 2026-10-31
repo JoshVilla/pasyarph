@@ -93,7 +93,7 @@ void main() {
                           ],
                         ),
                         PrimaryButton(
-                          label: 'GENERATE LOOP',
+                          label: 'Generate loop',
                           icon: LucideIcons.rotateCw,
                           onPressed: () {},
                         ),

@@ -52,13 +52,12 @@ class _RideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loop = post.loop;
-    if (loop == null) return _textCard();
+    if (loop == null) return _textCard(context);
     final first = post.photos.firstOrNull;
     final km = formatDistance(loop.distanceM);
-    final white = PasyarTextStyles.body.copyWith(
-      color: PasyarColors.card,
-      height: 1.2,
-    );
+    final white = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.card, height: 1.2);
     return Semantics(
       button: true,
       label: '${loop.name}, $km',
@@ -75,11 +74,11 @@ class _RideCard extends StatelessWidget {
                   image: photo(first.storagePath),
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) =>
-                      const ColoredBox(color: PasyarColors.ground),
+                      ColoredBox(color: PasyarColors.of(context).ground),
                 )
               else
                 ColoredBox(
-                  color: PasyarColors.mapGround,
+                  color: PasyarColors.of(context).mapGround,
                   child: LayoutBuilder(
                     builder: (context, c) => RouteThumbnail(
                       route: loop.sharedRoute ?? const [],
@@ -127,7 +126,7 @@ class _RideCard extends StatelessWidget {
 
   /// A text post: its first photo with the words over it, or the words on
   /// `ground`.
-  Widget _textCard() {
+  Widget _textCard(BuildContext context) {
     final text = (post.caption ?? '').trim();
     final first = post.photos.firstOrNull;
     return Semantics(
@@ -140,14 +139,16 @@ class _RideCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: first == null
               ? ColoredBox(
-                  color: PasyarColors.ground,
+                  color: PasyarColors.of(context).ground,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Text(
                       text,
                       maxLines: 5,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodySmall.copyWith(height: 1.3),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).bodySmall.copyWith(height: 1.3),
                     ),
                   ),
                 )
@@ -158,7 +159,7 @@ class _RideCard extends StatelessWidget {
                       image: photo(first.storagePath),
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) =>
-                          const ColoredBox(color: PasyarColors.ground),
+                          ColoredBox(color: PasyarColors.of(context).ground),
                     ),
                     const DecoratedBox(
                       decoration: BoxDecoration(
@@ -177,7 +178,7 @@ class _RideCard extends StatelessWidget {
                         text,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: PasyarTextStyles.body.copyWith(
+                        style: PasyarTextStyles.of(context).body.copyWith(
                           color: PasyarColors.card,
                           fontSize: 13,
                           height: 1.2,

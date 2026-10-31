@@ -53,12 +53,12 @@ class AvatarPicker extends StatelessWidget {
               Positioned.fill(
                 child: image == null
                     ? CustomPaint(
-                        painter: _DashedCirclePainter(),
+                        painter: _DashedCirclePainter(PasyarColors.of(context)),
                         child: Center(
                           child: Icon(
                             icon,
                             size: 34,
-                            color: PasyarColors.muted,
+                            color: PasyarColors.of(context).muted,
                           ),
                         ),
                       )
@@ -66,13 +66,14 @@ class AvatarPicker extends StatelessWidget {
                         child: Image(
                           image: image,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              const ColoredBox(color: PasyarColors.ground),
+                          errorBuilder: (_, _, _) => ColoredBox(
+                            color: PasyarColors.of(context).ground,
+                          ),
                         ),
                       ),
               ),
               if (uploading)
-                const Positioned.fill(
+                Positioned.fill(
                   child: ClipOval(
                     child: ColoredBox(
                       color: Color(0x6615171C),
@@ -81,7 +82,7 @@ class AvatarPicker extends StatelessWidget {
                           dimension: 26,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: PasyarColors.card,
+                            color: PasyarColors.of(context).card,
                           ),
                         ),
                       ),
@@ -95,14 +96,17 @@ class AvatarPicker extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: PasyarColors.accent,
+                    color: PasyarColors.of(context).accent,
                     shape: BoxShape.circle,
-                    border: Border.all(color: PasyarColors.card, width: 3),
+                    border: Border.all(
+                      color: PasyarColors.of(context).card,
+                      width: 3,
+                    ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     LucideIcons.camera,
                     size: 16,
-                    color: PasyarColors.card,
+                    color: PasyarColors.of(context).card,
                   ),
                 ),
               ),
@@ -115,18 +119,20 @@ class AvatarPicker extends StatelessWidget {
 }
 
 class _DashedCirclePainter extends CustomPainter {
+  _DashedCirclePainter(this.colors);
+  final PasyarPalette colors;
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     const stroke = 2.0;
     final radius = size.width / 2 - stroke / 2;
-    canvas.drawCircle(center, radius, Paint()..color = PasyarColors.ground);
+    canvas.drawCircle(center, radius, Paint()..color = colors.ground);
 
     // CSS-like dashes: about 6 on, 4 off around the circle.
     final dashes = (2 * math.pi * radius / 10).floor();
     final step = 2 * math.pi / dashes;
     final paint = Paint()
-      ..color = PasyarColors.lineStrong
+      ..color = colors.lineStrong
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke;
     final rect = Rect.fromCircle(center: center, radius: radius);
@@ -136,5 +142,6 @@ class _DashedCirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedCirclePainter oldDelegate) => false;
+  bool shouldRepaint(_DashedCirclePainter oldDelegate) =>
+      oldDelegate.colors.isDark != colors.isDark;
 }

@@ -129,12 +129,14 @@ class _ReportSheetState extends State<ReportSheet> {
                   children: [
                     Text(
                       'REPORT ${s.what.toUpperCase()}',
-                      style: PasyarTextStyles.screenTitle(28),
+                      style: PasyarTextStyles.of(context).screenTitle(28),
                     ),
                     Text(
                       "What's wrong with it? Moderators check every report. "
                       "The rider isn't told who reported them.",
-                      style: PasyarTextStyles.label.copyWith(fontSize: 14),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).label.copyWith(fontSize: 14),
                     ),
                     for (final r in ReportReason.values)
                       ChoiceCard(
@@ -165,9 +167,9 @@ class _ReportSheetState extends State<ReportSheet> {
               Text(
                 _error ?? 'Stop riding to send a report.',
                 textAlign: TextAlign.center,
-                style: PasyarTextStyles.bodySmall.copyWith(
+                style: PasyarTextStyles.of(context).bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: PasyarColors.accentDark,
+                  color: PasyarColors.of(context).accentDark,
                 ),
               ),
             PrimaryButton(
@@ -204,7 +206,9 @@ Future<bool> confirmBlock(
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          style: TextButton.styleFrom(foregroundColor: PasyarColors.accentDark),
+          style: TextButton.styleFrom(
+            foregroundColor: PasyarColors.of(context).accentDark,
+          ),
           child: const Text('BLOCK'),
         ),
       ],

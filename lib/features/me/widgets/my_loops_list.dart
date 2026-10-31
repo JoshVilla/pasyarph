@@ -134,7 +134,7 @@ class _MyLoopsListState extends State<MyLoopsList> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
-              foregroundColor: PasyarColors.accentDark,
+              foregroundColor: PasyarColors.of(context).accentDark,
             ),
             child: const Text('DELETE'),
           ),
@@ -153,7 +153,9 @@ class _MyLoopsListState extends State<MyLoopsList> {
   @override
   Widget build(BuildContext context) {
     final mine = _mine;
-    final empty = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final empty = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
@@ -266,7 +268,10 @@ class _EditLoopSheetState extends State<EditLoopSheet> {
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: BottomSheetPanel(
         children: [
-          Text('EDIT LOOP', style: PasyarTextStyles.screenTitle(24)),
+          Text(
+            'EDIT LOOP',
+            style: PasyarTextStyles.of(context).screenTitle(24),
+          ),
           PasyarTextField(
             label: 'Name',
             controller: _name,
@@ -289,7 +294,7 @@ class _EditLoopSheetState extends State<EditLoopSheet> {
             clubs != null && clubs.isEmpty
                 ? Text(
                     'Join or make a club first (Me → Clubs).',
-                    style: PasyarTextStyles.label,
+                    style: PasyarTextStyles.of(context).label,
                   )
                 : SecondaryButton(
                     label: _club?.name.toUpperCase() ?? 'PICK A CLUB',
@@ -302,13 +307,13 @@ class _EditLoopSheetState extends State<EditLoopSheet> {
             LoopVisibility.club =>
               'Only members of ${_club?.name ?? 'the club'} will see this loop.',
             LoopVisibility.private => 'Only you can see this loop.',
-          }, style: PasyarTextStyles.label),
+          }, style: PasyarTextStyles.of(context).label),
           if (_error != null || moving)
             Text(
               _error ?? 'Stop riding to edit your loop.',
-              style: PasyarTextStyles.bodySmall.copyWith(
+              style: PasyarTextStyles.of(context).bodySmall.copyWith(
                 fontWeight: FontWeight.w600,
-                color: PasyarColors.accentDark,
+                color: PasyarColors.of(context).accentDark,
               ),
             ),
           PrimaryButton(

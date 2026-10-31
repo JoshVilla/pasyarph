@@ -108,7 +108,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
   Widget build(BuildContext context) {
     final moving = context.watch<LocationProvider>().isMoving;
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: ListenableBuilder(
         listenable: _composer,
         builder: (context, _) => _form(context, moving),
@@ -120,12 +120,14 @@ class _WritePostScreenState extends State<WritePostScreen> {
     final c = _composer;
     final clubs = _clubs;
     final pad = MediaQuery.paddingOf(context);
-    final muted = PasyarTextStyles.body.copyWith(
+    final muted = PasyarTextStyles.of(context).body.copyWith(
       fontSize: 14,
       height: 1.2,
-      color: PasyarColors.muted,
+      color: PasyarColors.of(context).muted,
     );
-    final heading = PasyarTextStyles.bodyStrong.copyWith(height: 1.2);
+    final heading = PasyarTextStyles.of(
+      context,
+    ).bodyStrong.copyWith(height: 1.2);
     final problem =
         c.error ?? (moving ? 'Stop riding to write and post.' : null);
 
@@ -163,7 +165,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'WRITE A POST',
-                            style: PasyarTextStyles.screenTitle(32),
+                            style: PasyarTextStyles.of(context).screenTitle(32),
                           ),
                         ),
                       ),
@@ -196,7 +198,9 @@ class _WritePostScreenState extends State<WritePostScreen> {
                     for (final line in c.refused)
                       Text(
                         line,
-                        style: muted.copyWith(color: PasyarColors.accentDark),
+                        style: muted.copyWith(
+                          color: PasyarColors.of(context).accentDark,
+                        ),
                       ),
                   ],
                 ),
@@ -215,7 +219,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
                       clubs != null && clubs.isEmpty
                           ? Text(
                               'Join or make a club first (Me → Clubs).',
-                              style: PasyarTextStyles.label,
+                              style: PasyarTextStyles.of(context).label,
                             )
                           : SecondaryButton(
                               label: _club?.name.toUpperCase() ?? 'PICK A CLUB',
@@ -232,7 +236,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
                             'see it.',
                       LoopVisibility.private =>
                         'Only you can see it, on your profile.',
-                    }, style: PasyarTextStyles.label),
+                    }, style: PasyarTextStyles.of(context).label),
                   ],
                 ),
                 const Spacer(),
@@ -244,7 +248,9 @@ class _WritePostScreenState extends State<WritePostScreen> {
                       Text(
                         problem,
                         textAlign: TextAlign.center,
-                        style: muted.copyWith(color: PasyarColors.accentDark),
+                        style: muted.copyWith(
+                          color: PasyarColors.of(context).accentDark,
+                        ),
                       ),
                     PrimaryButton(
                       label: c.posting && c.photos.isNotEmpty
@@ -289,22 +295,22 @@ class _TextField extends StatelessWidget {
         textAlignVertical: TextAlignVertical.top,
         keyboardType: TextInputType.multiline,
         textCapitalization: TextCapitalization.sentences,
-        style: PasyarTextStyles.bodyLarge,
+        style: PasyarTextStyles.of(context).bodyLarge,
         decoration: InputDecoration(
           hintText: 'Ask about a road, plan a ride, share an update…',
-          hintStyle: PasyarTextStyles.bodyLarge.copyWith(
-            color: PasyarColors.muted,
-          ),
+          hintStyle: PasyarTextStyles.of(
+            context,
+          ).bodyLarge.copyWith(color: PasyarColors.of(context).muted),
           counterText: '',
           filled: true,
-          fillColor: PasyarColors.card,
+          fillColor: PasyarColors.of(context).card,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 12,
           ),
-          border: border(PasyarColors.line),
-          enabledBorder: border(PasyarColors.line),
-          focusedBorder: border(PasyarColors.ink),
+          border: border(PasyarColors.of(context).line),
+          enabledBorder: border(PasyarColors.of(context).line),
+          focusedBorder: border(PasyarColors.of(context).ink),
         ),
       ),
     );

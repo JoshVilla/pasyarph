@@ -27,9 +27,9 @@ class PrimaryButton extends StatelessWidget {
       enabled: onPressed != null,
       loading: loading,
       onPressed: onPressed,
-      fill: PasyarColors.accent,
-      foreground: PasyarColors.card,
-      textStyle: PasyarTextStyles.buttonPrimary,
+      fill: PasyarColors.of(context).accent,
+      foreground: PasyarColors.of(context).onAccent,
+      textStyle: PasyarTextStyles.of(context).buttonPrimary,
       icon: icon,
       iconSize: 22,
       iconGap: 10,
@@ -64,16 +64,18 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = _onDark ? PasyarColors.card : PasyarColors.ink;
+    final foreground = _onDark
+        ? PasyarColors.card
+        : PasyarColors.of(context).ink;
     return _ButtonFrame(
       label: label,
       enabled: onPressed != null,
       loading: loading,
       onPressed: onPressed,
-      fill: _onDark ? Colors.transparent : PasyarColors.card,
+      fill: _onDark ? Colors.transparent : PasyarColors.of(context).card,
       border: BorderSide(color: foreground, width: 2),
       foreground: foreground,
-      textStyle: PasyarTextStyles.buttonSecondary,
+      textStyle: PasyarTextStyles.of(context).buttonSecondary,
       icon: icon,
       iconSize: 20,
       iconGap: 8,
@@ -209,12 +211,18 @@ class RoundIconButton extends StatelessWidget {
           boxShadow: _floating ? PasyarShadows.floating : null,
         ),
         child: Material(
-          color: _floating ? PasyarColors.card : PasyarColors.ground,
+          color: _floating
+              ? PasyarColors.of(context).card
+              : PasyarColors.of(context).ground,
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onPressed,
-            child: Icon(icon, size: iconSize, color: PasyarColors.ink),
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: PasyarColors.of(context).ink,
+            ),
           ),
         ),
       ),

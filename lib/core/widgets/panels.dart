@@ -38,8 +38,8 @@ class BottomSheetPanel extends StatelessWidget {
     );
     return Container(
       padding: padding,
-      decoration: const BoxDecoration(
-        color: PasyarColors.card,
+      decoration: BoxDecoration(
+        color: PasyarColors.of(context).card,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(PasyarRadius.sheet),
         ),
@@ -70,7 +70,7 @@ class DragHandle extends StatelessWidget {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: PasyarColors.lineStrong,
+          color: PasyarColors.of(context).lineStrong,
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -94,7 +94,7 @@ class FloatingPill extends StatelessWidget {
         boxShadow: PasyarShadows.floating,
       ),
       child: Material(
-        color: PasyarColors.card,
+        color: PasyarColors.of(context).card,
         shape: const StadiumBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -133,8 +133,8 @@ class StatBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final valueStyle = small
-        ? PasyarTextStyles.statValueSmall
-        : PasyarTextStyles.statValue;
+        ? PasyarTextStyles.of(context).statValueSmall
+        : PasyarTextStyles.of(context).statValue;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -143,7 +143,9 @@ class StatBlock extends StatelessWidget {
         Text(
           label,
           maxLines: 1,
-          style: PasyarTextStyles.label.copyWith(height: _mockupLineHeight),
+          style: PasyarTextStyles.of(
+            context,
+          ).label.copyWith(height: _mockupLineHeight),
         ),
         Text(
           value,
@@ -194,7 +196,7 @@ class StopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: PasyarColors.ground,
+      color: PasyarColors.of(context).ground,
       borderRadius: BorderRadius.circular(PasyarRadius.panel),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -208,17 +210,17 @@ class StopCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: PasyarColors.lineStrong,
+                  color: PasyarColors.of(context).lineStrong,
                   borderRadius: BorderRadius.circular(PasyarRadius.thumbnail),
                   image: image == null
                       ? null
                       : DecorationImage(image: image!, fit: BoxFit.cover),
                 ),
                 child: image == null
-                    ? const Icon(
+                    ? Icon(
                         LucideIcons.image,
                         size: 24,
-                        color: PasyarColors.muted,
+                        color: PasyarColors.of(context).muted,
                       )
                     : null,
               ),
@@ -231,24 +233,24 @@ class StopCard extends StatelessWidget {
                       overline.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.overline.copyWith(
-                        height: _mockupLineHeight,
-                      ),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).overline.copyWith(height: _mockupLineHeight),
                     ),
                     Text(
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodyLarge.copyWith(
-                        height: _mockupLineHeight,
-                      ),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).bodyLarge.copyWith(height: _mockupLineHeight),
                     ),
                     if (detail != null)
                       Text(
                         detail!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: PasyarTextStyles.label.copyWith(
+                        style: PasyarTextStyles.of(context).label.copyWith(
                           fontSize: 14,
                           height: _mockupLineHeight,
                         ),
@@ -284,17 +286,17 @@ class SafetyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = PasyarTextStyles.body.copyWith(height: 1.35);
+    final style = PasyarTextStyles.of(context).body.copyWith(height: 1.35);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
       ),
       child: Row(
         spacing: 14,
         children: [
-          Icon(icon, size: 24, color: PasyarColors.accentDark),
+          Icon(icon, size: 24, color: PasyarColors.of(context).accentDark),
           Expanded(
             child: Text.rich(
               TextSpan(
@@ -333,7 +335,10 @@ class StepProgress extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
         children: [
-          Text('STEP $step OF $total', style: PasyarTextStyles.overline),
+          Text(
+            'STEP $step OF $total',
+            style: PasyarTextStyles.of(context).overline,
+          ),
           Row(
             spacing: 6,
             children: [
@@ -343,8 +348,8 @@ class StepProgress extends StatelessWidget {
                     height: 6,
                     decoration: BoxDecoration(
                       color: i <= step
-                          ? PasyarColors.accent
-                          : PasyarColors.line,
+                          ? PasyarColors.of(context).accent
+                          : PasyarColors.of(context).line,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -365,8 +370,12 @@ class OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const rule = Expanded(
-      child: Divider(height: 1, thickness: 1, color: PasyarColors.line),
+    final rule = Expanded(
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: PasyarColors.of(context).line,
+      ),
     );
     return Row(
       spacing: 12,
@@ -374,9 +383,9 @@ class OrDivider extends StatelessWidget {
         rule,
         Text(
           text,
-          style: PasyarTextStyles.bodySmall.copyWith(
+          style: PasyarTextStyles.of(context).bodySmall.copyWith(
             fontWeight: FontWeight.w400,
-            color: PasyarColors.muted,
+            color: PasyarColors.of(context).muted,
           ),
         ),
         rule,

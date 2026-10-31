@@ -133,11 +133,15 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                 children: [
                   Text(
                     'Add a club photo',
-                    style: PasyarTextStyles.bodyLarge.copyWith(fontSize: 16),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).bodyLarge.copyWith(fontSize: 16),
                   ),
                   Text(
                     'A logo or a group shot. Optional.',
-                    style: PasyarTextStyles.label.copyWith(fontSize: 14),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).label.copyWith(fontSize: 14),
                   ),
                 ],
               ),

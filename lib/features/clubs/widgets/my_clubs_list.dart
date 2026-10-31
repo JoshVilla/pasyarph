@@ -62,12 +62,14 @@ class _MyClubsListState extends State<MyClubsList> {
   Widget build(BuildContext context) {
     final mine = _mine;
     final avatars = context.read<FeedRepository>();
-    final empty = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final empty = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
       children: [
-        Text('YOUR CLUBS', style: PasyarTextStyles.screenTitle(24)),
+        Text('YOUR CLUBS', style: PasyarTextStyles.of(context).screenTitle(24)),
         if (mine == null && _error != null)
           Text(_error!, style: empty)
         else if (mine != null && mine.isEmpty)
@@ -145,7 +147,10 @@ class _JoinLinkSheetState extends State<_JoinLinkSheet> {
           20 + (media.viewInsets.bottom > 0 ? 0 : media.viewPadding.bottom),
         ),
         children: [
-          Text('JOIN A CLUB', style: PasyarTextStyles.screenTitle(24)),
+          Text(
+            'JOIN A CLUB',
+            style: PasyarTextStyles.of(context).screenTitle(24),
+          ),
           PasyarTextField(
             label: 'Invite link',
             hint: '${AppLinks.domain}/join/…',

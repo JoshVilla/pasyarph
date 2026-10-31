@@ -51,7 +51,7 @@ class MapLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final card = BoxDecoration(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       borderRadius: BorderRadius.circular(PasyarRadius.panel),
       boxShadow: PasyarShadows.floating,
     );
@@ -70,16 +70,16 @@ class MapLegend extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: 6,
               children: [
-                const Icon(
+                Icon(
                   LucideIcons.info,
                   size: 18,
-                  color: PasyarColors.accentDark,
+                  color: PasyarColors.of(context).accentDark,
                 ),
                 Text(
                   'Map key',
-                  style: PasyarTextStyles.label.copyWith(
+                  style: PasyarTextStyles.of(context).label.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: PasyarColors.ink,
+                    color: PasyarColors.of(context).ink,
                   ),
                 ),
               ],
@@ -144,10 +144,10 @@ class _Item extends StatelessWidget {
         SizedBox.square(dimension: 24, child: Center(child: _symbol)),
         Text(
           item.label,
-          style: PasyarTextStyles.label.copyWith(
+          style: PasyarTextStyles.of(context).label.copyWith(
             height: 1.2,
             fontWeight: FontWeight.w600,
-            color: PasyarColors.ink,
+            color: PasyarColors.of(context).ink,
           ),
         ),
       ],

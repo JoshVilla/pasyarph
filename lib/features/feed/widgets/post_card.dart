@@ -71,7 +71,7 @@ class PostCard extends StatelessWidget {
     // Words alone read a size up, as the post itself.
     final textOnly = loop == null && post.photos.isEmpty;
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -89,8 +89,8 @@ class PostCard extends StatelessWidget {
                 key: ValueKey(post.id),
                 text: caption,
                 style: textOnly
-                    ? PasyarTextStyles.bodyLarge
-                    : PasyarTextStyles.body,
+                    ? PasyarTextStyles.of(context).bodyLarge
+                    : PasyarTextStyles.of(context).body,
               ),
             ),
           if (loop == null) ...[
@@ -100,13 +100,13 @@ class PostCard extends StatelessWidget {
                 onTap: (i) => actions.onPhoto(post, i),
               ),
           ] else if (_isRide) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: _LoopCard(post: post, onRide: () => actions.onRide(post)),
+            ),
             PhotoCollage(
               photos: [for (final p in post.photos) photo(p.storagePath)],
               onTap: (i) => actions.onPhoto(post, i),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _LoopCard(post: post, onRide: () => actions.onRide(post)),
             ),
           ] else ...[
             _LoopMap(post: post),
@@ -189,8 +189,8 @@ class _CaptionState extends State<_Caption> {
                 minimumSize: const Size(44, PasyarSpacing.minTouch),
                 padding: EdgeInsets.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                foregroundColor: PasyarColors.muted,
-                textStyle: PasyarTextStyles.bodyStrong,
+                foregroundColor: PasyarColors.of(context).muted,
+                textStyle: PasyarTextStyles.of(context).bodyStrong,
               ),
               child: const Text('See more'),
             ),
@@ -229,7 +229,7 @@ class _Header extends StatelessWidget {
       ?post.clubName,
     ].join(' · ');
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 4, 10),
+      padding: const EdgeInsets.fromLTRB(16, 16, 4, 12),
       child: Row(
         spacing: 10,
         children: [
@@ -262,11 +262,15 @@ class _Header extends StatelessWidget {
                                     const TextSpan(text: ' shared a new loop'),
                                   ],
                           ),
-                          style: PasyarTextStyles.body.copyWith(height: 1.3),
+                          style: PasyarTextStyles.of(
+                            context,
+                          ).body.copyWith(height: 1.3),
                         ),
                         Text(
                           meta,
-                          style: PasyarTextStyles.label.copyWith(height: 1.2),
+                          style: PasyarTextStyles.of(
+                            context,
+                          ).label.copyWith(height: 1.35),
                         ),
                       ],
                     ),
@@ -280,10 +284,10 @@ class _Header extends StatelessWidget {
             child: IconButton(
               tooltip: 'More options',
               onPressed: () => onMore(post),
-              icon: const Icon(
+              icon: Icon(
                 LucideIcons.ellipsis,
                 size: 20,
-                color: PasyarColors.muted,
+                color: PasyarColors.of(context).muted,
               ),
             ),
           ),
@@ -309,45 +313,68 @@ class _LoopCard extends StatelessWidget {
     };
     final text = loopCardText(loop, away);
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
-        borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
+        color: PasyarColors.of(context).accentTint,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: PasyarColors.of(context).accent.withValues(alpha: 0.18),
+        ),
       ),
-      child: Row(
-        spacing: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 10,
         children: [
-          RouteThumbnail(
-            route: loop.sharedRoute ?? const [],
-            width: 64,
-            height: 50,
-            radius: 8,
-            startColor: PasyarColors.ink,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: PasyarTextStyles.bodyStrong.copyWith(height: 1.2),
+          Row(
+            spacing: 12,
+            children: [
+              RouteThumbnail(
+                route: loop.sharedRoute ?? const [],
+                width: 64,
+                height: 64,
+                radius: 10,
+                startColor: PasyarColors.of(context).ink,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 5,
+                  children: [
+                    Text(
+                      text.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: PasyarTextStyles.of(context).bodyLarge.copyWith(
+                        fontSize: 18,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    for (final line in text.details.skip(1))
+                      Text(
+                        line,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: PasyarTextStyles.of(context).label,
+                      ),
+                  ],
                 ),
-                // Up to two lines ("118 km · 3 h 50", "Ifugao · 6 km from
-                // you"), which still fit beside the thumbnail. No distance
-                // when the feed loaded without a location.
-                for (final line in text.details)
-                  Text(
-                    line,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.label.copyWith(height: 1.2),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-          _SmallButton(label: 'RIDE IT', onPressed: onRide),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                text.details.first,
+                style: PasyarTextStyles.of(context).bodyStrong,
+              ),
+              _SmallButton(label: 'Ride it', onPressed: onRide),
+            ],
+          ),
         ],
       ),
     );
@@ -362,43 +389,19 @@ class _SmallButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    // The row is 50 px tall (the thumbnail), so the 44 px touch area fits.
-    return SizedBox(
-      height: PasyarSpacing.minTouch,
-      child: Semantics(
-        button: true,
-        label: label,
-        excludeSemantics: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onPressed,
-          child: SizedBox(
-            height: PasyarSpacing.minTouch,
-            child: Center(
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: PasyarColors.accent,
-                  borderRadius: BorderRadius.circular(PasyarRadius.input),
-                ),
-                child: Text(
-                  label,
-                  style: PasyarTextStyles.buttonPrimary.copyWith(
-                    color: PasyarColors.card,
-                    fontSize: 16,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => FilledButton.icon(
+    onPressed: onPressed,
+    icon: const Icon(LucideIcons.navigation, size: 16),
+    label: Text(label),
+    style: FilledButton.styleFrom(
+      backgroundColor: PasyarColors.of(context).accent,
+      foregroundColor: PasyarColors.of(context).onAccent,
+      minimumSize: const Size(0, 44),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      textStyle: PasyarTextStyles.of(context).bodyStrong.copyWith(fontSize: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  );
 }
 
 /// Shared loop: the trimmed route on a real map, with stat chips.
@@ -430,7 +433,7 @@ class _LoopMap extends StatelessWidget {
                   initialCenter: route.isEmpty
                       ? const LatLng(16.67, 121.45)
                       : route.first,
-                  backgroundColor: PasyarColors.mapGround,
+                  backgroundColor: PasyarColors.of(context).mapGround,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.none,
                   ),
@@ -484,8 +487,8 @@ class _Chip extends StatelessWidget {
     return Container(
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: const ShapeDecoration(
-        color: PasyarColors.card,
+      decoration: ShapeDecoration(
+        color: PasyarColors.of(context).card,
         shape: StadiumBorder(),
       ),
       // widthFactor 1: as wide as the text, not the whole row.
@@ -493,10 +496,10 @@ class _Chip extends StatelessWidget {
         widthFactor: 1,
         child: Text(
           text,
-          style: PasyarTextStyles.label.copyWith(
+          style: PasyarTextStyles.of(context).label.copyWith(
             height: 1,
             fontWeight: FontWeight.w600,
-            color: PasyarColors.ink,
+            color: PasyarColors.of(context).ink,
           ),
         ),
       ),
@@ -513,7 +516,7 @@ class _RideThisLoopButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: PasyarColors.accent,
+      color: PasyarColors.of(context).accent,
       borderRadius: BorderRadius.circular(PasyarRadius.choiceCard),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -522,11 +525,11 @@ class _RideThisLoopButton extends StatelessWidget {
           height: 48,
           child: Center(
             child: Text(
-              'RIDE THIS LOOP',
-              style: PasyarTextStyles.buttonPrimary.copyWith(
-                color: PasyarColors.card,
-                fontSize: 19,
-                letterSpacing: 1,
+              'Ride this loop',
+              style: PasyarTextStyles.of(context).buttonPrimary.copyWith(
+                color: PasyarColors.of(context).onAccent,
+                fontSize: 17,
+                letterSpacing: 0.2,
               ),
             ),
           ),
@@ -544,7 +547,7 @@ class _Counts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = PasyarTextStyles.label.copyWith(height: 1.2);
+    final style = PasyarTextStyles.of(context).label.copyWith(height: 1.2);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -572,7 +575,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const rule = BorderSide(color: PasyarColors.line);
+    final rule = BorderSide(color: PasyarColors.of(context).line);
     final liked = post.likedByMe;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -618,7 +621,9 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = filled ? PasyarColors.accentDark : PasyarColors.ink;
+    final color = filled
+        ? PasyarColors.of(context).accentDark
+        : PasyarColors.of(context).ink;
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -629,10 +634,10 @@ class _Action extends StatelessWidget {
             spacing: 6,
             children: [
               filled
-                  ? const Icon(
+                  ? Icon(
                       Icons.favorite,
                       size: 20,
-                      color: PasyarColors.accent,
+                      color: PasyarColors.of(context).accent,
                     )
                   : Icon(icon, size: 20, color: color),
               // Shrinks with an ellipsis on narrow phones or large text.
@@ -641,7 +646,7 @@ class _Action extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: PasyarTextStyles.bodySmall.copyWith(
+                  style: PasyarTextStyles.of(context).bodySmall.copyWith(
                     height: 1,
                     fontWeight: FontWeight.w600,
                     color: color,
@@ -674,10 +679,9 @@ class _CommentPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = comment.author.displayName ?? 'A rider';
     final url = comment.author.avatarUrl;
-    final text = PasyarTextStyles.bodySmall.copyWith(
-      fontWeight: FontWeight.w400,
-      height: 1.35,
-    );
+    final text = PasyarTextStyles.of(
+      context,
+    ).bodySmall.copyWith(fontWeight: FontWeight.w400, height: 1.35);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
@@ -704,7 +708,7 @@ class _CommentPreview extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: PasyarColors.ground,
+                      color: PasyarColors.of(context).ground,
                       borderRadius: BorderRadius.circular(
                         PasyarRadius.choiceCard,
                       ),
@@ -735,9 +739,9 @@ class _CommentPreview extends StatelessWidget {
                 onTap: onViewAll,
                 child: Text(
                   'View all $total comments',
-                  style: PasyarTextStyles.bodySmall.copyWith(
+                  style: PasyarTextStyles.of(context).bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: PasyarColors.muted,
+                    color: PasyarColors.of(context).muted,
                   ),
                 ),
               ),

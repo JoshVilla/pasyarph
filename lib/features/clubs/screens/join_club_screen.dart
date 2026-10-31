@@ -96,22 +96,26 @@ class _JoinClubScreenState extends State<JoinClubScreen> {
       ],
       children: [
         if (_loading)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 32),
             child: Center(
-              child: CircularProgressIndicator(color: PasyarColors.accent),
+              child: CircularProgressIndicator(
+                color: PasyarColors.of(context).accent,
+              ),
             ),
           )
         else if (club == null)
           Text(
             _error ?? '',
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           )
         else
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: PasyarColors.ground,
+              color: PasyarColors.of(context).ground,
               borderRadius: BorderRadius.circular(PasyarRadius.panel),
             ),
             child: Row(
@@ -129,9 +133,15 @@ class _JoinClubScreenState extends State<JoinClubScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 2,
                     children: [
-                      Text(club.name, style: PasyarTextStyles.screenTitle(26)),
+                      Text(
+                        club.name,
+                        style: PasyarTextStyles.of(context).screenTitle(26),
+                      ),
                       if (club.memberCount case final n?)
-                        Text(memberCount(n), style: PasyarTextStyles.label),
+                        Text(
+                          memberCount(n),
+                          style: PasyarTextStyles.of(context).label,
+                        ),
                     ],
                   ),
                 ),

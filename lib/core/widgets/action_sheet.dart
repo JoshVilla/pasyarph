@@ -42,7 +42,7 @@ Future<T?> showActionSheet<T>(
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: PasyarTextStyles.screenTitle(24),
+              style: PasyarTextStyles.of(context).screenTitle(24),
             ),
           ),
         for (final a in actions) _ActionRow(action: a),
@@ -59,10 +59,10 @@ class _ActionRow<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = !action.enabled
-        ? PasyarColors.muted
+        ? PasyarColors.of(context).muted
         : action.destructive
-        ? PasyarColors.accentDark
-        : PasyarColors.ink;
+        ? PasyarColors.of(context).accentDark
+        : PasyarColors.of(context).ink;
     return Semantics(
       button: true,
       enabled: action.enabled,
@@ -86,7 +86,9 @@ class _ActionRow<T> extends StatelessWidget {
                 Expanded(
                   child: Text(
                     action.label,
-                    style: PasyarTextStyles.bodyLarge.copyWith(color: color),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).bodyLarge.copyWith(color: color),
                   ),
                 ),
               ],

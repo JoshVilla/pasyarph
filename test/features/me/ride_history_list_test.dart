@@ -66,10 +66,25 @@ void main() {
     ); // incl. NOT POSTED YET
     expect(find.textContaining('TOO SHORT TO POST'), findsOneWidget);
     final first = tester.getTopLeft(find.textContaining('NOT POSTED YET')).dy;
-    final posted = tester.getTopLeft(find.textContaining('· POSTED')).dy;
+    final posted = tester.getTopLeft(find.text('POSTED')).dy;
     expect(first, lessThan(posted));
   });
 
+  testWidgets('ride cards fit a narrow screen with large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 844);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final history = FakeRideHistory();
+    await history.save(_ride());
+    await tester.pumpWidget(_list(history));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Distance ridden'), findsOneWidget);
+    expect(find.text('Ride time'), findsOneWidget);
+    expect(find.text('POST'), findsOneWidget);
+  });
   group('delete', () {
     Future<void> openDelete(WidgetTester tester) async {
       await tester.tap(find.byTooltip('More'));

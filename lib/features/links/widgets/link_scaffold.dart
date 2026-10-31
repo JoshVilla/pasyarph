@@ -56,10 +56,12 @@ class LinkScaffold extends StatelessWidget {
       ],
       children: [
         if (message == null && error == null)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 32),
             child: Center(
-              child: CircularProgressIndicator(color: PasyarColors.accent),
+              child: CircularProgressIndicator(
+                color: PasyarColors.of(context).accent,
+              ),
             ),
           ),
       ],

@@ -74,7 +74,7 @@ void _phone(WidgetTester tester) {
 
 PrimaryButton _generate(WidgetTester tester) => tester.widget<PrimaryButton>(
   find.byWidgetPredicate(
-    (w) => w is PrimaryButton && w.label == 'GENERATE LOOP',
+    (w) => w is PrimaryButton && w.label == 'Generate loop',
   ),
 );
 
@@ -102,7 +102,7 @@ void main() {
       constraints: _screen,
       pumpBeforeTest: (tester) async {
         await tester.pumpAndSettle();
-        await tester.tap(find.text('MULTI-DAY'));
+        await tester.tap(find.text('Multi-day'));
         await tester.pumpAndSettle();
       },
       builder: () => _home(_location()),
@@ -144,7 +144,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pump();
     expect(find.text('Building your loop…'), findsOneWidget);
     expect(_generate(tester).loading, isTrue);
@@ -161,7 +161,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't find a loop from here."), findsOneWidget);
     expect(_generate(tester).loading, isFalse);
@@ -171,12 +171,12 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: _home(_location())));
     await tester.pumpAndSettle();
     final options = Provider.of<RideOptionsProvider>(
-      tester.element(find.text('QUICK')),
+      tester.element(find.text('Quick')),
       listen: false,
     );
     expect(options.duration, LoopDuration.halfDay);
 
-    await tester.tap(find.text('QUICK'));
+    await tester.tap(find.text('Quick'));
     await tester.tap(find.text('Avoid unpaved'));
     await tester.tap(find.text('Avoid highways'));
     await tester.pump();
@@ -195,13 +195,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Days'), findsNothing);
 
-    await tester.tap(find.text('MULTI-DAY'));
+    await tester.tap(find.text('Multi-day'));
     await tester.pumpAndSettle();
     expect(find.text('Days'), findsOneWidget);
     await tester.tap(find.text('5'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pump();
     expect(routes.sentDays, [5]);
   });
@@ -211,7 +211,7 @@ void main() {
     final routes = FakeRouteRepository()..gate = Completer();
     await tester.pumpWidget(MaterialApp(home: _home(_location(), routes)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pump();
     expect(routes.sentDays, [null]);
   });

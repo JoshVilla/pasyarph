@@ -27,7 +27,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -40,7 +40,10 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                   semanticLabel: 'Back',
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
-                Text('WIDGETS', style: PasyarTextStyles.screenTitle(32)),
+                Text(
+                  'WIDGETS',
+                  style: PasyarTextStyles.of(context).screenTitle(32),
+                ),
               ],
             ),
             const _Section('Colors', child: ColorSwatches()),
@@ -49,7 +52,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
               'PrimaryButton',
               child: _column([
                 PrimaryButton(
-                  label: 'GENERATE LOOP',
+                  label: 'Generate loop',
                   icon: LucideIcons.rotateCw,
                   onPressed: () {},
                 ),
@@ -66,14 +69,14 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
               'SecondaryButton',
               child: _column([
                 SecondaryButton(
-                  label: 'SHUFFLE',
+                  label: 'Shuffle',
                   icon: LucideIcons.shuffle,
                   onPressed: () {},
                 ),
                 SecondaryButton(label: 'END RIDE', onPressed: () {}),
                 const SecondaryButton(label: 'DISABLED', onPressed: null),
                 Container(
-                  color: PasyarColors.ink,
+                  color: PasyarColors.of(context).ink,
                   padding: const EdgeInsets.all(16),
                   child: SecondaryButton.onDark(
                     label: 'I ALREADY HAVE AN ACCOUNT',
@@ -85,7 +88,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
             _Section(
               'RoundIconButton / FloatingPill',
               child: Container(
-                color: PasyarColors.mapGround,
+                color: PasyarColors.of(context).mapGround,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +105,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                         FloatingPill(
                           child: Text(
                             'HALF-DAY LOOP',
-                            style: PasyarTextStyles.pillTitle,
+                            style: PasyarTextStyles.of(context).pillTitle,
                           ),
                         ),
                       ],
@@ -274,7 +277,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
             const _Section('SafetyRow', child: SafetyRows()),
             _Section(
               'StatBlock',
-              child: _column(const [
+              child: _column([
                 StatRow(
                   children: [
                     StatBlock(label: 'Distance', value: '118 km'),
@@ -282,7 +285,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                     StatBlock(
                       label: 'Curvy roads',
                       value: 'High',
-                      valueColor: PasyarColors.accentDark,
+                      valueColor: PasyarColors.of(context).accentDark,
                     ),
                   ],
                 ),
@@ -305,10 +308,10 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
               ),
             ),
             const _Section('Avatar', child: AvatarSamples()),
-            const _Section(
+            _Section(
               'BottomSheetPanel',
               child: ColoredBox(
-                color: PasyarColors.mapGround,
+                color: PasyarColors.of(context).mapGround,
                 child: Padding(
                   padding: EdgeInsets.only(top: 24),
                   child: BottomSheetPanel(
@@ -375,7 +378,10 @@ class _Section extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 12,
         children: [
-          Text(title.toUpperCase(), style: PasyarTextStyles.overline),
+          Text(
+            title.toUpperCase(),
+            style: PasyarTextStyles.of(context).overline,
+          ),
           child,
         ],
       ),
@@ -393,21 +399,26 @@ class StartingFromPill extends StatelessWidget {
       child: Row(
         spacing: 10,
         children: [
-          const Icon(LucideIcons.locate, size: 18, color: PasyarColors.rider),
+          Icon(
+            LucideIcons.locate,
+            size: 18,
+            color: PasyarColors.of(context).rider,
+          ),
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Starting from',
-                style: PasyarTextStyles.label.copyWith(
-                  fontSize: 12,
-                  height: 1.15,
-                ),
+                style: PasyarTextStyles.of(
+                  context,
+                ).label.copyWith(fontSize: 12, height: 1.15),
               ),
               Text(
                 'Current location',
-                style: PasyarTextStyles.bodyStrong.copyWith(height: 1.15),
+                style: PasyarTextStyles.of(
+                  context,
+                ).bodyStrong.copyWith(height: 1.15),
               ),
             ],
           ),
@@ -420,21 +431,21 @@ class StartingFromPill extends StatelessWidget {
 class ColorSwatches extends StatelessWidget {
   const ColorSwatches({super.key});
 
-  static const colors = {
-    'ink': PasyarColors.ink,
-    'muted': PasyarColors.muted,
-    'ground': PasyarColors.ground,
-    'card': PasyarColors.card,
-    'line': PasyarColors.line,
-    'lineStrong': PasyarColors.lineStrong,
-    'accent': PasyarColors.accent,
-    'accentDark': PasyarColors.accentDark,
-    'accentTint': PasyarColors.accentTint,
-    'rider': PasyarColors.rider,
-    'verifiedTint': PasyarColors.verifiedTint,
-    'verifiedText': PasyarColors.verifiedText,
-    'mapGround': PasyarColors.mapGround,
-    'riddenRoute': PasyarColors.riddenRoute,
+  static Map<String, Color> colors(BuildContext context) => {
+    'ink': PasyarColors.of(context).ink,
+    'muted': PasyarColors.of(context).muted,
+    'ground': PasyarColors.of(context).ground,
+    'card': PasyarColors.of(context).card,
+    'line': PasyarColors.of(context).line,
+    'lineStrong': PasyarColors.of(context).lineStrong,
+    'accent': PasyarColors.of(context).accent,
+    'accentDark': PasyarColors.of(context).accentDark,
+    'accentTint': PasyarColors.of(context).accentTint,
+    'rider': PasyarColors.of(context).rider,
+    'verifiedTint': PasyarColors.of(context).verifiedTint,
+    'verifiedText': PasyarColors.of(context).verifiedText,
+    'mapGround': PasyarColors.of(context).mapGround,
+    'riddenRoute': PasyarColors.of(context).riddenRoute,
   };
 
   @override
@@ -443,7 +454,7 @@ class ColorSwatches extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        for (final MapEntry(key: name, value: color) in colors.entries)
+        for (final MapEntry(key: name, value: color) in colors(context).entries)
           SizedBox(
             width: 78,
             child: Column(
@@ -455,12 +466,14 @@ class ColorSwatches extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: PasyarColors.line),
+                    border: Border.all(color: PasyarColors.of(context).line),
                   ),
                 ),
                 Text(
                   name,
-                  style: PasyarTextStyles.label.copyWith(fontSize: 11),
+                  style: PasyarTextStyles.of(
+                    context,
+                  ).label.copyWith(fontSize: 11),
                 ),
               ],
             ),
@@ -481,52 +494,73 @@ class TypographySamples extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          color: PasyarColors.ink,
+          color: PasyarColors.of(context).ink,
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'PASYAR',
-                style: PasyarTextStyles.wordmark.copyWith(
-                  color: PasyarColors.card,
-                ),
+                style: PasyarTextStyles.of(
+                  context,
+                ).wordmark.copyWith(color: PasyarColors.of(context).card),
               ),
-              Text('Walang plano? Pasyar na.', style: PasyarTextStyles.tagline),
+              Text(
+                'Walang plano? Pasyar na.',
+                style: PasyarTextStyles.of(context).tagline,
+              ),
             ],
           ),
         ),
-        Text('WHERE TO TODAY?', style: PasyarTextStyles.screenTitle(30)),
-        Text('WELCOME BACK', style: PasyarTextStyles.screenTitle(36)),
-        Text('400 m', style: PasyarTextStyles.navDistance),
-        Text('118 km', style: PasyarTextStyles.statValue),
-        Text('GENERATE LOOP', style: PasyarTextStyles.buttonPrimary),
-        Text('SHUFFLE', style: PasyarTextStyles.buttonSecondary),
-        Text('HALF-DAY', style: PasyarTextStyles.choiceTitle),
-        Text('HALF-DAY LOOP', style: PasyarTextStyles.pillTitle),
-        Text('[Stop name] Viewpoint', style: PasyarTextStyles.bodyLarge),
+        Text(
+          'WHERE TO TODAY?',
+          style: PasyarTextStyles.of(context).screenTitle(30),
+        ),
+        Text(
+          'WELCOME BACK',
+          style: PasyarTextStyles.of(context).screenTitle(36),
+        ),
+        Text('400 m', style: PasyarTextStyles.of(context).navDistance),
+        Text('118 km', style: PasyarTextStyles.of(context).statValue),
+        Text(
+          'Generate loop',
+          style: PasyarTextStyles.of(context).buttonPrimary,
+        ),
+        Text('Shuffle', style: PasyarTextStyles.of(context).buttonSecondary),
+        Text('HALF-DAY', style: PasyarTextStyles.of(context).choiceTitle),
+        Text('HALF-DAY LOOP', style: PasyarTextStyles.of(context).pillTitle),
+        Text(
+          '[Stop name] Viewpoint',
+          style: PasyarTextStyles.of(context).bodyLarge,
+        ),
         Text(
           'Sunday loop with the club. Smooth roads after the bridge.',
-          style: PasyarTextStyles.body,
+          style: PasyarTextStyles.of(context).body,
         ),
-        Text('Avoid highways', style: PasyarTextStyles.bodySmall),
-        Text('2 h ago · at [Stop name] Falls', style: PasyarTextStyles.label),
-        Text('Rider name', style: PasyarTextStyles.fieldLabel),
-        Text('MAIN STOP · 52 KM IN', style: PasyarTextStyles.overline),
+        Text('Avoid highways', style: PasyarTextStyles.of(context).bodySmall),
+        Text(
+          '2 h ago · at [Stop name] Falls',
+          style: PasyarTextStyles.of(context).label,
+        ),
+        Text('Rider name', style: PasyarTextStyles.of(context).fieldLabel),
+        Text(
+          'MAIN STOP · 52 KM IN',
+          style: PasyarTextStyles.of(context).overline,
+        ),
         Row(
           spacing: 16,
           children: [
             Text(
               'Ride',
-              style: PasyarTextStyles.tabLabelActive.copyWith(
-                color: PasyarColors.accent,
-              ),
+              style: PasyarTextStyles.of(
+                context,
+              ).tabLabelActive.copyWith(color: PasyarColors.of(context).accent),
             ),
             Text(
               'Feed',
-              style: PasyarTextStyles.tabLabel.copyWith(
-                color: PasyarColors.muted,
-              ),
+              style: PasyarTextStyles.of(
+                context,
+              ).tabLabel.copyWith(color: PasyarColors.of(context).muted),
             ),
           ],
         ),
@@ -610,14 +644,21 @@ class AvatarSamples extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       spacing: 12,
       children: [
-        Avatar(name: 'Rider Name', color: PasyarColors.verifiedText),
-        Avatar(name: 'Iloilo Riders', color: PasyarColors.ink),
-        Avatar(name: 'Ana Lim', color: PasyarColors.muted),
-        Avatar(name: 'Me', size: 40, color: PasyarColors.ink),
-        Avatar(name: 'Juan Mercado', size: 32, color: PasyarColors.accentDark),
+        Avatar(
+          name: 'Rider Name',
+          color: PasyarColors.of(context).verifiedText,
+        ),
+        Avatar(name: 'Iloilo Riders', color: PasyarColors.of(context).ink),
+        Avatar(name: 'Ana Lim', color: PasyarColors.of(context).muted),
+        Avatar(name: 'Me', size: 40, color: PasyarColors.of(context).ink),
+        Avatar(
+          name: 'Juan Mercado',
+          size: 32,
+          color: PasyarColors.of(context).accentDark,
+        ),
         Avatar(name: 'Juan Dela Cruz'),
       ],
     );
@@ -686,7 +727,7 @@ class _DemoMap extends StatelessWidget {
               coordinates: DemoRoutes.loop,
               padding: const EdgeInsets.all(28),
             ),
-            backgroundColor: PasyarColors.mapGround,
+            backgroundColor: PasyarColors.of(context).mapGround,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.none,
             ),

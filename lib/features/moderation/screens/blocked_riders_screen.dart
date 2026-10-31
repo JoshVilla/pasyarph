@@ -88,7 +88,9 @@ class _BlockedRidersScreenState extends State<BlockedRidersScreen> {
                 children: [
                   Avatar(
                     name: r.displayName ?? 'A rider',
-                    image: r.avatarUrl == null ? null : feed.avatar(r.avatarUrl!),
+                    image: r.avatarUrl == null
+                        ? null
+                        : feed.avatar(r.avatarUrl!),
                     size: 40,
                   ),
                   Expanded(
@@ -96,7 +98,7 @@ class _BlockedRidersScreenState extends State<BlockedRidersScreen> {
                       r.displayName ?? 'A rider',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodyStrong,
+                      style: PasyarTextStyles.of(context).bodyStrong,
                     ),
                   ),
                   TextButton(
@@ -105,10 +107,10 @@ class _BlockedRidersScreenState extends State<BlockedRidersScreen> {
                         : () => _unblock(r),
                     style: TextButton.styleFrom(
                       minimumSize: const Size(88, 48),
-                      foregroundColor: PasyarColors.accentDark,
-                      textStyle: PasyarTextStyles.buttonSecondary.copyWith(
-                        fontSize: 16,
-                      ),
+                      foregroundColor: PasyarColors.of(context).accentDark,
+                      textStyle: PasyarTextStyles.of(
+                        context,
+                      ).buttonSecondary.copyWith(fontSize: 16),
                     ),
                     child: const Text('UNBLOCK'),
                   ),

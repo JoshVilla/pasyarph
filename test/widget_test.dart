@@ -30,6 +30,8 @@ import 'package:pasyarph/features/auth/providers/auth_provider.dart';
 import 'package:pasyarph/features/auth/screens/login_screen.dart';
 import 'package:pasyarph/features/auth/screens/welcome_screen.dart';
 import 'package:pasyarph/data/repositories/loop_repository.dart';
+import 'package:pasyarph/data/repositories/discovery_repository.dart';
+import 'package:pasyarph/features/discover/screens/discover_screen.dart';
 import 'package:pasyarph/data/repositories/route_repository.dart';
 import 'package:pasyarph/features/create/screens/create_loop_screen.dart';
 import 'package:pasyarph/features/feed/providers/feed_provider.dart';
@@ -51,6 +53,7 @@ import 'support/fake_auth_repository.dart';
 import 'support/fake_clubs.dart';
 import 'support/fake_covers.dart';
 import 'support/fake_feed.dart';
+import 'support/fake_discovery.dart';
 import 'support/fake_links.dart';
 import 'support/fake_me.dart';
 import 'support/fake_moderation.dart';
@@ -84,6 +87,7 @@ Future<FakeAuthRepository> pumpApp(
     MultiProvider(
       providers: [
         Provider<RouteRepository>.value(value: routeRepo),
+        Provider<DiscoveryRepository>(create: (_) => FakeDiscoveryRepository()),
         Provider<LoopRepository>(create: (_) => FakeLoopRepository()),
         Provider<ClubRepository>(create: (_) => clubs ?? FakeClubRepository()),
         Provider<RideHistoryRepository>.value(value: history),
@@ -160,6 +164,28 @@ Future<void> openTab(WidgetTester tester, String label) async {
 }
 
 void main() {
+  testWidgets('Feed search and Ride exploration open route discovery', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
+    );
+    await tester.tap(find.bySemanticsLabel('Search'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DiscoverScreen), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
+    await openTab(tester, 'Ride');
+    await tester.scrollUntilVisible(
+      find.text('Explore rider loops'),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('Explore rider loops'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DiscoverScreen), findsOneWidget);
+  });
   testWidgets('signed out: Welcome, then Log in', (tester) async {
     await pumpApp(tester, FakeAuthRepository());
     expect(find.byType(WelcomeScreen), findsOneWidget);
@@ -253,13 +279,13 @@ void main() {
       FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
     );
     await openTab(tester, 'Ride');
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pumpAndSettle();
     expect(find.byType(LoopPreviewScreen), findsOneWidget);
     expect(find.text('HALF-DAY LOOP'), findsOneWidget);
     expect(find.byType(PasyarBottomTabs), findsNothing);
 
-    await tester.tap(find.text('SHUFFLE'));
+    await tester.tap(find.text('Shuffle'));
     await tester.pumpAndSettle();
     expect(find.byType(LoopPreviewScreen), findsOneWidget);
 
@@ -277,12 +303,12 @@ void main() {
       FakeAuthRepository(session: fakeSession(), profile: fakeProfile()),
     );
     await openTab(tester, 'Ride');
-    await tester.tap(find.text('GENERATE LOOP'));
+    await tester.tap(find.text('Generate loop'));
     await tester.pumpAndSettle();
     // start() runs a chain of async steps (notification permission,
     // background tracking, opening Maps); let it finish on the real clock.
     await tester.runAsync(() async {
-      await tester.tap(find.text('START RIDE'));
+      await tester.tap(find.text('Start ride'));
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pumpAndSettle();
@@ -322,15 +348,15 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('RIDE IT').first);
+    await tester.tap(find.text('Ride it').first);
     await tester.pumpAndSettle();
 
     expect(routes.rideLoops, ['loop-p1']);
     expect(find.byType(LoopPreviewScreen), findsOneWidget);
     expect(find.text('SUNDAY FALLS LOOP'), findsOneWidget);
     expect(find.text('Includes 3.0 km to the loop and back.'), findsOneWidget);
-    expect(find.text('SHUFFLE'), findsNothing);
-    expect(find.text('START RIDE'), findsOneWidget);
+    expect(find.text('Shuffle'), findsNothing);
+    expect(find.text('Start ride'), findsOneWidget);
   });
 
   testWidgets('signed in: tabs switch, and Me logs out', (tester) async {
@@ -392,7 +418,7 @@ void main() {
           .setMockMethodCallHandler(SystemChannels.platform, null);
     });
 
-    /// Me → My loops, where the clubs are.
+    /// Me → My clubs.
     Future<void> openMe(WidgetTester tester) async {
       await tester.tap(
         find.descendant(
@@ -401,7 +427,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('My loops'));
+      await tester.tap(find.text('My clubs'));
       await tester.pumpAndSettle();
     }
 

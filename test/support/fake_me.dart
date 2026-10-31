@@ -73,6 +73,13 @@ class MemorySettingsStore implements SettingsStore {
   MemorySettingsStore([Map<String, bool>? values]) : values = values ?? {};
 
   final Map<String, bool> values;
+  final strings = <String, String>{};
+  @override
+  Future<String?> getString(String key) async => strings[key];
+  @override
+  Future<void> setString(String key, String value) async {
+    strings[key] = value;
+  }
 
   @override
   Future<bool?> getBool(String key) async => values[key];

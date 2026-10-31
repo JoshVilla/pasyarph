@@ -15,8 +15,8 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (auth.status != AuthStatus.profileError) {
-      return const Scaffold(
-        backgroundColor: PasyarColors.card,
+      return Scaffold(
+        backgroundColor: PasyarColors.of(context).background,
         body: Center(child: CircularProgressIndicator()),
       );
     }

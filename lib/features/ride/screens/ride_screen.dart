@@ -92,7 +92,7 @@ class _RideHomeState extends State<_RideHome> {
         : null;
 
     return Scaffold(
-      backgroundColor: PasyarColors.mapGround,
+      backgroundColor: PasyarColors.of(context).mapGround,
       body: Stack(
         children: [
           LayoutBuilder(
@@ -106,6 +106,7 @@ class _RideHomeState extends State<_RideHome> {
               ),
               sheet: WhereToSheet(
                 options: options,
+                onDiscover: () => context.push(Routes.discover),
                 generating: generating,
                 notice: notice,
                 onGenerate: location.hasFix ? _generate : null,

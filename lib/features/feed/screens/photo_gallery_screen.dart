@@ -59,7 +59,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                 child: Image(
                   image: widget.photos[i],
                   fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const Icon(
+                  errorBuilder: (_, _, _) => Icon(
                     LucideIcons.imageOff,
                     color: PasyarColors.onInkMuted,
                     size: 32,
@@ -87,7 +87,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                     ),
                     child: Text(
                       '${_index + 1} / ${widget.photos.length}',
-                      style: PasyarTextStyles.label.copyWith(
+                      style: PasyarTextStyles.of(context).label.copyWith(
                         height: 1,
                         fontWeight: FontWeight.w600,
                         color: PasyarColors.card,
@@ -117,7 +117,7 @@ class _CloseButton extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
-        child: const SizedBox.square(
+        child: SizedBox.square(
           dimension: PasyarSpacing.minTouch,
           child: Icon(LucideIcons.x, size: 22, color: PasyarColors.card),
         ),

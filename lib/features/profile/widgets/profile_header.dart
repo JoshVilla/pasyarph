@@ -51,6 +51,7 @@ class ProfileHeader extends StatelessWidget {
     required this.action,
     this.coverLeading,
     this.coverActions = const [],
+    this.profileActions = const [],
     this.onEditCover,
     this.coverBusy = false,
     this.onFollowers,
@@ -64,6 +65,9 @@ class ProfileHeader extends StatelessWidget {
   final Widget action;
   final Widget? coverLeading;
   final List<Widget> coverActions;
+
+  /// Actions beside Edit profile, below the cover photo.
+  final List<Widget> profileActions;
   final VoidCallback? onEditCover;
   final bool coverBusy;
   final VoidCallback? onFollowers;
@@ -80,13 +84,12 @@ class ProfileHeader extends StatelessWidget {
       bike: d.bike,
       homeArea: d.homeArea,
     );
-    final muted = PasyarTextStyles.body.copyWith(
-      fontSize: 14,
-      color: PasyarColors.muted,
-    );
+    final muted = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(fontSize: 14, color: PasyarColors.of(context).muted);
 
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -113,7 +116,7 @@ class ProfileHeader extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: PasyarColors.card,
+                        color: PasyarColors.of(context).card,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: PasyarShadows.floating,
                       ),
@@ -124,8 +127,20 @@ class ProfileHeader extends StatelessWidget {
                         radius: 20,
                       ),
                     ),
-                    const Spacer(),
-                    action,
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: IntrinsicWidth(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(child: action),
+                              ...profileActions,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -146,10 +161,10 @@ class ProfileHeader extends StatelessWidget {
                   header: true,
                   child: Text(
                     d.name,
-                    style: PasyarTextStyles.body.copyWith(
+                    style: PasyarTextStyles.of(context).body.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: PasyarColors.ink,
+                      color: PasyarColors.of(context).ink,
                       height: 1.2,
                     ),
                   ),
@@ -162,7 +177,9 @@ class ProfileHeader extends StatelessWidget {
                         '+ Add a username',
                         if (handle.isNotEmpty) handle,
                       ].join(' · '),
-                      style: muted.copyWith(color: PasyarColors.accent),
+                      style: muted.copyWith(
+                        color: PasyarColors.of(context).accent,
+                      ),
                     ),
                   )
                 else if (handle.isNotEmpty)
@@ -172,7 +189,9 @@ class ProfileHeader extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       bio.trim(),
-                      style: PasyarTextStyles.body.copyWith(fontSize: 14),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).body.copyWith(fontSize: 14),
                     ),
                   ),
                 Padding(
@@ -230,13 +249,12 @@ class _FollowCounts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = PasyarTextStyles.body.copyWith(
-      fontSize: 14,
-      color: PasyarColors.muted,
-    );
+    final base = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(fontSize: 14, color: PasyarColors.of(context).muted);
     final bold = base.copyWith(
       fontWeight: FontWeight.w700,
-      color: PasyarColors.ink,
+      color: PasyarColors.of(context).ink,
     );
     Widget part(int n, String label, VoidCallback? onTap) => Semantics(
       button: onTap != null,
@@ -287,11 +305,15 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlight ? PasyarColors.accentDark : PasyarColors.ink;
+    final color = highlight
+        ? PasyarColors.of(context).accentDark
+        : PasyarColors.of(context).ink;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: highlight ? PasyarColors.accentTint : PasyarColors.ground,
+        color: highlight
+            ? PasyarColors.of(context).accentTint
+            : PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -301,7 +323,7 @@ class _StatTile extends StatelessWidget {
           Text(
             value,
             maxLines: 1,
-            style: PasyarTextStyles.body.copyWith(
+            style: PasyarTextStyles.of(context).body.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               height: 1.2,
@@ -311,9 +333,11 @@ class _StatTile extends StatelessWidget {
           Text(
             label,
             maxLines: 1,
-            style: PasyarTextStyles.label.copyWith(
-              fontSize: 12,
-              color: highlight ? PasyarColors.accentDark : PasyarColors.muted,
+            style: PasyarTextStyles.of(context).label.copyWith(
+              fontSize: 13,
+              color: highlight
+                  ? PasyarColors.of(context).accentDark
+                  : PasyarColors.of(context).muted,
             ),
           ),
         ],
@@ -352,20 +376,29 @@ class ProfilePillButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18),
             alignment: Alignment.center,
             decoration: ShapeDecoration(
-              color: outlined ? PasyarColors.card : PasyarColors.accent,
+              color: outlined
+                  ? PasyarColors.of(context).card
+                  : PasyarColors.of(context).accent,
               shape: StadiumBorder(
                 side: outlined
-                    ? const BorderSide(color: PasyarColors.line, width: 1.5)
+                    ? BorderSide(
+                        color: PasyarColors.of(context).line,
+                        width: 1.5,
+                      )
                     : BorderSide.none,
               ),
             ),
             child: Text(
               label,
-              style: PasyarTextStyles.body.copyWith(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PasyarTextStyles.of(context).body.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 height: 1,
-                color: outlined ? PasyarColors.ink : PasyarColors.card,
+                color: outlined
+                    ? PasyarColors.of(context).ink
+                    : PasyarColors.of(context).onAccent,
               ),
             ),
           ),
@@ -375,7 +408,7 @@ class ProfilePillButton extends StatelessWidget {
   }
 }
 
-/// Rides / My loops / Saved: 36 px pills, the active one filled with ink.
+/// Profile section tabs: 36 px pills, the active one filled with ink.
 class ProfileTabs<T> extends StatelessWidget {
   const ProfileTabs({
     super.key,
@@ -393,11 +426,11 @@ class ProfileTabs<T> extends StatelessWidget {
     // Scrolls sideways when large text doesn't fit.
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: _tabs(),
+      child: _tabs(context),
     );
   }
 
-  Widget _tabs() {
+  Widget _tabs(BuildContext context) {
     return Row(
       spacing: 8,
       children: [
@@ -419,24 +452,24 @@ class ProfileTabs<T> extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: ShapeDecoration(
                       color: tab == selected
-                          ? PasyarColors.ink
-                          : PasyarColors.card,
+                          ? PasyarColors.of(context).ink
+                          : PasyarColors.of(context).card,
                       shape: StadiumBorder(
                         side: tab == selected
                             ? BorderSide.none
-                            : const BorderSide(
-                                color: PasyarColors.line,
+                            : BorderSide(
+                                color: PasyarColors.of(context).line,
                                 width: 1.5,
                               ),
                       ),
                     ),
                     child: Text(
                       label,
-                      style: PasyarTextStyles.bodySmall.copyWith(
+                      style: PasyarTextStyles.of(context).bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
                         color: tab == selected
-                            ? PasyarColors.card
-                            : PasyarColors.ink,
+                            ? PasyarColors.of(context).card
+                            : PasyarColors.of(context).ink,
                       ),
                     ),
                   ),

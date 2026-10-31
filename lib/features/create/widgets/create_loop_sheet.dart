@@ -106,8 +106,8 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
         w.visibility == LoopVisibility.club && (w.clubs?.length ?? 0) > 1;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: PasyarColors.card,
+      decoration: BoxDecoration(
+        color: PasyarColors.of(context).card,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(PasyarRadius.sheet),
         ),
@@ -160,10 +160,9 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                               hint: 'Name your loop',
                               height: 48,
                               maxLength: 80,
-                              textStyle: PasyarTextStyles.choiceTitle.copyWith(
-                                fontSize: 22,
-                                height: 1.2,
-                              ),
+                              textStyle: PasyarTextStyles.of(
+                                context,
+                              ).choiceTitle.copyWith(fontSize: 22, height: 1.2),
                               enabled: !w.moving,
                               textCapitalization: TextCapitalization.words,
                               textInputAction: TextInputAction.done,
@@ -193,14 +192,20 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                                       PasyarSpacing.minTouch,
                                     ),
                                     padding: EdgeInsets.zero,
-                                    foregroundColor: PasyarColors.accentDark,
+                                    foregroundColor: PasyarColors.of(
+                                      context,
+                                    ).accentDark,
                                   ),
                                   icon: const Icon(LucideIcons.plus, size: 18),
                                   label: Text(
                                     'Add a caption',
-                                    style: PasyarTextStyles.bodyStrong.copyWith(
-                                      color: PasyarColors.accentDark,
-                                    ),
+                                    style: PasyarTextStyles.of(context)
+                                        .bodyStrong
+                                        .copyWith(
+                                          color: PasyarColors.of(
+                                            context,
+                                          ).accentDark,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -210,7 +215,9 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                               children: [
                                 Text(
                                   'Who can see it',
-                                  style: PasyarTextStyles.fieldLabel,
+                                  style: PasyarTextStyles.of(
+                                    context,
+                                  ).fieldLabel,
                                 ),
                                 SegmentedChoice<LoopVisibility>(
                                   semanticLabel: 'Visibility',
@@ -223,7 +230,9 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                                     Expanded(
                                       child: Text(
                                         _visibilityHelp,
-                                        style: PasyarTextStyles.label,
+                                        style: PasyarTextStyles.of(
+                                          context,
+                                        ).label,
                                       ),
                                     ),
                                     if (canPickClub)
@@ -234,14 +243,18 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                                             PasyarSpacing.minTouch,
                                             PasyarSpacing.minTouch,
                                           ),
-                                          foregroundColor:
-                                              PasyarColors.accentDark,
+                                          foregroundColor: PasyarColors.of(
+                                            context,
+                                          ).accentDark,
                                         ),
                                         child: Text(
                                           'Change',
-                                          style: PasyarTextStyles.fieldLabel
+                                          style: PasyarTextStyles.of(context)
+                                              .fieldLabel
                                               .copyWith(
-                                                color: PasyarColors.accentDark,
+                                                color: PasyarColors.of(
+                                                  context,
+                                                ).accentDark,
                                               ),
                                         ),
                                       ),
@@ -319,13 +332,17 @@ class _TotalsBar extends StatelessWidget {
                     line,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.statValue.copyWith(height: 1),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).statValue.copyWith(height: 1),
                   ),
                   Text(
                     detail,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: PasyarTextStyles.label.copyWith(height: 1.2),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).label.copyWith(height: 1.2),
                   ),
                 ],
               ),
@@ -354,7 +371,7 @@ Future<String?> showClubPicker(
     builder: (context) => BottomSheetPanel(
       gap: 8,
       children: [
-        Text('SHARE WITH', style: PasyarTextStyles.screenTitle(24)),
+        Text('SHARE WITH', style: PasyarTextStyles.of(context).screenTitle(24)),
         for (final c in clubs)
           ChoiceCard(
             title: c.name,

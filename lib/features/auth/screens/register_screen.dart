@@ -195,14 +195,14 @@ class _TermsCheckboxState extends State<_TermsCheckbox> {
 
   @override
   Widget build(BuildContext context) {
-    final style = PasyarTextStyles.bodySmall.copyWith(
+    final style = PasyarTextStyles.of(context).bodySmall.copyWith(
       fontWeight: FontWeight.w400,
       height: 1.4,
-      color: PasyarColors.muted,
+      color: PasyarColors.of(context).muted,
     );
-    const link = TextStyle(
+    final link = TextStyle(
       fontWeight: FontWeight.w600,
-      color: PasyarColors.accentDark,
+      color: PasyarColors.of(context).accentDark,
     );
     return Semantics(
       checked: widget.value,

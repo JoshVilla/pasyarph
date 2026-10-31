@@ -47,14 +47,19 @@ class TitledPage extends StatelessWidget {
         const SizedBox(height: 12),
         Semantics(
           header: true,
-          child: Text(title, style: PasyarTextStyles.screenTitle(36)),
+          child: Text(
+            title,
+            style: PasyarTextStyles.of(context).screenTitle(36),
+          ),
         ),
         if (subtitle != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               subtitle!,
-              style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+              style: PasyarTextStyles.of(
+                context,
+              ).body.copyWith(color: PasyarColors.of(context).muted),
             ),
           ),
         const SizedBox(height: 20),
@@ -62,11 +67,11 @@ class TitledPage extends StatelessWidget {
       ],
     );
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       body: onRefresh == null
           ? list
           : RefreshIndicator(
-              color: PasyarColors.accent,
+              color: PasyarColors.of(context).accent,
               edgeOffset: top,
               onRefresh: onRefresh!,
               child: list,
@@ -88,7 +93,9 @@ class PageMessage extends StatelessWidget {
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+        style: PasyarTextStyles.of(
+          context,
+        ).body.copyWith(color: PasyarColors.of(context).muted),
       ),
     );
   }
@@ -99,8 +106,10 @@ class PageLoading extends StatelessWidget {
   const PageLoading({super.key});
 
   @override
-  Widget build(BuildContext context) => const Padding(
+  Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(32),
-    child: Center(child: CircularProgressIndicator(color: PasyarColors.accent)),
+    child: Center(
+      child: CircularProgressIndicator(color: PasyarColors.of(context).accent),
+    ),
   );
 }

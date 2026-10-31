@@ -50,7 +50,7 @@ class Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initials = Text(
       initialsOf(name),
-      style: PasyarTextStyles.body.copyWith(
+      style: PasyarTextStyles.of(context).body.copyWith(
         height: 1,
         // Feed sizes use 12 / 15; profile and club headers (64+) scale.
         fontSize: size <= 32 ? 12 : (size < 64 ? 15 : size * 0.36),

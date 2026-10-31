@@ -123,7 +123,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         : null;
 
     return Scaffold(
-      backgroundColor: PasyarColors.card,
+      backgroundColor: PasyarColors.of(context).background,
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
@@ -173,7 +173,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     children: [
                       Text(
                         'EDIT PROFILE',
-                        style: PasyarTextStyles.screenTitle(30),
+                        style: PasyarTextStyles.of(context).screenTitle(30),
                       ),
                       PasyarTextField(
                         label: 'Rider name',
@@ -216,7 +216,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           Text(
                             'What do you ride?',
-                            style: PasyarTextStyles.fieldLabel,
+                            style: PasyarTextStyles.of(context).fieldLabel,
                           ),
                           for (var row = 0; row < _bikes.length; row += 2)
                             Row(
@@ -316,16 +316,18 @@ class _AvatarEditor extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: PasyarColors.card,
+                color: PasyarColors.of(context).card,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: PasyarShadows.floating,
               ),
               child: Avatar(name: name, image: image, size: 76, radius: 20),
             ),
             if (uploading)
-              const Positioned.fill(
+              Positioned.fill(
                 child: Center(
-                  child: CircularProgressIndicator(color: PasyarColors.card),
+                  child: CircularProgressIndicator(
+                    color: PasyarColors.of(context).card,
+                  ),
                 ),
               ),
             Positioned(
@@ -335,14 +337,17 @@ class _AvatarEditor extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: PasyarColors.accent,
+                  color: PasyarColors.of(context).accent,
                   shape: BoxShape.circle,
-                  border: Border.all(color: PasyarColors.card, width: 2),
+                  border: Border.all(
+                    color: PasyarColors.of(context).card,
+                    width: 2,
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   LucideIcons.camera,
                   size: 15,
-                  color: PasyarColors.card,
+                  color: PasyarColors.of(context).card,
                 ),
               ),
             ),

@@ -100,7 +100,9 @@ class _SavedLoopsListState extends State<SavedLoopsList> {
   @override
   Widget build(BuildContext context) {
     final saved = _saved;
-    final empty = PasyarTextStyles.body.copyWith(color: PasyarColors.muted);
+    final empty = PasyarTextStyles.of(
+      context,
+    ).body.copyWith(color: PasyarColors.of(context).muted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,

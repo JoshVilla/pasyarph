@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/pasyar_theme.dart';
 
@@ -9,7 +8,7 @@ const coverHeight = 150.0;
 /// Full-width profile banner: the rider's cover photo (with a soft dark
 /// gradient at the top so white icons stay readable), or the default blue
 /// banner with a faint loop. [leading] and [actions] sit at the top, below
-/// the status bar; [onEditCover] adds the "Edit cover" chip (own profile).
+/// the status bar; [onEditCover] makes the banner tappable (own profile).
 class ProfileCover extends StatelessWidget {
   const ProfileCover({
     super.key,
@@ -32,29 +31,48 @@ class ProfileCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final image = this.image;
+    final artwork = Stack(
+      fit: StackFit.expand,
+      children: [
+        const CustomPaint(painter: DefaultCoverPainter()),
+        if (image != null) ...[
+          Image(
+            image: image,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+          ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.center,
+                colors: [Color(0x6615171C), Color(0x0015171C)],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
     return SizedBox(
       height: top + coverHeight,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const CustomPaint(painter: DefaultCoverPainter()),
-          if (image != null) ...[
-            Image(
-              image: image,
-              fit: BoxFit.cover,
-              // A broken link falls back to the default banner.
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.center,
-                  colors: [Color(0x6615171C), Color(0x0015171C)],
-                ),
+          if (onEditCover == null)
+            artwork
+          else
+            Semantics(
+              button: true,
+              enabled: !busy,
+              label: 'Edit cover',
+              hint: 'Tap to change your cover photo',
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: busy ? null : onEditCover,
+                child: artwork,
               ),
             ),
-          ],
           if (busy)
             const Align(
               alignment: Alignment.bottomCenter,
@@ -64,17 +82,12 @@ class ProfileCover extends StatelessWidget {
                 backgroundColor: Color(0x33FFFFFF),
               ),
             ),
-          Positioned(
-            top: top + 8,
-            left: PasyarSpacing.screen,
-            right: PasyarSpacing.screen,
-            child: Row(children: [?leading, const Spacer(), ...actions]),
-          ),
-          if (onEditCover != null)
+          if (leading != null || actions.isNotEmpty)
             Positioned(
+              top: top + 8,
+              left: PasyarSpacing.screen,
               right: PasyarSpacing.screen,
-              bottom: 12,
-              child: _EditCoverChip(onTap: busy ? null : onEditCover),
+              child: Row(children: [?leading, const Spacer(), ...actions]),
             ),
         ],
       ),
@@ -104,7 +117,7 @@ class CoverIconButton extends StatelessWidget {
         label: label,
         excludeSemantics: true,
         child: Material(
-          color: PasyarColors.card,
+          color: PasyarColors.of(context).card,
           shape: const CircleBorder(),
           elevation: 0,
           child: InkWell(
@@ -112,58 +125,7 @@ class CoverIconButton extends StatelessWidget {
             onTap: onPressed,
             child: SizedBox.square(
               dimension: PasyarSpacing.minTouch,
-              child: Icon(icon, size: 20, color: PasyarColors.ink),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EditCoverChip extends StatelessWidget {
-  const _EditCoverChip({required this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Edit cover',
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        // 32 px chip, 44 px tap area.
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: const ShapeDecoration(
-              color: PasyarColors.coverChip,
-              shape: StadiumBorder(),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 6,
-              children: [
-                const Icon(
-                  LucideIcons.camera,
-                  size: 16,
-                  color: PasyarColors.card,
-                ),
-                Text(
-                  'Edit cover',
-                  style: PasyarTextStyles.body.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                    color: PasyarColors.card,
-                  ),
-                ),
-              ],
+              child: Icon(icon, size: 20, color: PasyarColors.of(context).ink),
             ),
           ),
         ),

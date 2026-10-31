@@ -132,11 +132,9 @@ List<Widget> feedPostItems(
         avatar: repo.avatar,
       ),
     if (feed.loadingMore)
-      const Padding(
+      Padding(
         padding: EdgeInsets.all(24),
-        child: Center(
-          child: CircularProgressIndicator(color: PasyarColors.accent),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       )
     else if (error != null && feed.pagingFailed)
       FeedEmpty(text: error, action: tryAgain)
@@ -155,7 +153,7 @@ class FeedEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: PasyarColors.card,
+      color: PasyarColors.of(context).card,
       child: Padding(
         padding: const EdgeInsets.all(PasyarSpacing.sheet),
         child: Column(
@@ -165,7 +163,9 @@ class FeedEmpty extends StatelessWidget {
             Text(
               text,
               textAlign: TextAlign.center,
-              style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+              style: PasyarTextStyles.of(
+                context,
+              ).body.copyWith(color: PasyarColors.of(context).muted),
             ),
             ?action,
           ],

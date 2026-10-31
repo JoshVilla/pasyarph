@@ -123,7 +123,7 @@ class _PostLoopScreenState extends State<PostLoopScreen> {
         final c = _composer;
         final ride = c.ride;
         return Scaffold(
-          backgroundColor: PasyarColors.card,
+          backgroundColor: PasyarColors.of(context).background,
           body: switch (c.phase) {
             ComposerPhase.loading => const SizedBox.expand(),
             ComposerPhase.missing ||
@@ -195,12 +195,14 @@ class _Form extends StatelessWidget {
         (moving ? 'Stop riding to write a caption and post.' : null);
     final pad = MediaQuery.paddingOf(context);
     // Browser-normal line height, as in the mockup's labels.
-    final muted = PasyarTextStyles.body.copyWith(
+    final muted = PasyarTextStyles.of(context).body.copyWith(
       fontSize: 14,
       height: 1.2,
-      color: PasyarColors.muted,
+      color: PasyarColors.of(context).muted,
     );
-    final heading = PasyarTextStyles.bodyStrong.copyWith(height: 1.2);
+    final heading = PasyarTextStyles.of(
+      context,
+    ).bodyStrong.copyWith(height: 1.2);
 
     // Fills the screen (buttons at the bottom) and scrolls when it can't.
     // The padding is inside: SliverFillRemaining ignores a SliverPadding's.
@@ -237,16 +239,16 @@ class _Form extends StatelessWidget {
                   children: [
                     Text(
                       'YOU MADE IT',
-                      style: PasyarTextStyles.screenTitle(
-                        36,
-                      ).copyWith(letterSpacing: 0.5),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).screenTitle(36).copyWith(letterSpacing: 0.5),
                     ),
                     Text(
                       _subtitle,
-                      style: PasyarTextStyles.body.copyWith(
+                      style: PasyarTextStyles.of(context).body.copyWith(
                         fontSize: 16,
                         height: 1.2,
-                        color: PasyarColors.muted,
+                        color: PasyarColors.of(context).muted,
                       ),
                     ),
                   ],
@@ -276,7 +278,9 @@ class _Form extends StatelessWidget {
                     for (final line in c.refused)
                       Text(
                         line,
-                        style: muted.copyWith(color: PasyarColors.accentDark),
+                        style: muted.copyWith(
+                          color: PasyarColors.of(context).accentDark,
+                        ),
                       ),
                   ],
                 ),
@@ -306,7 +310,9 @@ class _Form extends StatelessWidget {
                       Text(
                         problem,
                         textAlign: TextAlign.center,
-                        style: muted.copyWith(color: PasyarColors.accentDark),
+                        style: muted.copyWith(
+                          color: PasyarColors.of(context).accentDark,
+                        ),
                       ),
                     PrimaryButton(
                       label: posting
@@ -363,20 +369,22 @@ class _CaptionField extends StatelessWidget {
         textAlignVertical: TextAlignVertical.top,
         keyboardType: TextInputType.multiline,
         textCapitalization: TextCapitalization.sentences,
-        style: PasyarTextStyles.body,
+        style: PasyarTextStyles.of(context).body,
         decoration: InputDecoration(
           hintText: 'How was the ride?',
-          hintStyle: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+          hintStyle: PasyarTextStyles.of(
+            context,
+          ).body.copyWith(color: PasyarColors.of(context).muted),
           counterText: '',
           filled: true,
-          fillColor: PasyarColors.card,
+          fillColor: PasyarColors.of(context).card,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 12,
           ),
-          border: border(PasyarColors.line),
-          enabledBorder: border(PasyarColors.line),
-          focusedBorder: border(PasyarColors.ink),
+          border: border(PasyarColors.of(context).line),
+          enabledBorder: border(PasyarColors.of(context).line),
+          focusedBorder: border(PasyarColors.of(context).ink),
         ),
       ),
     );
@@ -397,10 +405,10 @@ class _LinkButton extends StatelessWidget {
       style: TextButton.styleFrom(
         minimumSize: const Size(44, PasyarSpacing.minTouch),
         padding: const EdgeInsets.all(8),
-        foregroundColor: PasyarColors.ink,
-        textStyle: PasyarTextStyles.bodyStrong.copyWith(
-          decoration: TextDecoration.underline,
-        ),
+        foregroundColor: PasyarColors.of(context).ink,
+        textStyle: PasyarTextStyles.of(
+          context,
+        ).bodyStrong.copyWith(decoration: TextDecoration.underline),
       ),
       child: Text(label),
     );
@@ -422,7 +430,11 @@ class _Message extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: PasyarSpacing.groupGap,
         children: [
-          Text(text, textAlign: TextAlign.center, style: PasyarTextStyles.body),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: PasyarTextStyles.of(context).body,
+          ),
           SecondaryButton(label: 'CLOSE', onPressed: onClose),
         ],
       ),

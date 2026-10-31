@@ -24,7 +24,10 @@ Future<bool?> askPhotoSource(BuildContext context) =>
       builder: (context) => BottomSheetPanel(
         padding: _sheetPadding(context),
         children: [
-          Text('ADD PHOTOS', style: PasyarTextStyles.screenTitle(30)),
+          Text(
+            'ADD PHOTOS',
+            style: PasyarTextStyles.of(context).screenTitle(30),
+          ),
           PrimaryButton(
             label: 'CHOOSE PHOTOS',
             icon: LucideIcons.images,
@@ -47,7 +50,10 @@ Future<bool> confirmRemovePhoto(BuildContext context) async =>
       builder: (context) => BottomSheetPanel(
         padding: _sheetPadding(context),
         children: [
-          Text('REMOVE THIS PHOTO?', style: PasyarTextStyles.screenTitle(30)),
+          Text(
+            'REMOVE THIS PHOTO?',
+            style: PasyarTextStyles.of(context).screenTitle(30),
+          ),
           PrimaryButton(
             label: 'REMOVE',
             onPressed: () => Navigator.pop(context, true),
@@ -71,25 +77,25 @@ class RodeBadge extends StatelessWidget {
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: PasyarColors.verifiedTint,
+        color: PasyarColors.of(context).verifiedTint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 6,
         children: [
-          const Icon(
+          Icon(
             LucideIcons.check,
             size: 16,
-            color: PasyarColors.verifiedText,
+            color: PasyarColors.of(context).verifiedText,
           ),
           Text(
             'Rode this loop',
-            style: PasyarTextStyles.body.copyWith(
+            style: PasyarTextStyles.of(context).body.copyWith(
               fontSize: 13,
               height: 1,
               fontWeight: FontWeight.w600,
-              color: PasyarColors.verifiedText,
+              color: PasyarColors.of(context).verifiedText,
             ),
           ),
         ],
@@ -166,7 +172,7 @@ class _PhotoSlot extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
           child: ColoredBox(
-            color: PasyarColors.ground,
+            color: PasyarColors.of(context).ground,
             child: Image.file(
               File(path),
               fit: BoxFit.cover,
@@ -195,27 +201,27 @@ class _AddSlot extends StatelessWidget {
       label: 'Add photos',
       excludeSemantics: true,
       child: Material(
-        color: PasyarColors.accentTint,
+        color: PasyarColors.of(context).accentTint,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: const BorderSide(color: PasyarColors.accent, width: 2),
+          side: BorderSide(color: PasyarColors.of(context).accent, width: 2),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: loading ? null : onTap,
           child: Center(
             child: loading
-                ? const SizedBox.square(
+                ? SizedBox.square(
                     dimension: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: PasyarColors.accentDark,
+                      color: PasyarColors.of(context).accentDark,
                     ),
                   )
-                : const Icon(
+                : Icon(
                     LucideIcons.camera,
                     size: 24,
-                    color: PasyarColors.accentDark,
+                    color: PasyarColors.of(context).accentDark,
                   ),
           ),
         ),
@@ -229,12 +235,13 @@ class _EmptySlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const CustomPaint(painter: _DashedSlotPainter());
+      CustomPaint(painter: _DashedSlotPainter(PasyarColors.of(context)));
 }
 
 /// 1.5 px dashed `lineStrong` rounded square.
 class _DashedSlotPainter extends CustomPainter {
-  const _DashedSlotPainter();
+  const _DashedSlotPainter(this.colors);
+  final PasyarPalette colors;
 
   static const _dash = 4.0;
   static const _gap = 3.0;
@@ -247,7 +254,7 @@ class _DashedSlotPainter extends CustomPainter {
       const Radius.circular(PasyarRadius.photoSlot),
     );
     final paint = Paint()
-      ..color = PasyarColors.lineStrong
+      ..color = colors.lineStrong
       ..style = PaintingStyle.stroke
       ..strokeWidth = w;
     for (final metric in (Path()..addRRect(rect)).computeMetrics()) {
@@ -261,7 +268,8 @@ class _DashedSlotPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedSlotPainter oldDelegate) => false;
+  bool shouldRepaint(_DashedSlotPainter oldDelegate) =>
+      oldDelegate.colors.isDark != colors.isDark;
 }
 
 /// "Route attached": the loop's shape and its length and ride time.
@@ -282,7 +290,7 @@ class RouteAttachedCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: PasyarColors.ground,
+        color: PasyarColors.of(context).ground,
         borderRadius: BorderRadius.circular(PasyarRadius.panel),
       ),
       child: Row(
@@ -294,12 +302,15 @@ class RouteAttachedCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text('Route attached', style: PasyarTextStyles.bodyStrong),
+                Text(
+                  'Route attached',
+                  style: PasyarTextStyles.of(context).bodyStrong,
+                ),
                 Text(
                   detail,
-                  style: PasyarTextStyles.body.copyWith(
+                  style: PasyarTextStyles.of(context).body.copyWith(
                     fontSize: 14,
-                    color: PasyarColors.muted,
+                    color: PasyarColors.of(context).muted,
                   ),
                 ),
               ],

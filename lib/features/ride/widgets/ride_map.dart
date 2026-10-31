@@ -113,7 +113,7 @@ class _RideMapState extends State<RideMap> {
         initialCameraFit: _reachFit(),
         minZoom: 4,
         maxZoom: 18,
-        backgroundColor: PasyarColors.mapGround,
+        backgroundColor: PasyarColors.of(context).mapGround,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
@@ -141,8 +141,12 @@ class _RideMapState extends State<RideMap> {
                       point: rider,
                       radius: r,
                       useRadiusInMeter: true,
-                      color: PasyarColors.accent.withValues(alpha: 0.06),
-                      borderColor: PasyarColors.accent.withValues(alpha: 0.75),
+                      color: PasyarColors.of(
+                        context,
+                      ).accent.withValues(alpha: 0.06),
+                      borderColor: PasyarColors.of(
+                        context,
+                      ).accent.withValues(alpha: 0.75),
                       borderStrokeWidth: 2,
                     ),
                   ],
@@ -180,17 +184,17 @@ class _ReachLabel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: PasyarColors.card,
+        color: PasyarColors.of(context).card,
         borderRadius: BorderRadius.circular(PasyarRadius.pill),
-        border: Border.all(color: PasyarColors.accent, width: 1.5),
+        border: Border.all(color: PasyarColors.of(context).accent, width: 1.5),
       ),
       child: Text(
         'Loop reaches ~${km.round()} km out',
         maxLines: 1,
-        style: PasyarTextStyles.label.copyWith(
+        style: PasyarTextStyles.of(context).label.copyWith(
           height: 1.2,
           fontWeight: FontWeight.w600,
-          color: PasyarColors.accentDark,
+          color: PasyarColors.of(context).accentDark,
         ),
       ),
     );

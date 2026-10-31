@@ -42,22 +42,26 @@ class PersonRow extends StatelessWidget {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: PasyarTextStyles.bodyStrong.copyWith(height: 1.2),
+                      style: PasyarTextStyles.of(
+                        context,
+                      ).bodyStrong.copyWith(height: 1.2),
                     ),
                     if (detail case final d?)
                       Text(
                         d,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: PasyarTextStyles.label.copyWith(height: 1.2),
+                        style: PasyarTextStyles.of(
+                          context,
+                        ).label.copyWith(height: 1.2),
                       ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 LucideIcons.chevronRight,
                 size: 22,
-                color: PasyarColors.muted,
+                color: PasyarColors.of(context).muted,
               ),
             ],
           ),

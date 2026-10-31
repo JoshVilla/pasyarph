@@ -32,22 +32,26 @@ class VisibilityBadge extends StatelessWidget {
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: ShapeDecoration(
-        color: PasyarColors.card,
-        shape: const StadiumBorder(
-          side: BorderSide(color: PasyarColors.lineStrong),
+        color: PasyarColors.of(context).card,
+        shape: StadiumBorder(
+          side: BorderSide(color: PasyarColors.of(context).lineStrong),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 4,
         children: [
-          Icon(visibilityIcon(visibility), size: 13, color: PasyarColors.muted),
+          Icon(
+            visibilityIcon(visibility),
+            size: 13,
+            color: PasyarColors.of(context).muted,
+          ),
           Text(
             visibilityLabel(visibility),
-            style: PasyarTextStyles.label.copyWith(
+            style: PasyarTextStyles.of(context).label.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: PasyarColors.ink,
+              color: PasyarColors.of(context).ink,
             ),
           ),
         ],
@@ -80,7 +84,7 @@ class LoopRow extends StatelessWidget {
     // Loops under 1.8 km have nothing left after the home privacy trim.
     final rideable = loop.sharedRoute != null;
     return Material(
-      color: PasyarColors.ground,
+      color: PasyarColors.of(context).ground,
       borderRadius: BorderRadius.circular(PasyarRadius.panel),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -112,21 +116,21 @@ class LoopRow extends StatelessWidget {
                                 detail!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: PasyarTextStyles.label,
+                                style: PasyarTextStyles.of(context).label,
                               ),
                             ),
                         ],
                       ),
                       Text(
                         loop.name,
-                        style: PasyarTextStyles.bodyLarge,
+                        style: PasyarTextStyles.of(context).bodyLarge,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         '${formatDistance(loop.distanceM)} · '
                         '${formatRideTime(loop.durationS)}',
-                        style: PasyarTextStyles.label,
+                        style: PasyarTextStyles.of(context).label,
                       ),
                     ],
                   ),
@@ -140,10 +144,10 @@ class LoopRow extends StatelessWidget {
                     width: 48,
                     height: 48,
                   ),
-                  icon: const Icon(
+                  icon: Icon(
                     LucideIcons.ellipsis,
                     size: 22,
-                    color: PasyarColors.muted,
+                    color: PasyarColors.of(context).muted,
                   ),
                 ),
             ],

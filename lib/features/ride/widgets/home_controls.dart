@@ -30,7 +30,9 @@ class StartingFromPill extends StatelessWidget {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: on ? PasyarColors.accent : PasyarColors.riddenRoute,
+                color: on
+                    ? PasyarColors.of(context).accent
+                    : PasyarColors.of(context).riddenRoute,
                 shape: BoxShape.circle,
               ),
             ),
@@ -39,9 +41,11 @@ class StartingFromPill extends StatelessWidget {
                 text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: PasyarTextStyles.bodyStrong.copyWith(
+                style: PasyarTextStyles.of(context).bodyStrong.copyWith(
                   height: 1.15,
-                  color: on ? PasyarColors.ink : PasyarColors.muted,
+                  color: on
+                      ? PasyarColors.of(context).ink
+                      : PasyarColors.of(context).muted,
                 ),
               ),
             ),
@@ -76,7 +80,7 @@ class LocationOffBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: PasyarColors.ground,
+          color: PasyarColors.of(context).ground,
           borderRadius: BorderRadius.circular(PasyarRadius.panel),
         ),
         child: Column(
@@ -87,10 +91,10 @@ class LocationOffBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 12,
               children: [
-                const Icon(
+                Icon(
                   LucideIcons.mapPinOff,
                   size: 22,
-                  color: PasyarColors.accentDark,
+                  color: PasyarColors.of(context).accentDark,
                 ),
                 Expanded(
                   child: Text.rich(
@@ -103,7 +107,9 @@ class LocationOffBanner extends StatelessWidget {
                         TextSpan(text: message),
                       ],
                     ),
-                    style: PasyarTextStyles.body.copyWith(height: 1.35),
+                    style: PasyarTextStyles.of(
+                      context,
+                    ).body.copyWith(height: 1.35),
                   ),
                 ),
               ],
@@ -134,18 +140,18 @@ class SheetError extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 10,
         children: [
-          const Icon(
+          Icon(
             LucideIcons.circleAlert,
             size: 20,
-            color: PasyarColors.accentDark,
+            color: PasyarColors.of(context).accentDark,
           ),
           Expanded(
             child: Text(
               message,
-              style: PasyarTextStyles.body.copyWith(
+              style: PasyarTextStyles.of(context).body.copyWith(
                 height: 1.35,
                 fontWeight: FontWeight.w600,
-                color: PasyarColors.accentDark,
+                color: PasyarColors.of(context).accentDark,
               ),
             ),
           ),
@@ -166,16 +172,18 @@ class SheetWaiting extends StatelessWidget {
       child: Row(
         spacing: 10,
         children: [
-          const SizedBox.square(
+          SizedBox.square(
             dimension: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: PasyarColors.accent,
+              color: PasyarColors.of(context).accent,
             ),
           ),
           Text(
             'Finding your location…',
-            style: PasyarTextStyles.body.copyWith(color: PasyarColors.muted),
+            style: PasyarTextStyles.of(
+              context,
+            ).body.copyWith(color: PasyarColors.of(context).muted),
           ),
         ],
       ),
@@ -183,12 +191,12 @@ class SheetWaiting extends StatelessWidget {
   }
 }
 
-/// The sheet's sentence for a choice: "I'VE GOT ABOUT " + "4 HRS".
+/// The sheet's sentence for a choice: "I've got about " + "4 HRS".
 (String, String) headlineFor(LoopDuration d, int days) => switch (d) {
-  LoopDuration.quick => ("I'VE GOT ABOUT ", '1 HR'),
-  LoopDuration.halfDay => ("I'VE GOT ABOUT ", '4 HRS'),
-  LoopDuration.fullDay => ("I'VE GOT ", 'ALL DAY'),
-  LoopDuration.multiDay => ("I'VE GOT ", '$days DAYS'),
+  LoopDuration.quick => ("I've got about ", '1 hour'),
+  LoopDuration.halfDay => ("I've got about ", '4 hours'),
+  LoopDuration.fullDay => ("I've got ", 'all day'),
+  LoopDuration.multiDay => ("I've got ", '$days days'),
 };
 
 /// "WHERE TO TODAY?" answered as one line the rider finishes: the
@@ -202,6 +210,7 @@ class WhereToSheet extends StatelessWidget {
     required this.onGenerate,
     this.generating = false,
     this.notice,
+    this.onDiscover,
     this.maxHeight,
   });
 
@@ -218,6 +227,7 @@ class WhereToSheet extends StatelessWidget {
   final bool generating;
 
   final Widget? notice;
+  final VoidCallback? onDiscover;
 
   @override
   Widget build(BuildContext context) {
@@ -250,20 +260,26 @@ class WhereToSheet extends StatelessWidget {
                       TextSpan(text: lead),
                       TextSpan(
                         text: choice,
-                        style: const TextStyle(color: PasyarColors.accent),
+                        style: TextStyle(
+                          color: PasyarColors.of(context).accent,
+                        ),
                       ),
                     ],
                   ),
-                  maxLines: 1,
-                  style: PasyarTextStyles.screenTitle(30),
+                  maxLines: 2,
+                  style: PasyarTextStyles.of(context).bodyLarge.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ),
             Text(
               "Pick how long. We'll make the loop.",
-              style: PasyarTextStyles.body.copyWith(
+              style: PasyarTextStyles.of(context).body.copyWith(
                 height: 1.2,
-                color: PasyarColors.muted,
+                color: PasyarColors.of(context).muted,
               ),
             ),
           ],
@@ -280,7 +296,12 @@ class WhereToSheet extends StatelessWidget {
                   for (final d in LoopDuration.values.skip(i).take(2))
                     Expanded(
                       child: ChoiceCard(
-                        title: d.title,
+                        title: switch (d) {
+                          LoopDuration.quick => 'Quick',
+                          LoopDuration.halfDay => 'Half-day',
+                          LoopDuration.fullDay => 'Full day',
+                          LoopDuration.multiDay => 'Multi-day',
+                        },
                         subtitle: d.subtitle,
                         selected: options.duration == d,
                         onTap: () {
@@ -297,7 +318,7 @@ class WhereToSheet extends StatelessWidget {
           Row(
             spacing: 12,
             children: [
-              Text('Days', style: PasyarTextStyles.fieldLabel),
+              Text('Days', style: PasyarTextStyles.of(context).fieldLabel),
               Expanded(
                 child: SegmentedChoice<int>(
                   semanticLabel: 'Days',
@@ -329,12 +350,18 @@ class WhereToSheet extends StatelessWidget {
         ),
         ?notice,
         PrimaryButton(
-          label: 'GENERATE LOOP',
+          label: 'Generate loop',
           // Not the Create tab's route icon: this makes the loop for you.
           icon: LucideIcons.sparkles,
           loading: generating,
           onPressed: onGenerate,
         ),
+        if (onDiscover != null)
+          TextButton.icon(
+            onPressed: onDiscover,
+            icon: const Icon(LucideIcons.search, size: 18),
+            label: const Text('Explore rider loops'),
+          ),
       ],
     );
   }

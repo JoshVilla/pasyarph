@@ -37,7 +37,7 @@ void main() {
           _scenario(
             'with icon',
             PrimaryButton(
-              label: 'GENERATE LOOP',
+              label: 'Generate loop',
               icon: LucideIcons.rotateCw,
               onPressed: () {},
             ),
@@ -48,7 +48,7 @@ void main() {
           ),
           _scenario(
             'disabled',
-            const PrimaryButton(label: 'GENERATE LOOP', onPressed: null),
+            const PrimaryButton(label: 'Generate loop', onPressed: null),
           ),
           _scenario(
             'loading',
@@ -71,7 +71,7 @@ void main() {
               child: SizedBox(
                 width: 132,
                 child: SecondaryButton(
-                  label: 'SHUFFLE',
+                  label: 'Shuffle',
                   icon: LucideIcons.shuffle,
                   onPressed: () {},
                 ),
