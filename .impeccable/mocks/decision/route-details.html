@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Barlow,sans-serif;color:#15171C;background:#EEF0EA;position:relative}
+svg.map{position:absolute;inset:0}
+.top{position:absolute;top:56px;left:16px;right:16px;display:flex;gap:10px;align-items:center}
+.rb{width:48px;height:48px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(21,23,28,.14);display:flex;align-items:center;justify-content:center;font:600 20px Barlow}
+.hint{flex:1;height:40px;border-radius:20px;background:#15171C;color:#fff;font-size:14px;display:flex;align-items:center;padding:0 16px}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:420px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(21,23,28,.10);padding:10px 20px 34px}
+.handle{width:40px;height:4px;border-radius:2px;background:#D3D5CC;margin:0 auto 12px}
+.seg{display:flex;background:#F3F2EE;border-radius:12px;padding:4px;height:44px}
+.seg div{flex:1;display:flex;align-items:center;justify-content:center;border-radius:9px;font-weight:600;font-size:15px;color:#5A5F69}
+.seg .on{background:#fff;color:#1E3A8A;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stats{display:flex;align-items:baseline;gap:16px;margin:14px 0 6px}
+.stats b{font:700 28px/1 'Barlow Condensed'}
+.stats span{font-size:13px;color:#5A5F69}
+.pt{height:48px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E2E0DA}
+.n{width:28px;height:28px;border-radius:50%;background:#1D4ED8;color:#fff;font:700 13px Barlow;display:flex;align-items:center;justify-content:center}
+.n.s{background:#15171C}
+.pt p{flex:1;font-size:15px}
+.tag{font:700 13px 'Barlow Condensed';letter-spacing:.5px;color:#1E3A8A;background:#EAF0FE;border-radius:10px;padding:4px 8px}
+.x{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#5A5F69;font-size:18px}
+.row{display:flex;gap:10px;position:absolute;left:20px;right:20px;bottom:34px}
+.btn{height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed';letter-spacing:1px}
+.save{width:120px;border:2px solid #15171C}
+.share{flex:1;background:#1D4ED8;color:#fff}
+</style></head><body>
+<svg class="map" width="390" height="844" viewBox="0 0 390 844">
+<path d="M0 330 L390 300 M195 0 L205 460 M40 0 L120 460 M0 150 L390 120" stroke="#fff" stroke-width="9"/>
+<path d="M320 0 C280 120 380 220 320 460" stroke="#CFE0EE" stroke-width="16" fill="none"/>
+<polyline points="196,330 120,300 80,190 190,140 300,145" fill="none" stroke="#1D4ED8" stroke-width="6" stroke-linejoin="round"/>
+<polyline points="300,145 290,280 196,330" fill="none" stroke="#1D4ED8" stroke-width="4" stroke-dasharray="8 8"/>
+<circle cx="196" cy="330" r="13" fill="#15171C" stroke="#fff" stroke-width="3"/>
+<circle cx="80" cy="190" r="13" fill="#1D4ED8" stroke="#fff" stroke-width="3"/>
+<circle cx="190" cy="140" r="13" fill="#1D4ED8" stroke="#fff" stroke-width="3"/>
+<circle cx="300" cy="145" r="13" fill="#15171C" stroke="#fff" stroke-width="3"/>
+</svg>
+<div class="top"><div class="rb">‹</div><div class="hint">Tap the map to add a point</div><div class="rb">↶</div></div>
+<div class="sheet">
+<div class="handle"></div>
+<div class="seg"><div class="on">Route</div><div>Details</div></div>
+<div class="stats"><b>96 KM</b><b>3 H 10</b><span>3 points · closes back to start</span></div>
+<div class="pt"><div class="n s">S</div><p>Start · your location</p></div>
+<div class="pt"><div class="n">1</div><p>Point 1</p><div class="x">✕</div></div>
+<div class="pt"><div class="n">2</div><p>Point 2</p><div class="x">✕</div></div>
+<div class="pt"><div class="n">3</div><p>Point 3</p><span class="tag">⚑ MAIN STOP</span><div class="x">✕</div></div>
+<div class="row"><div class="btn save">SAVE</div><div class="btn share">SHARE LINK</div></div>
+</div>
+</body></html>

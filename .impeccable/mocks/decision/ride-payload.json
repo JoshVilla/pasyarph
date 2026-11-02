@@ -1,0 +1,46 @@
+{
+  "title": "Redesign the Ride tab",
+  "question": "Three ways to lay out Home, all in Pasyar's own colours and type, all map-first, all keeping Multi-day as a card. Pick the one to build.",
+  "options": [
+    {
+      "id": "sentence",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Say it in one line",
+      "thesis": "The sheet reads as one sentence the rider finishes: I'VE GOT ABOUT 4 HRS. Four compact cards change the blank.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF", "#EAF0FE"],
+      "materials": ["full-screen map", "condensed headline", "2x2 duration cards"],
+      "viewport": "Map fills the top 60% with a reach ring around the rider; the sheet opens with a big condensed sentence that updates as you pick a card, a 2x2 card grid, Avoid highways, and GENERATE LOOP.",
+      "risk": "The sentence repeats what the selected card says; it has to earn its size by being the clearest thing on screen.",
+      "html": ".impeccable/mocks/decision/sentence.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "tap-to-go",
+      "kind": "dealt",
+      "label": "Tap a length, go",
+      "thesis": "Every duration card is the button: one tap makes that loop. No separate Generate step.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF"],
+      "materials": ["full-screen map", "big action cards", "chip toggle"],
+      "viewport": "Map fills the top half; below it a short title and four full-width action cards (QUICK, HALF-DAY, FULL DAY, MULTI-DAY), each ending in a go arrow, with Avoid highways as a chip above them.",
+      "risk": "One tap spends a generate from the hourly quota; a mis-tap with gloves starts building a loop you didn't want (Back undoes it).",
+      "html": ".impeccable/mocks/decision/tap-to-go.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "back-by",
+      "kind": "dealt",
+      "label": "Back by…",
+      "thesis": "Choose by when you'll be home, not by length: each card leads with a real return time worked out from now.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF", "#EAF0FE"],
+      "materials": ["full-screen map", "return-time cards", "headline time"],
+      "viewport": "Map on top; sheet headline BACK BY 1:40 PM in big condensed type; three across cards (QUICK / HALF-DAY / FULL DAY) with their return times, Multi-day as a wide card below, then GENERATE LOOP.",
+      "risk": "Return times are estimates; a rider who stops long at the falls will be later than promised.",
+      "html": ".impeccable/mocks/decision/back-by.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

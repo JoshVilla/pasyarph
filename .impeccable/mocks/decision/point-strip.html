@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Barlow,sans-serif;color:#15171C;background:#EEF0EA;position:relative}
+svg.map{position:absolute;inset:0}
+.top{position:absolute;top:56px;left:16px;right:16px;display:flex;gap:10px;align-items:center}
+.rb{width:48px;height:48px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(21,23,28,.14);display:flex;align-items:center;justify-content:center;font:600 20px Barlow}
+.hint{flex:1;height:40px;border-radius:20px;background:#15171C;color:#fff;font-size:14px;display:flex;align-items:center;padding:0 16px}
+.pop{position:absolute;left:150px;top:126px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(21,23,28,.18);display:flex;gap:6px;padding:6px}
+.pop div{height:44px;border-radius:12px;padding:0 12px;display:flex;align-items:center;font:700 15px 'Barlow Condensed';letter-spacing:.5px}
+.pop .a{background:#EAF0FE;color:#1E3A8A}
+.pop .b{background:#F3F2EE}
+.panel{position:absolute;left:0;right:0;bottom:0;height:236px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(21,23,28,.10);padding:10px 20px 34px}
+.handle{width:40px;height:4px;border-radius:2px;background:#D3D5CC;margin:0 auto 12px}
+.stats{display:flex;align-items:baseline;gap:18px}
+.stats b{font:700 30px/1 'Barlow Condensed'}
+.stats span{font-size:13px;color:#5A5F69}
+.strip{display:flex;gap:8px;margin:14px 0}
+.ch{min-width:44px;height:44px;border-radius:22px;border:1.5px solid #D3D5CC;display:flex;align-items:center;justify-content:center;font:700 16px 'Barlow Condensed';padding:0 12px}
+.ch.s{background:#15171C;color:#fff;border:none}
+.ch.on{border:2px solid #1D4ED8;background:#EAF0FE;color:#1E3A8A}
+.ch.add{color:#5A5F69;border-style:dashed}
+.row{display:flex;gap:10px}
+.btn{height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed';letter-spacing:1px}
+.undo{width:120px;border:2px solid #15171C}
+.done{flex:1;background:#1D4ED8;color:#fff}
+</style></head><body>
+<svg class="map" width="390" height="844" viewBox="0 0 390 844">
+<path d="M0 470 L390 430 M195 0 L205 620 M40 0 L120 620 M0 230 L390 200" stroke="#fff" stroke-width="9"/>
+<path d="M320 0 C280 160 380 300 320 620" stroke="#CFE0EE" stroke-width="16" fill="none"/>
+<polyline points="196,440 120,410 70,250 190,190 300,195" fill="none" stroke="#1D4ED8" stroke-width="6" stroke-linejoin="round"/>
+<polyline points="300,195 290,380 196,440" fill="none" stroke="#1D4ED8" stroke-width="4" stroke-dasharray="8 8"/>
+<circle cx="196" cy="440" r="14" fill="#15171C" stroke="#fff" stroke-width="3"/><text x="196" y="445" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" font-family="Barlow">S</text>
+<circle cx="70" cy="250" r="14" fill="#1D4ED8" stroke="#fff" stroke-width="3"/><text x="70" y="255" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" font-family="Barlow">1</text>
+<circle cx="190" cy="190" r="16" fill="#1D4ED8" stroke="#EAF0FE" stroke-width="5"/><text x="190" y="195" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" font-family="Barlow">2</text>
+<circle cx="300" cy="195" r="14" fill="#15171C" stroke="#fff" stroke-width="3"/><text x="300" y="200" font-size="12" fill="#fff" text-anchor="middle" font-family="Barlow">⚑</text>
+</svg>
+<div class="top"><div class="rb">‹</div><div class="hint">Point 2: make it the main stop or remove it</div><div class="rb">↶</div></div>
+<div class="pop"><div class="a">⚑ MAKE MAIN STOP</div><div class="b">REMOVE</div></div>
+<div class="panel">
+<div class="handle"></div>
+<div class="stats"><b>96 KM</b><b>3 H 10</b><span>closes back to start</span></div>
+<div class="strip"><div class="ch s">S</div><div class="ch">1</div><div class="ch on">2</div><div class="ch">3 ⚑</div><div class="ch add">+</div></div>
+<div class="row"><div class="btn undo">UNDO</div><div class="btn done">DONE</div></div>
+</div>
+</body></html>

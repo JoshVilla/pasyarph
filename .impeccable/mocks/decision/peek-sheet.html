@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Barlow,sans-serif;color:#15171C;background:#EEF0EA;position:relative}
+svg.map{position:absolute;inset:0}
+.top{position:absolute;top:56px;left:16px;right:16px;display:flex;gap:10px;align-items:center}
+.rb{width:48px;height:48px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(21,23,28,.14);display:flex;align-items:center;justify-content:center;font:600 20px Barlow}
+.hint{flex:1;height:40px;border-radius:20px;background:#15171C;color:#fff;font-size:14px;display:flex;align-items:center;padding:0 16px}
+.pop{position:absolute;left:220px;top:300px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(21,23,28,.18);display:flex;gap:6px;padding:6px}
+.pop div{height:44px;border-radius:12px;padding:0 12px;display:flex;align-items:center;font:700 15px 'Barlow Condensed';letter-spacing:.5px}
+.pop .a{background:#EAF0FE;color:#1E3A8A}
+.pop .b{background:#F3F2EE}
+.peek{position:absolute;left:0;right:0;bottom:0;height:146px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(21,23,28,.10);padding:10px 20px 34px}
+.handle{width:40px;height:4px;border-radius:2px;background:#D3D5CC;margin:0 auto 14px}
+.bar{display:flex;align-items:center;gap:14px}
+.bar div{flex:1}
+.bar b{display:block;font:700 28px/1 'Barlow Condensed'}
+.bar span{font-size:13px;color:#5A5F69}
+.done{width:132px;height:56px;border-radius:16px;background:#1D4ED8;color:#fff;font:700 22px 'Barlow Condensed';letter-spacing:1px;display:flex;align-items:center;justify-content:center}
+</style></head><body>
+<svg class="map" width="390" height="844" viewBox="0 0 390 844">
+<path d="M0 560 L390 520 M195 0 L205 720 M40 0 L120 720 M0 260 L390 230" stroke="#fff" stroke-width="9"/>
+<path d="M320 0 C280 200 380 380 320 720" stroke="#CFE0EE" stroke-width="16" fill="none"/>
+<polyline points="196,560 110,520 60,300 190,220 290,230 300,380" fill="none" stroke="#1D4ED8" stroke-width="6" stroke-linejoin="round"/>
+<polyline points="300,380 280,500 196,560" fill="none" stroke="#1D4ED8" stroke-width="4" stroke-dasharray="8 8"/>
+<circle cx="196" cy="560" r="14" fill="#15171C" stroke="#fff" stroke-width="3"/>
+<circle cx="60" cy="300" r="14" fill="#1D4ED8" stroke="#fff" stroke-width="3"/>
+<circle cx="190" cy="220" r="14" fill="#1D4ED8" stroke="#fff" stroke-width="3"/>
+<circle cx="290" cy="230" r="14" fill="#15171C" stroke="#fff" stroke-width="3"/>
+<circle cx="300" cy="380" r="16" fill="#1D4ED8" stroke="#EAF0FE" stroke-width="5"/>
+</svg>
+<div class="top"><div class="rb">‹</div><div class="hint">Point 4 selected</div><div class="rb">↶</div></div>
+<div class="pop"><div class="a">⚑ MAIN STOP</div><div class="b">REMOVE</div></div>
+<div class="peek">
+<div class="handle"></div>
+<div class="bar"><div><b>96 KM · 3 H 10</b><span>4 points · closes back to start</span></div><div class="done">DONE</div></div>
+</div>
+</body></html>

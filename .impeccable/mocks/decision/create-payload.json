@@ -1,0 +1,46 @@
+{
+  "title": "Redesign Create a loop",
+  "question": "Three ways to give the map the screen while you build, all in Pasyar's own colours and type. Every one has the tap-a-point action row (MAKE MAIN STOP · REMOVE), big live km and time, 'Club' instead of 'Group', and a collapsed caption. Pick the one to build.",
+  "options": [
+    {
+      "id": "point-strip",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Map + point strip",
+      "thesis": "Build on a near-full map; your points ride along the bottom as a strip of numbered chips, and the form only comes up after DONE.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF", "#EAF0FE"],
+      "materials": ["full-screen map", "point chip strip", "publish sheet after DONE"],
+      "viewport": "Map fills ~70%; a short bottom panel shows 96 KM · 3 H 10 at stat size, a scrolling strip S · 1 · 2 · 3⚑ · +, and DONE. Tapping a point (on the map or strip) shows MAKE MAIN STOP · REMOVE.",
+      "risk": "Two steps instead of one sheet: riders who want to name the loop first must tap DONE before they can.",
+      "html": ".impeccable/mocks/decision/point-strip.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "route-details",
+      "kind": "dealt",
+      "label": "Route | Details tabs",
+      "thesis": "One sheet, two tabs: Route shows live stats and the point list with actions; Details holds name, caption and who can see it.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF"],
+      "materials": ["map", "tabbed sheet", "point list rows"],
+      "viewport": "Map top ~55%; sheet with a Route | Details switch; Route lists S, 1, 2, 3 as rows with the main-stop flag and a REMOVE action; SAVE and SHARE LINK stay pinned at the bottom.",
+      "risk": "Keeps a tall sheet over the map; the map gains less room than the other two.",
+      "html": ".impeccable/mocks/decision/route-details.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "peek-sheet",
+      "kind": "dealt",
+      "label": "Peek sheet",
+      "thesis": "Same single sheet as today, but it starts lowered to a peek bar with live stats and DONE; drag or tap DONE to bring up the form.",
+      "palette": ["#1D4ED8", "#15171C", "#F3F2EE", "#FFFFFF"],
+      "materials": ["full map", "peek bar", "drag-up form"],
+      "viewport": "Map fills nearly the whole screen; a 112 px peek bar at the bottom reads 96 KM · 3 H 10 · 3 points with DONE; the action row floats by a tapped point.",
+      "risk": "Least change: dragging a sheet is a hidden gesture, so DONE has to carry the discoverability.",
+      "html": ".impeccable/mocks/decision/peek-sheet.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

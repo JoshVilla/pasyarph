@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Pasyar app icon: a loop road that leaves the start dot, rides up into
+       a P and comes back down to the same dot. Chevrons as on the app's
+       route lines. Colors: accent #1D4ED8, ink #15171C, white. -->
+  <rect width="1024" height="1024" rx="224" fill="#1D4ED8"/>
+  <path d="M 350 770
+           L 350 340
+           Q 350 240 450 240
+           L 600 240
+           A 175 175 0 0 1 600 590
+           L 530 590
+           Q 480 590 480 640
+           L 480 770
+           A 65 65 0 0 1 350 770 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="58" stroke-linejoin="round"/>
+  <g fill="none" stroke="#1D4ED8" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <!-- up the stem -->
+    <polyline points="334,512 350,492 366,512"/>
+    <!-- along the top -->
+    <polyline points="512,224 532,240 512,256"/>
+    <!-- round the bowl, heading back -->
+    <polyline points="759,398 775,418 791,398"/>
+    <!-- back down to the start -->
+    <polyline points="464,672 480,692 496,672"/>
+  </g>
+  <!-- Start and end: the app's start marker. -->
+  <circle cx="415" cy="835" r="50" fill="#15171C" stroke="#FFFFFF" stroke-width="16"/>
+</svg>
