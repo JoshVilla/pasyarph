@@ -74,8 +74,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
   Future<void> _send() async {
     if (await _c.send(_input.text)) {
+      if (!mounted) return;
       _input.clear();
       if (_scroll.hasClients) {
+        if (MediaQuery.disableAnimationsOf(context)) {
+          _scroll.jumpTo(_scroll.position.maxScrollExtent);
+          return;
+        }
         _scroll.animateTo(
           _scroll.position.maxScrollExtent + 200,
           duration: const Duration(milliseconds: 250),

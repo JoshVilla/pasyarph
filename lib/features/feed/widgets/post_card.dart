@@ -633,13 +633,17 @@ class _Action extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 6,
             children: [
-              filled
-                  ? Icon(
-                      Icons.favorite,
-                      size: 20,
-                      color: PasyarColors.of(context).accent,
-                    )
-                  : Icon(icon, size: 20, color: color),
+              MotionChange(
+                value: filled,
+                duration: const Duration(milliseconds: 120),
+                child: filled
+                    ? Icon(
+                        Icons.favorite,
+                        size: 20,
+                        color: PasyarColors.of(context).accent,
+                      )
+                    : Icon(icon, size: 20, color: color),
+              ),
               // Shrinks with an ellipsis on narrow phones or large text.
               Flexible(
                 child: Text(

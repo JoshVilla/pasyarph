@@ -23,6 +23,7 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
   bool _avoidUnpaved = false;
   int _filter = 0;
   int _tab = 0;
+  bool _motionBusy = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +46,21 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
                   style: PasyarTextStyles.of(context).screenTitle(32),
                 ),
               ],
+            ),
+            _Section(
+              'Motion feedback',
+              child: _column([
+                SwitchListTile(
+                  title: const Text('Preview loading state'),
+                  value: _motionBusy,
+                  onChanged: (value) => setState(() => _motionBusy = value),
+                ),
+                PrimaryButton(
+                  label: 'PREVIEW ACTION',
+                  loading: _motionBusy,
+                  onPressed: () {},
+                ),
+              ]),
             ),
             const _Section('Colors', child: ColorSwatches()),
             const _Section('Typography', child: TypographySamples()),

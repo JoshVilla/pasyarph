@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'motion.dart';
 
 /// How tall a collapsed map sheet stays: the drag handle and its first row
 /// (the stats on the loop preview).
@@ -41,25 +42,45 @@ class CollapsibleSheetState extends State<CollapsibleSheet>
     with SingleTickerProviderStateMixin {
   late final _collapse = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 220),
+    duration: PasyarMotion.sheet,
     value: widget.startCollapsed ? 1 : 0,
   )..addListener(() => setState(() {}));
 
   bool get isCollapsed => _collapse.value > 0.5;
 
   /// Raises the sheet all the way.
-  void open() => _collapse.animateTo(0, curve: Curves.easeOut);
+  void open() => _animateTo(0);
+
+  double _target = 0;
+  void _animateTo(double target) {
+    _target = target;
+    _collapse.animateTo(
+      target,
+      duration: PasyarMotion.duration(context, PasyarMotion.sheet),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) && _collapse.isAnimating) {
+      _collapse.stop();
+      _collapse.value = _target;
+    }
+  }
 
   /// Lowers the sheet to its peek.
   void close() {
-    if (widget.enabled) _collapse.animateTo(1, curve: Curves.easeOut);
+    if (widget.enabled) _animateTo(1);
   }
+
   final _sheetKey = GlobalKey();
 
   @override
   void didUpdateWidget(CollapsibleSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.enabled && _collapse.value > 0) _collapse.animateTo(0);
+    if (!widget.enabled && _collapse.value > 0) _animateTo(0);
   }
 
   @override
@@ -87,11 +108,10 @@ class CollapsibleSheetState extends State<CollapsibleSheet>
     if (!widget.enabled) return;
     final v = d.primaryVelocity ?? 0;
     final down = v.abs() > 300 ? v > 0 : _collapse.value > 0.5;
-    _collapse.animateTo(down ? 1 : 0, curve: Curves.easeOut);
+    _animateTo(down ? 1 : 0);
   }
 
-  void _toggle() =>
-      _collapse.animateTo(_collapse.value > 0.5 ? 0 : 1, curve: Curves.easeOut);
+  void _toggle() => _animateTo(_collapse.value > 0.5 ? 0 : 1);
 
   Widget _wrap(Widget sheet) {
     final collapsed = _collapse.value > 0.5;

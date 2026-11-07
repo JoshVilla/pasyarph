@@ -62,6 +62,10 @@ class _FeedScreenState extends State<FeedScreen> {
   void _onTabReselected() {
     if (tabReselects.branch != feedBranch || !_scroll.hasClients) return;
     if (_scroll.offset > 0) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _scroll.jumpTo(0);
+        return;
+      }
       _scroll.animateTo(
         0,
         duration: const Duration(milliseconds: 350),

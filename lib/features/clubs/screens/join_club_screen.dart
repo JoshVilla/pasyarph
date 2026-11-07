@@ -95,59 +95,72 @@ class _JoinClubScreenState extends State<JoinClubScreen> {
           SecondaryButton(label: 'TRY AGAIN', onPressed: _load),
       ],
       children: [
-        if (_loading)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: PasyarColors.of(context).accent,
-              ),
-            ),
-          )
-        else if (club == null)
-          Text(
-            _error ?? '',
-            style: PasyarTextStyles.of(
-              context,
-            ).body.copyWith(color: PasyarColors.of(context).muted),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: PasyarColors.of(context).ground,
-              borderRadius: BorderRadius.circular(PasyarRadius.panel),
-            ),
-            child: Row(
-              spacing: 14,
-              children: [
-                Avatar(
-                  name: club.name,
-                  image: club.photoUrl == null
-                      ? null
-                      : context.read<FeedRepository>().avatar(club.photoUrl!),
-                  size: 64,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 2,
+        MotionChange(
+          value: _loading,
+          duration: PasyarMotion.feedback,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_loading)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: PasyarColors.of(context).accent,
+                    ),
+                  ),
+                )
+              else if (club == null)
+                Text(
+                  _error ?? '',
+                  style: PasyarTextStyles.of(
+                    context,
+                  ).body.copyWith(color: PasyarColors.of(context).muted),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: PasyarColors.of(context).ground,
+                    borderRadius: BorderRadius.circular(PasyarRadius.panel),
+                  ),
+                  child: Row(
+                    spacing: 14,
                     children: [
-                      Text(
-                        club.name,
-                        style: PasyarTextStyles.of(context).screenTitle(26),
+                      Avatar(
+                        name: club.name,
+                        image: club.photoUrl == null
+                            ? null
+                            : context.read<FeedRepository>().avatar(
+                                club.photoUrl!,
+                              ),
+                        size: 64,
                       ),
-                      if (club.memberCount case final n?)
-                        Text(
-                          memberCount(n),
-                          style: PasyarTextStyles.of(context).label,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 2,
+                          children: [
+                            Text(
+                              club.name,
+                              style: PasyarTextStyles.of(
+                                context,
+                              ).screenTitle(26),
+                            ),
+                            if (club.memberCount case final n?)
+                              Text(
+                                memberCount(n),
+                                style: PasyarTextStyles.of(context).label,
+                              ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
+        ),
       ],
     );
   }

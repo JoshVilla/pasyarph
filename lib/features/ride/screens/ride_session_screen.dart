@@ -170,9 +170,13 @@ class _RideSessionScreenState extends State<RideSessionScreen> {
                 ),
                 attributionBottom: PasyarRadius.sheet,
               ),
-              sheet: finished
-                  ? _SummarySheet(ride: ride, onDone: _done, onPost: _post)
-                  : _RidingSheet(ride: ride, onEnd: _confirmEnd),
+              sheet: MotionChange(
+                value: finished,
+                duration: const Duration(milliseconds: 200),
+                child: finished
+                    ? _SummarySheet(ride: ride, onDone: _done, onPost: _post)
+                    : _RidingSheet(ride: ride, onEnd: _confirmEnd),
+              ),
             ),
             Positioned(
               top: top,

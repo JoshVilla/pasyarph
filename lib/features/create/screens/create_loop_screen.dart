@@ -295,7 +295,7 @@ class _CreateLoopScreenState extends State<CreateLoopScreen> {
                   ),
                 AnimatedPositioned(
                   // Follows the keyboard smoothly; follows a drag at once.
-                  duration: collapsed > 0
+                  duration: media.disableAnimations || collapsed > 0
                       ? Duration.zero
                       : const Duration(milliseconds: 150),
                   left: 0,

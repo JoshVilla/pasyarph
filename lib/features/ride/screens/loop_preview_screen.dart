@@ -96,7 +96,12 @@ class LoopPreviewScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              sheet: wrapSheet(_PreviewSheet(preview: preview, loop: loop)),
+              sheet: wrapSheet(
+                MotionChange(
+                  value: loop,
+                  child: _PreviewSheet(preview: preview, loop: loop),
+                ),
+              ),
             ),
           ),
           Positioned(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/motion.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -264,7 +265,20 @@ class _PointActionsLayer extends StatelessWidget {
           child: Align(
             alignment: above ? Alignment.topCenter : Alignment.bottomCenter,
             // Large system text shrinks the card rather than clip it.
-            child: FittedBox(fit: BoxFit.scaleDown, child: actions),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.65, end: 1),
+              duration: PasyarMotion.duration(
+                context,
+                const Duration(milliseconds: 120),
+              ),
+              curve: Curves.easeOutCubic,
+              child: FittedBox(fit: BoxFit.scaleDown, child: actions),
+              builder: (context, opacity, child) => Opacity(
+                opacity: opacity,
+                alwaysIncludeSemantics: true,
+                child: child,
+              ),
+            ),
           ),
         ),
       ],

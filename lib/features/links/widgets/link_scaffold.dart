@@ -55,15 +55,20 @@ class LinkScaffold extends StatelessWidget {
           SecondaryButton(label: 'GO TO HOME', onPressed: home),
       ],
       children: [
-        if (message == null && error == null)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: PasyarColors.of(context).accent,
-              ),
-            ),
-          ),
+        MotionChange(
+          value: (message, error),
+          duration: PasyarMotion.feedback,
+          child: message == null && error == null
+              ? Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: PasyarColors.of(context).accent,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
     );
   }

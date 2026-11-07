@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../../../core/widgets/motion.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/pasyar_theme.dart';
@@ -65,6 +66,7 @@ class AvatarPicker extends StatelessWidget {
                     : ClipOval(
                         child: Image(
                           image: image,
+                          frameBuilder: PasyarMotion.imageFrame,
                           fit: BoxFit.cover,
                           errorBuilder: (_, _, _) => ColoredBox(
                             color: PasyarColors.of(context).ground,

@@ -371,7 +371,9 @@ class ProfilePillButton extends StatelessWidget {
         // 38 px pill, 44 px tap area.
         child: Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Container(
+          child: AnimatedContainer(
+            duration: PasyarMotion.duration(context, PasyarMotion.feedback),
+            curve: Curves.easeOutCubic,
             height: 38,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             alignment: Alignment.center,
@@ -446,7 +448,12 @@ class ProfileTabs<T> extends StatelessWidget {
               child: SizedBox(
                 height: PasyarSpacing.minTouch,
                 child: Center(
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: PasyarMotion.duration(
+                      context,
+                      PasyarMotion.feedback,
+                    ),
+                    curve: Curves.easeOutCubic,
                     height: 36,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     alignment: Alignment.center,

@@ -2,6 +2,7 @@ export 'action_sheet.dart';
 export 'avatar.dart';
 export 'bottom_tabs.dart';
 export 'buttons.dart';
+export 'motion.dart';
 export 'choice_card.dart';
 export 'map_notice.dart';
 export 'collapsible_sheet.dart';

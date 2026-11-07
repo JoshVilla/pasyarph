@@ -184,87 +184,102 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (_results.loading)
-                  const Padding(
-                    padding: EdgeInsets.all(28),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else ...[
-                  if (_results.loops.isEmpty && _results.error == null)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: colors.ground,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        spacing: 12,
-                        children: [
-                          Icon(
-                            LucideIcons.search,
-                            size: 32,
-                            color: colors.muted,
-                          ),
-                          Text(
-                            query.filtered
-                                ? 'No routes match yet'
-                                : 'No public routes yet',
-                            style: styles.bodyLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            query.filtered
-                                ? 'Try another destination or widen your distance and ride-time filters.'
-                                : 'Loops shared publicly by riders will appear here.',
-                            style: styles.label,
-                            textAlign: TextAlign.center,
-                          ),
-                          if (query.filtered)
-                            TextButton(
-                              onPressed: _reset,
-                              child: const Text('Show all routes'),
+                MotionChange(
+                  value: (
+                    _results.loading,
+                    _results.error,
+                    _results.loops.isEmpty,
+                  ),
+                  duration: PasyarMotion.feedback,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_results.loading)
+                        const Padding(
+                          padding: EdgeInsets.all(28),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else ...[
+                        if (_results.loops.isEmpty && _results.error == null)
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colors.ground,
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                        ],
-                      ),
-                    ),
-                  for (final loop in _results.loops)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _RouteCard(
-                        loop: loop,
-                        opening: _opening == loop.id,
-                        onTap: _opening == null ? () => _ride(loop) : null,
-                      ),
-                    ),
-                  if (_results.error != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Column(
-                        spacing: 8,
-                        children: [
-                          Text(
-                            _results.error!,
-                            style: styles.label,
-                            textAlign: TextAlign.center,
+                            child: Column(
+                              spacing: 12,
+                              children: [
+                                Icon(
+                                  LucideIcons.search,
+                                  size: 32,
+                                  color: colors.muted,
+                                ),
+                                Text(
+                                  query.filtered
+                                      ? 'No routes match yet'
+                                      : 'No public routes yet',
+                                  style: styles.bodyLarge,
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  query.filtered
+                                      ? 'Try another destination or widen your distance and ride-time filters.'
+                                      : 'Loops shared publicly by riders will appear here.',
+                                  style: styles.label,
+                                  textAlign: TextAlign.center,
+                                ),
+                                if (query.filtered)
+                                  TextButton(
+                                    onPressed: _reset,
+                                    child: const Text('Show all routes'),
+                                  ),
+                              ],
+                            ),
                           ),
-                          TextButton(
-                            onPressed: () => _results.loops.isEmpty
-                                ? _results.refresh()
-                                : _results.loadMore(),
-                            child: const Text('Try again'),
+                        for (final loop in _results.loops)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _RouteCard(
+                              loop: loop,
+                              opening: _opening == loop.id,
+                              onTap: _opening == null
+                                  ? () => _ride(loop)
+                                  : null,
+                            ),
                           ),
-                        ],
-                      ),
-                    )
-                  else if (_results.hasMore)
-                    SecondaryButton(
-                      label: 'Load more routes',
-                      loading: _results.loadingMore,
-                      onPressed: _results.loadingMore
-                          ? null
-                          : _results.loadMore,
-                    ),
-                ],
+                        if (_results.error != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Column(
+                              spacing: 8,
+                              children: [
+                                Text(
+                                  _results.error!,
+                                  style: styles.label,
+                                  textAlign: TextAlign.center,
+                                ),
+                                TextButton(
+                                  onPressed: () => _results.loops.isEmpty
+                                      ? _results.refresh()
+                                      : _results.loadMore(),
+                                  child: const Text('Try again'),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (_results.hasMore)
+                          SecondaryButton(
+                            label: 'Load more routes',
+                            loading: _results.loadingMore,
+                            onPressed: _results.loadingMore
+                                ? null
+                                : _results.loadMore,
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

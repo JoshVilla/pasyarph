@@ -48,7 +48,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      MotionChange(value: _sentTo != null, child: _content(context));
+
+  Widget _content(BuildContext context) {
     if (_sentTo != null) {
       return AuthScaffold(
         onBack: _back,

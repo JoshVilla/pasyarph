@@ -233,136 +233,138 @@ class WhereToSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final (lead, choice) = headlineFor(options.duration, options.days);
     final instant = MediaQuery.disableAnimationsOf(context);
-    return BottomSheetPanel(
-      gap: 14,
-      maxHeight: maxHeight,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 4,
-          children: [
-            Semantics(
-              header: true,
-              liveRegion: true,
-              child: AnimatedSwitcher(
-                duration: instant
-                    ? Duration.zero
-                    : const Duration(milliseconds: 180),
-                switchInCurve: Curves.easeOutCubic,
-                layoutBuilder: (current, previous) => Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [...previous, ?current],
-                ),
-                child: Text.rich(
-                  key: ValueKey(lead + choice),
-                  TextSpan(
-                    children: [
-                      TextSpan(text: lead),
-                      TextSpan(
-                        text: choice,
-                        style: TextStyle(
-                          color: PasyarColors.of(context).accent,
-                        ),
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  style: PasyarTextStyles.of(context).bodyLarge.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ),
-            Text(
-              "Pick how long. We'll make the loop.",
-              style: PasyarTextStyles.of(context).body.copyWith(
-                height: 1.2,
-                color: PasyarColors.of(context).muted,
-              ),
-            ),
-          ],
-        ),
-        // Two rows of two: four cards in one row would be too narrow for
-        // MULTI-DAY and for gloves.
-        Column(
-          spacing: PasyarSpacing.buttonGap,
-          children: [
-            for (var i = 0; i < LoopDuration.values.length; i += 2)
-              Row(
-                spacing: PasyarSpacing.buttonGap,
-                children: [
-                  for (final d in LoopDuration.values.skip(i).take(2))
-                    Expanded(
-                      child: ChoiceCard(
-                        title: switch (d) {
-                          LoopDuration.quick => 'Quick',
-                          LoopDuration.halfDay => 'Half-day',
-                          LoopDuration.fullDay => 'Full day',
-                          LoopDuration.multiDay => 'Multi-day',
-                        },
-                        subtitle: d.subtitle,
-                        selected: options.duration == d,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          options.duration = d;
-                        },
-                      ),
-                    ),
-                ],
-              ),
-          ],
-        ),
-        if (options.duration == LoopDuration.multiDay)
-          Row(
-            spacing: 12,
+    return MotionSize(
+      child: BottomSheetPanel(
+        gap: 14,
+        maxHeight: maxHeight,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 4,
             children: [
-              Text('Days', style: PasyarTextStyles.of(context).fieldLabel),
-              Expanded(
-                child: SegmentedChoice<int>(
-                  semanticLabel: 'Days',
-                  options: {for (var d = 2; d <= 7; d++) d: '$d'},
-                  selected: options.days,
-                  onChanged: (d) => options.days = d,
+              Semantics(
+                header: true,
+                liveRegion: true,
+                child: AnimatedSwitcher(
+                  duration: instant
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [...previous, ?current],
+                  ),
+                  child: Text.rich(
+                    key: ValueKey(lead + choice),
+                    TextSpan(
+                      children: [
+                        TextSpan(text: lead),
+                        TextSpan(
+                          text: choice,
+                          style: TextStyle(
+                            color: PasyarColors.of(context).accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    style: PasyarTextStyles.of(context).bodyLarge.copyWith(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+              Text(
+                "Pick how long. We'll make the loop.",
+                style: PasyarTextStyles.of(context).body.copyWith(
+                  height: 1.2,
+                  color: PasyarColors.of(context).muted,
                 ),
               ),
             ],
           ),
-        Row(
-          spacing: PasyarSpacing.buttonGap,
-          children: [
-            Expanded(
-              child: PillToggle(
-                label: 'Avoid highways',
-                value: options.avoidHighways,
-                onChanged: (v) => options.avoidHighways = v,
-              ),
-            ),
-            Expanded(
-              child: PillToggle(
-                label: 'Avoid unpaved',
-                value: options.avoidUnpaved,
-                onChanged: (v) => options.avoidUnpaved = v,
-              ),
-            ),
-          ],
-        ),
-        ?notice,
-        PrimaryButton(
-          label: 'Generate loop',
-          // Not the Create tab's route icon: this makes the loop for you.
-          icon: LucideIcons.sparkles,
-          loading: generating,
-          onPressed: onGenerate,
-        ),
-        if (onDiscover != null)
-          TextButton.icon(
-            onPressed: onDiscover,
-            icon: const Icon(LucideIcons.search, size: 18),
-            label: const Text('Explore rider loops'),
+          // Two rows of two: four cards in one row would be too narrow for
+          // MULTI-DAY and for gloves.
+          Column(
+            spacing: PasyarSpacing.buttonGap,
+            children: [
+              for (var i = 0; i < LoopDuration.values.length; i += 2)
+                Row(
+                  spacing: PasyarSpacing.buttonGap,
+                  children: [
+                    for (final d in LoopDuration.values.skip(i).take(2))
+                      Expanded(
+                        child: ChoiceCard(
+                          title: switch (d) {
+                            LoopDuration.quick => 'Quick',
+                            LoopDuration.halfDay => 'Half-day',
+                            LoopDuration.fullDay => 'Full day',
+                            LoopDuration.multiDay => 'Multi-day',
+                          },
+                          subtitle: d.subtitle,
+                          selected: options.duration == d,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            options.duration = d;
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+            ],
           ),
-      ],
+          if (options.duration == LoopDuration.multiDay)
+            Row(
+              spacing: 12,
+              children: [
+                Text('Days', style: PasyarTextStyles.of(context).fieldLabel),
+                Expanded(
+                  child: SegmentedChoice<int>(
+                    semanticLabel: 'Days',
+                    options: {for (var d = 2; d <= 7; d++) d: '$d'},
+                    selected: options.days,
+                    onChanged: (d) => options.days = d,
+                  ),
+                ),
+              ],
+            ),
+          Row(
+            spacing: PasyarSpacing.buttonGap,
+            children: [
+              Expanded(
+                child: PillToggle(
+                  label: 'Avoid highways',
+                  value: options.avoidHighways,
+                  onChanged: (v) => options.avoidHighways = v,
+                ),
+              ),
+              Expanded(
+                child: PillToggle(
+                  label: 'Avoid unpaved',
+                  value: options.avoidUnpaved,
+                  onChanged: (v) => options.avoidUnpaved = v,
+                ),
+              ),
+            ],
+          ),
+          ?notice,
+          PrimaryButton(
+            label: 'Generate loop',
+            // Not the Create tab's route icon: this makes the loop for you.
+            icon: LucideIcons.sparkles,
+            loading: generating,
+            onPressed: onGenerate,
+          ),
+          if (onDiscover != null)
+            TextButton.icon(
+              onPressed: onDiscover,
+              icon: const Icon(LucideIcons.search, size: 18),
+              label: const Text('Explore rider loops'),
+            ),
+        ],
+      ),
     );
   }
 }

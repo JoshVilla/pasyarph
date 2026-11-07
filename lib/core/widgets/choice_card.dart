@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/pasyar_theme.dart';
+import 'motion.dart';
 
 /// Selectable card. With a [subtitle] it is the 72 px duration card
 /// (QUICK / about 1 hr); without one it is the 52 px card (report reasons).
@@ -45,6 +46,10 @@ class ChoiceCard extends StatelessWidget {
             ? 72
             : 52,
         child: Material(
+          animationDuration: PasyarMotion.duration(
+            context,
+            PasyarMotion.feedback,
+          ),
           color: selected
               ? PasyarColors.of(context).accentTint
               : PasyarColors.of(context).card,

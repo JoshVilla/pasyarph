@@ -86,10 +86,14 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
         ),
       ],
       children: [
-        SafetyRow(
-          icon: _resent ? LucideIcons.check : LucideIcons.inbox,
-          lead: _resent ? 'Sent again.' : "Can't find it?",
-          text: ' Check your spam or promotions folder.',
+        MotionChange(
+          value: _resent,
+          duration: PasyarMotion.feedback,
+          child: SafetyRow(
+            icon: _resent ? LucideIcons.check : LucideIcons.inbox,
+            lead: _resent ? 'Sent again.' : "Can't find it?",
+            text: ' Check your spam or promotions folder.',
+          ),
         ),
       ],
     );

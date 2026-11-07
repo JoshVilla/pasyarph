@@ -17,7 +17,15 @@ class SplashScreen extends StatelessWidget {
     if (auth.status != AuthStatus.profileError) {
       return Scaffold(
         backgroundColor: PasyarColors.of(context).background,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Semantics(
+            label: 'Loading your profile',
+            liveRegion: true,
+            child: CircularProgressIndicator(
+              value: MediaQuery.disableAnimationsOf(context) ? 0.65 : null,
+            ),
+          ),
+        ),
       );
     }
     return AuthScaffold(

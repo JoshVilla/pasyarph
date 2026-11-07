@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/pasyar_theme.dart';
+import 'motion.dart';
 
 const _disabledOpacity = 0.4;
 
@@ -120,6 +121,7 @@ class _ButtonFrame extends StatelessWidget {
         ? SizedBox.square(
             dimension: 24,
             child: CircularProgressIndicator(
+              value: MediaQuery.disableAnimationsOf(context) ? 0.65 : null,
               strokeWidth: 2.5,
               color: foreground,
             ),
@@ -159,7 +161,13 @@ class _ButtonFrame extends StatelessWidget {
               onTap: enabled && !loading ? onPressed : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Center(child: content),
+                child: Center(
+                  child: MotionChange(
+                    value: loading,
+                    duration: PasyarMotion.feedback,
+                    child: content,
+                  ),
+                ),
               ),
             ),
           ),

@@ -149,7 +149,10 @@ class _CreateLoopSheetState extends State<CreateLoopSheet> {
                       ignoring: w.collapsed,
                       child: AnimatedOpacity(
                         opacity: w.collapsed ? 0 : 1,
-                        duration: const Duration(milliseconds: 150),
+                        duration: PasyarMotion.duration(
+                          context,
+                          PasyarMotion.feedback,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           spacing: 14,

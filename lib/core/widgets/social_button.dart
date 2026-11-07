@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/pasyar_theme.dart';
+import 'motion.dart';
 
 enum SocialProvider { apple, google }
 
@@ -62,34 +63,42 @@ class SocialButton extends StatelessWidget {
             child: InkWell(
               onTap: enabled ? onPressed : null,
               child: Center(
-                child: loading
-                    ? SizedBox.square(
-                        dimension: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: foreground,
-                        ),
-                      )
-                    : FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: compact ? 10 : 12,
-                          children: [
-                            _ProviderMark(provider),
-                            Text(
-                              label,
-                              maxLines: 1,
-                              style: PasyarTextStyles.of(context).body.copyWith(
-                                fontSize: 16,
-                                height: 1.2,
-                                fontWeight: FontWeight.w600,
-                                color: foreground,
+                child: MotionChange(
+                  value: loading,
+                  duration: PasyarMotion.feedback,
+                  child: loading
+                      ? SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(
+                            value: MediaQuery.disableAnimationsOf(context)
+                                ? 0.65
+                                : null,
+                            strokeWidth: 2.5,
+                            color: foreground,
+                          ),
+                        )
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: compact ? 10 : 12,
+                            children: [
+                              _ProviderMark(provider),
+                              Text(
+                                label,
+                                maxLines: 1,
+                                style: PasyarTextStyles.of(context).body
+                                    .copyWith(
+                                      fontSize: 16,
+                                      height: 1.2,
+                                      fontWeight: FontWeight.w600,
+                                      color: foreground,
+                                    ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ),

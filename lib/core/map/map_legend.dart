@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/pasyar_theme.dart';
 import 'map_markers.dart';
+import '../widgets/motion.dart';
 
 /// One symbol a map draws, as its key explains it.
 enum MapKeyItem {
@@ -49,7 +50,10 @@ class MapLegend extends StatelessWidget {
   final bool row;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      MotionSize(alignment: Alignment.bottomLeft, child: _content(context));
+
+  Widget _content(BuildContext context) {
     final card = BoxDecoration(
       color: PasyarColors.of(context).card,
       borderRadius: BorderRadius.circular(PasyarRadius.panel),

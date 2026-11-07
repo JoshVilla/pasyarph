@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/pasyar_theme.dart';
+import 'motion.dart';
 
 /// Square checkbox tinted `accent`, matching the native checkbox in the
 /// mockups. Visual only; wrap it in something tappable.
@@ -12,7 +13,9 @@ class PasyarCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: PasyarMotion.duration(context, PasyarMotion.feedback),
+      curve: Curves.easeOutCubic,
       width: size,
       height: size,
       decoration: BoxDecoration(
@@ -138,7 +141,9 @@ class PasyarFilterChip extends StatelessWidget {
         child: SizedBox(
           height: 44,
           child: Center(
-            child: Container(
+            child: AnimatedContainer(
+              duration: PasyarMotion.duration(context, PasyarMotion.feedback),
+              curve: Curves.easeOutCubic,
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
@@ -241,7 +246,9 @@ class _Segment extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Container(
+        child: AnimatedContainer(
+          duration: PasyarMotion.duration(context, PasyarMotion.feedback),
+          curve: Curves.easeOutCubic,
           height: 44,
           alignment: Alignment.center,
           decoration: selected
@@ -250,7 +257,10 @@ class _Segment extends StatelessWidget {
                   borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
                   boxShadow: SegmentedChoice._selectedShadow,
                 )
-              : null,
+              : BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(PasyarRadius.photoSlot),
+                ),
           child: Text(
             label,
             maxLines: 1,

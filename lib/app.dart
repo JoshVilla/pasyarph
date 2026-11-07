@@ -29,27 +29,40 @@ class _PasyarAppState extends State<PasyarApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Pasyar',
-      debugShowCheckedModeBanner: false,
-      theme: PasyarTheme.light(),
-      darkTheme: PasyarTheme.dark(),
-      themeMode: context.watch<AppSettings>().themeMode,
-      routerConfig: _router,
-      builder: (context, child) {
-        final dark = Theme.of(context).brightness == Brightness.dark;
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: (dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
-              .copyWith(
-                statusBarColor: Colors.transparent,
-                systemNavigationBarColor: PasyarColors.of(context).background,
-                systemNavigationBarIconBrightness: dark
-                    ? Brightness.light
-                    : Brightness.dark,
-              ),
-          child: child!,
-        );
-      },
+    return MediaQuery.fromView(
+      view: View.of(context),
+      child: Builder(
+        builder: (context) => MaterialApp.router(
+          themeAnimationDuration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : kThemeAnimationDuration,
+          title: 'Pasyar',
+          debugShowCheckedModeBanner: false,
+          theme: PasyarTheme.light(),
+          darkTheme: PasyarTheme.dark(),
+          themeMode: context.watch<AppSettings>().themeMode,
+          routerConfig: _router,
+          builder: (context, child) {
+            final dark = Theme.of(context).brightness == Brightness.dark;
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value:
+                  (dark
+                          ? SystemUiOverlayStyle.light
+                          : SystemUiOverlayStyle.dark)
+                      .copyWith(
+                        statusBarColor: Colors.transparent,
+                        systemNavigationBarColor: PasyarColors.of(
+                          context,
+                        ).background,
+                        systemNavigationBarIconBrightness: dark
+                            ? Brightness.light
+                            : Brightness.dark,
+                      ),
+              child: child!,
+            );
+          },
+        ),
+      ),
     );
   }
 }

@@ -204,40 +204,43 @@ class _WritePostScreenState extends State<WritePostScreen> {
                       ),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 10,
-                  children: [
-                    Text('Who sees this', style: heading),
-                    SegmentedChoice<LoopVisibility>(
-                      semanticLabel: 'Who sees this post',
-                      options: _labels,
-                      selected: c.visibility,
-                      onChanged: c.posting ? (_) {} : _setVisibility,
-                    ),
-                    if (c.visibility == LoopVisibility.club)
-                      clubs != null && clubs.isEmpty
-                          ? Text(
-                              'Join or make a club first (Me → Clubs).',
-                              style: PasyarTextStyles.of(context).label,
-                            )
-                          : SecondaryButton(
-                              label: _club?.name.toUpperCase() ?? 'PICK A CLUB',
-                              icon: LucideIcons.users,
-                              onPressed: clubs == null || c.posting
-                                  ? null
-                                  : _pickClub,
-                            ),
-                    Text(switch (c.visibility) {
-                      LoopVisibility.public =>
-                        'Anyone on Pasyar can see it, under Global.',
-                      LoopVisibility.club =>
-                        'Only members of ${_club?.name ?? 'the club'} will '
-                            'see it.',
-                      LoopVisibility.private =>
-                        'Only you can see it, on your profile.',
-                    }, style: PasyarTextStyles.of(context).label),
-                  ],
+                MotionSize(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 10,
+                    children: [
+                      Text('Who sees this', style: heading),
+                      SegmentedChoice<LoopVisibility>(
+                        semanticLabel: 'Who sees this post',
+                        options: _labels,
+                        selected: c.visibility,
+                        onChanged: c.posting ? (_) {} : _setVisibility,
+                      ),
+                      if (c.visibility == LoopVisibility.club)
+                        clubs != null && clubs.isEmpty
+                            ? Text(
+                                'Join or make a club first (Me → Clubs).',
+                                style: PasyarTextStyles.of(context).label,
+                              )
+                            : SecondaryButton(
+                                label:
+                                    _club?.name.toUpperCase() ?? 'PICK A CLUB',
+                                icon: LucideIcons.users,
+                                onPressed: clubs == null || c.posting
+                                    ? null
+                                    : _pickClub,
+                              ),
+                      Text(switch (c.visibility) {
+                        LoopVisibility.public =>
+                          'Anyone on Pasyar can see it, under Global.',
+                        LoopVisibility.club =>
+                          'Only members of ${_club?.name ?? 'the club'} will '
+                              'see it.',
+                        LoopVisibility.private =>
+                          'Only you can see it, on your profile.',
+                      }, style: PasyarTextStyles.of(context).label),
+                    ],
+                  ),
                 ),
                 const Spacer(),
                 Column(

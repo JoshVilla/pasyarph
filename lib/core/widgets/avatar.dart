@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/pasyar_theme.dart';
+import 'motion.dart';
 
 /// Round profile picture with an initials fallback. Feed sizes: 44 (post
 /// author), 40 (composer), 32 (comment). With [radius] it's a rounded
@@ -77,6 +78,7 @@ class Avatar extends StatelessWidget {
             ? initials
             : Image(
                 image: image!,
+                frameBuilder: PasyarMotion.imageFrame,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,

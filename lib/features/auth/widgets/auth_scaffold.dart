@@ -233,20 +233,24 @@ class AuthErrorText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (message == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Semantics(
-        liveRegion: true,
-        child: Text(
-          message!,
-          textAlign: TextAlign.center,
-          style: PasyarTextStyles.of(context).bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
-            color: PasyarColors.of(context).accentDark,
-          ),
-        ),
-      ),
+    return MotionSize(
+      duration: PasyarMotion.feedback,
+      child: message == null
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: PasyarTextStyles.of(context).bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: PasyarColors.of(context).accentDark,
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
