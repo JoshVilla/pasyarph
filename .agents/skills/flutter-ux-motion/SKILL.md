@@ -81,7 +81,7 @@ Before changing a screen, explain:
 
 ## Final quality review
 
-After implementing animations, verify:
+After implementing animations, verify
 
 - Animations have a clear UX purpose.
 - No interaction becomes slower or harder.
